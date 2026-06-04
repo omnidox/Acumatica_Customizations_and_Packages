@@ -31,10 +31,16 @@ namespace iStarShippingRestrictionsCustomizations
             if (shipment == null)
                 return;
 
-            if (ShouldBypassShippingValidation(shipment))
+            Customer customer = GetCustomer(shipment);
+
+            if (ShouldBypassShippingValidation(customer))
             {
                 PXTrace.WriteInformation(
-                    $"Shipping restriction validation bypassed for shipment {shipment.ShipmentNbr}, customer ID {shipment.CustomerID}.");
+                    $"Shipping restriction validation bypassed. " +
+                    $"Shipment={shipment.ShipmentNbr}, " +
+                    $"CustomerID={shipment.CustomerID}, " +
+                    $"CustomerCD={customer?.AcctCD?.Trim()}, " +
+                    $"CustomerName={customer?.AcctName}");
 
                 return;
             }
@@ -50,7 +56,8 @@ namespace iStarShippingRestrictionsCustomizations
 
             if (packageContents.Count == 0)
             {
-                throw new PXException("Please add contents to the package before confirming shipment.");
+                throw new PXException(
+                    "Please add contents to the package before confirming shipment.");
             }
 
             // Validation 2: every package must have GS1-128 / UCC128
@@ -64,22 +71,27 @@ namespace iStarShippingRestrictionsCustomizations
 
             foreach (SOPackageDetailEx package in packages)
             {
-                string ucc128 = Base.Packages.Cache.GetValue(package, "UsrTCUCC128") as string;
+                string ucc128 =
+                    Base.Packages.Cache.GetValue(package, "UsrTCUCC128") as string;
 
                 if (string.IsNullOrWhiteSpace(ucc128))
                 {
-                    throw new PXException("GS1-128 is required for all packages before confirming shipment.");
+                    throw new PXException(
+                        "GS1-128 is required for all packages before confirming shipment.");
                 }
             }
         }
 
-        private bool ShouldBypassShippingValidation(SOShipment shipment)
+        private Customer GetCustomer(SOShipment shipment)
         {
             if (shipment?.CustomerID == null)
-                return false;
+                return null;
 
-            Customer customer = Customer.PK.Find(Base, shipment.CustomerID);
+            return Customer.PK.Find(Base, shipment.CustomerID);
+        }
 
+        private bool ShouldBypassShippingValidation(Customer customer)
+        {
             string customerCD = customer?.AcctCD?.Trim();
 
             if (string.IsNullOrWhiteSpace(customerCD))
