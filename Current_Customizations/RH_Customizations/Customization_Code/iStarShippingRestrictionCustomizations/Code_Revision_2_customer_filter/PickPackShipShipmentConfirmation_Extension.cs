@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using PX.Data;
+using PX.Objects.AR;
 using PX.Objects.SO;
 using PX.Objects.SO.GraphExtensions.SOShipmentEntryExt;
 
@@ -8,6 +11,12 @@ namespace iStarShippingRestrictionsCustomizations
         : PXGraphExtension<ConfirmShipmentExtension, SOShipmentEntry>
     {
         public static bool IsActive() => true;
+
+        private static readonly HashSet<string> BypassCustomerCDs =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "DKOHL"
+            };
 
         public delegate void ValidateShipmentDelegate(SOShipment shiporder);
 
@@ -21,6 +30,14 @@ namespace iStarShippingRestrictionsCustomizations
             SOShipment shipment = Base.Document.Current ?? shiporder;
             if (shipment == null)
                 return;
+
+            if (ShouldBypassShippingValidation(shipment))
+            {
+                PXTrace.WriteInformation(
+                    $"Shipping restriction validation bypassed for shipment {shipment.ShipmentNbr}, customer ID {shipment.CustomerID}.");
+
+                return;
+            }
 
             // Validation 1: shipment must have package contents
             PXResultset<SOShipLineSplitPackage> packageContents =
@@ -54,6 +71,21 @@ namespace iStarShippingRestrictionsCustomizations
                     throw new PXException("GS1-128 is required for all packages before confirming shipment.");
                 }
             }
+        }
+
+        private bool ShouldBypassShippingValidation(SOShipment shipment)
+        {
+            if (shipment?.CustomerID == null)
+                return false;
+
+            Customer customer = Customer.PK.Find(Base, shipment.CustomerID);
+
+            string customerCD = customer?.AcctCD?.Trim();
+
+            if (string.IsNullOrWhiteSpace(customerCD))
+                return false;
+
+            return BypassCustomerCDs.Contains(customerCD);
         }
     }
 }
