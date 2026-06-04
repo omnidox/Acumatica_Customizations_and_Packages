@@ -1,0 +1,59 @@
+using PX.Data;
+using PX.Objects.SO;
+using PX.Objects.SO.GraphExtensions.SOShipmentEntryExt;
+
+namespace iStarShippingRestrictionsCustomizations
+{
+    public class ConfirmShipmentExtension_Extension
+        : PXGraphExtension<ConfirmShipmentExtension, SOShipmentEntry>
+    {
+        public static bool IsActive() => true;
+
+        public delegate void ValidateShipmentDelegate(SOShipment shiporder);
+
+        [PXOverride]
+        public virtual void ValidateShipment(
+            SOShipment shiporder,
+            ValidateShipmentDelegate baseMethod)
+        {
+            baseMethod?.Invoke(shiporder);
+
+            SOShipment shipment = Base.Document.Current ?? shiporder;
+            if (shipment == null)
+                return;
+
+            // Validation 1: shipment must have package contents
+            PXResultset<SOShipLineSplitPackage> packageContents =
+                PXSelect<
+                    SOShipLineSplitPackage,
+                    Where<
+                        SOShipLineSplitPackage.shipmentNbr,
+                        Equal<Required<SOShipLineSplitPackage.shipmentNbr>>>>
+                .Select(Base, shipment.ShipmentNbr);
+
+            if (packageContents.Count == 0)
+            {
+                throw new PXException("Please add contents to the package before confirming shipment.");
+            }
+
+            // Validation 2: every package must have GS1-128 / UCC128
+            PXResultset<SOPackageDetailEx> packages =
+                PXSelect<
+                    SOPackageDetailEx,
+                    Where<
+                        SOPackageDetailEx.shipmentNbr,
+                        Equal<Required<SOPackageDetailEx.shipmentNbr>>>>
+                .Select(Base, shipment.ShipmentNbr);
+
+            foreach (SOPackageDetailEx package in packages)
+            {
+                string ucc128 = Base.Packages.Cache.GetValue(package, "UsrTCUCC128") as string;
+
+                if (string.IsNullOrWhiteSpace(ucc128))
+                {
+                    throw new PXException("GS1-128 is required for all packages before confirming shipment.");
+                }
+            }
+        }
+    }
+}
