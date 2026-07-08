@@ -2,6 +2,7 @@ using System;
 using PX.Data;
 using PX.Data.BQL;
 using PX.Data.ReferentialIntegrity.Attributes;
+using PX.Objects.AR;
 using PX.Objects.IN;
 
 namespace MonthlyForecastReferenceTable
@@ -10,16 +11,37 @@ namespace MonthlyForecastReferenceTable
     [PXCacheName("Monthly Item Forecast")]
     public class UsrMonthlyForecast : PXBqlTable, IBqlTable
     {
-        public class PK : PrimaryKeyOf<UsrMonthlyForecast>.By<inventoryID, finPeriodID>
+        public class PK : PrimaryKeyOf<UsrMonthlyForecast>
+            .By<customerID, inventoryID, forecastType, forecastYear, forecastMonth>
         {
-            public static UsrMonthlyForecast Find(PXGraph graph, int? inventoryID, string finPeriodID)
-                => FindBy(graph, inventoryID, finPeriodID);
+            public static UsrMonthlyForecast Find(
+                PXGraph graph,
+                int? customerID,
+                int? inventoryID,
+                string forecastType,
+                string forecastYear,
+                string forecastMonth)
+                => FindBy(graph, customerID, inventoryID, forecastType, forecastYear, forecastMonth);
         }
 
         public static class FK
         {
-            public class InventoryItem : PX.Objects.IN.InventoryItem.PK.ForeignKeyOf<UsrMonthlyForecast>.By<inventoryID> { }
+            public class Customer :
+                PX.Objects.AR.Customer.PK.ForeignKeyOf<UsrMonthlyForecast>
+                    .By<customerID> { }
+
+            public class InventoryItem :
+                PX.Objects.IN.InventoryItem.PK.ForeignKeyOf<UsrMonthlyForecast>
+                    .By<inventoryID> { }
         }
+
+        #region CustomerID
+        [Customer(IsKey = true)]
+        [PXDefault]
+        [PXUIField(DisplayName = "Customer")]
+        public virtual int? CustomerID { get; set; }
+        public abstract class customerID : BqlInt.Field<customerID> { }
+        #endregion
 
         #region InventoryID
         [Inventory(IsKey = true)]
@@ -29,12 +51,35 @@ namespace MonthlyForecastReferenceTable
         public abstract class inventoryID : BqlInt.Field<inventoryID> { }
         #endregion
 
-        #region FinPeriodID
-        [PXDBString(6, IsKey = true, IsFixed = true, InputMask = "")]
+        #region ForecastType
+        [PXDBString(2, IsKey = true, IsFixed = true, InputMask = ">??")]
         [PXDefault]
-        [PXUIField(DisplayName = "Financial Period")]
-        public virtual string FinPeriodID { get; set; }
-        public abstract class finPeriodID : BqlString.Field<finPeriodID> { }
+        [PXUIField(DisplayName = "Forecast Type")]
+        public virtual string ForecastType { get; set; }
+        public abstract class forecastType : BqlString.Field<forecastType> { }
+        #endregion
+
+        #region ForecastDate
+        [PXDate]
+        [PXUIField(DisplayName = "Forecast Date")]
+        public virtual DateTime? ForecastDate { get; set; }
+        public abstract class forecastDate : BqlDateTime.Field<forecastDate> { }
+        #endregion
+
+        #region ForecastYear
+        [PXDBString(4, IsKey = true, IsFixed = true)]
+        [PXDefault]
+        [PXUIField(DisplayName = "Forecast Year")]
+        public virtual string ForecastYear { get; set; }
+        public abstract class forecastYear : BqlString.Field<forecastYear> { }
+        #endregion
+
+        #region ForecastMonth
+        [PXDBString(2, IsKey = true, IsFixed = true)]
+        [PXDefault]
+        [PXUIField(DisplayName = "Forecast Month")]
+        public virtual string ForecastMonth { get; set; }
+        public abstract class forecastMonth : BqlString.Field<forecastMonth> { }
         #endregion
 
         #region ForecastQty
