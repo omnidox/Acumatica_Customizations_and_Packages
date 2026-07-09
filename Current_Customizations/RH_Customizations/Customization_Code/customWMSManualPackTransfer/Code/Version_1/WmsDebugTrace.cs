@@ -14,7 +14,7 @@ namespace CustomWMS2
         /// Master switch for all CustomWMS trace output.
         /// Default is OFF.
         /// </summary>
-        public static bool Enabled { get; set; } = false;
+        public static bool Enabled { get; set; } = true;
 
         /// <summary>
         /// Individual trace category switches.
