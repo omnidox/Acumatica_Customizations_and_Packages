@@ -1,6 +1,6 @@
 using PX.Data;
 
-namespace CustomWMS
+namespace CustomWMS2
 {
     /// <summary>
     /// Centralized debug tracing for CustomWMS.

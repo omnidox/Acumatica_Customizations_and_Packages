@@ -10,7 +10,7 @@ using PX.Objects.SO.WMS;
 using WmsShipmentExt = WMS.SOShipmentEntryExt;
 using WmsPlan = WMS.SelectedPackageContents;
 
-namespace CustomWMS
+namespace CustomWMS2
 {
     public class PackTransferExpectedCommand : PickPackShip.ScanExtension
     {
