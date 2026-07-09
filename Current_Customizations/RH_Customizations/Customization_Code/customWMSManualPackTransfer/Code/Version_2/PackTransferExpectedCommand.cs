@@ -15,7 +15,7 @@ namespace CustomWMS2
     public class PackTransferExpectedCommand : PickPackShip.ScanExtension
     {
         private const string TracePrefix = "[PackTransferExpectedCommand]";
-        private const string Version = "2026-07-08-POC-TRANSFER-TOP-EXPECTED-01";
+        private const string Version = "2026-07-09-V2-SELECTED-ROW-QTY-TRANSFER-01";
 
         public static bool IsActive()
         {
@@ -23,17 +23,15 @@ namespace CustomWMS2
             return true;
         }
 
-        public sealed class TransferTopExpectedRowCommand : PickPackShip.ScanCommand
+        public abstract class TransferExpectedBaseCommand : PickPackShip.ScanCommand
         {
-            public override string Code => "TRANSFEREXPECTED";
-            public override string ButtonName => "TransferTopExpectedRow";
-            public override string DisplayName => "Transfer Top Expected Row";
+            protected abstract bool UseEnteredQty { get; }
 
             protected override bool IsEnabled => true;
 
             protected override bool Process()
             {
-                WmsDebugTrace.Info($"{TracePrefix} Process ENTER. Version={Version}");
+                WmsDebugTrace.Info($"{TracePrefix} Process ENTER. Version={Version}, Command={Code}");
 
                 PickPackShip.PackMode.Logic packLogic =
                     Basis.Get<PickPackShip.PackMode.Logic>();
@@ -46,23 +44,20 @@ namespace CustomWMS2
                 if (package == null || package.ShipmentNbr == null || package.LineNbr == null)
                 {
                     Basis.ReportError("No selected package was found.");
-                    WmsDebugTrace.Warning($"{TracePrefix} No valid selected package.");
                     return true;
                 }
 
-                WmsPlan expectedRow = GetFirstIncompleteExpectedRow(package);
+                WmsPlan expectedRow = GetSelectedExpectedRow(package);
 
                 if (expectedRow == null)
                 {
-                    Basis.ReportWarning("No remaining expected content was found for this package.");
-                    WmsDebugTrace.Info($"{TracePrefix} No incomplete expected row found.");
+                    Basis.ReportError("Please select an expected content row first.");
                     return true;
                 }
 
                 if (expectedRow.ShipmentSplitLineNbr == null)
                 {
-                    Basis.ReportError("The expected row does not have a shipment split line number.");
-                    WmsDebugTrace.Warning($"{TracePrefix} Expected row missing ShipmentSplitLineNbr.");
+                    Basis.ReportError("The selected expected row does not have a shipment split line number.");
                     return true;
                 }
 
@@ -73,18 +68,30 @@ namespace CustomWMS2
                 if (split == null)
                 {
                     Basis.ReportError("The matching shipment split was not found.");
-                    WmsDebugTrace.Warning(
-                        $"{TracePrefix} Matching SOShipLineSplit not found. ShipmentNbr={expectedRow.ShipmentNbr}, SplitLineNbr={expectedRow.ShipmentSplitLineNbr}");
                     return true;
                 }
 
-                decimal transferQty = GetRemainingQtyForPackage(package, expectedRow);
+                decimal remainingQty = GetRemainingQtyForPackage(package, expectedRow);
 
-                if (transferQty <= 0m)
+                if (remainingQty <= 0m)
                 {
                     Basis.ReportWarning("The selected expected row has no remaining quantity to transfer.");
-                    WmsDebugTrace.Info($"{TracePrefix} Remaining qty is zero.");
                     return true;
+                }
+
+                decimal transferQty = remainingQty;
+
+                if (UseEnteredQty)
+                {
+                    decimal enteredQty = Basis.Qty.GetValueOrDefault();
+
+                    if (enteredQty <= 0m)
+                    {
+                        Basis.ReportError("Please enter a quantity before using Transfer Qty From Selected Row.");
+                        return true;
+                    }
+
+                    transferQty = Math.Min(enteredQty, remainingQty);
                 }
 
                 decimal? targetQty = confirmLogic.TargetQty(split);
@@ -97,23 +104,26 @@ namespace CustomWMS2
                     if (availableOnSplit <= 0m)
                     {
                         Basis.ReportWarning("The matching shipment split is already fully packed.");
-                        WmsDebugTrace.Info($"{TracePrefix} Split already fully packed.");
                         return true;
                     }
 
-                    if (transferQty > availableOnSplit)
-                        transferQty = availableOnSplit;
+                    transferQty = Math.Min(transferQty, availableOnSplit);
+                }
+
+                if (transferQty <= 0m)
+                {
+                    Basis.ReportWarning("There is no quantity available to transfer.");
+                    return true;
                 }
 
                 WmsDebugTrace.Info(
-                    $"{TracePrefix} Calling PackSplit. ShipmentNbr={split.ShipmentNbr}, LineNbr={split.LineNbr}, SplitLineNbr={split.SplitLineNbr}, InventoryID={split.InventoryID}, LotSerialNbr={split.LotSerialNbr}, PackageLineNbr={package.LineNbr}, TransferQty={transferQty}");
+                    $"{TracePrefix} Calling PackSplit. Command={Code}, ShipmentNbr={split.ShipmentNbr}, LineNbr={split.LineNbr}, SplitLineNbr={split.SplitLineNbr}, InventoryID={split.InventoryID}, LotSerialNbr={split.LotSerialNbr}, PackageLineNbr={package.LineNbr}, RemainingQty={remainingQty}, TransferQty={transferQty}");
 
                 bool packed = confirmLogic.PackSplit(split, package, transferQty);
 
                 if (!packed)
                 {
                     Basis.ReportError("The selected expected row could not be transferred.");
-                    WmsDebugTrace.Warning($"{TracePrefix} PackSplit returned false.");
                     return true;
                 }
 
@@ -124,37 +134,38 @@ namespace CustomWMS2
 
                 Basis.Save.Press();
 
-                RequestEstimatedContentRefresh("Manual expected-row transfer");
+                RequestRefresh("Manual selected expected-row transfer");
 
                 Basis.ReportInfo(
                     "Transferred {0} x {1} to the selected package.",
                     GetInventoryCD(split.InventoryID),
                     transferQty);
 
-                WmsDebugTrace.Info($"{TracePrefix} Process EXIT success.");
+                WmsDebugTrace.Info($"{TracePrefix} Process EXIT success. Command={Code}");
                 return true;
             }
 
-            private WmsPlan GetFirstIncompleteExpectedRow(SOPackageDetailEx package)
+            private WmsPlan GetSelectedExpectedRow(SOPackageDetailEx package)
             {
-                List<WmsPlan> plannedRows =
-                    PXSelectReadonly<
-                        WmsPlan,
-                        Where<
-                            WmsPlan.shipmentNbr, Equal<Required<WmsPlan.shipmentNbr>>,
-                            And<WmsPlan.packageLineNbr, Equal<Required<WmsPlan.packageLineNbr>>>>>
-                    .Select(Basis, package.ShipmentNbr, package.LineNbr)
-                    .RowCast<WmsPlan>()
-                    .ToList();
+                WmsShipmentExt wmsExt = Basis.Graph.GetExtension<WmsShipmentExt>();
 
-                return plannedRows
-                    .Where(row => GetRemainingQtyForPackage(package, row) > 0m)
-                    .OrderBy(row => row.DefaultIssueFrom)
-                    .ThenBy(row => row.OrderNbr)
-                    .ThenBy(row => row.StoreNbr)
-                    .ThenBy(row => GetInventoryCD(row.InventoryID))
-                    .ThenBy(row => row.LotSerialNbr)
-                    .FirstOrDefault();
+                WmsPlan current =
+                    wmsExt?.SelectedPackageContentsView?.Current
+                    ?? Basis.Graph.Caches<WmsPlan>()?.Current as WmsPlan;
+
+                if (current == null)
+                    return null;
+
+                if (!string.Equals(current.ShipmentNbr, package.ShipmentNbr, StringComparison.OrdinalIgnoreCase))
+                    return null;
+
+                if (current.PackageLineNbr != package.LineNbr)
+                    return null;
+
+                if (GetRemainingQtyForPackage(package, current) <= 0m)
+                    return null;
+
+                return current;
             }
 
             private decimal GetRemainingQtyForPackage(SOPackageDetailEx package, WmsPlan row)
@@ -205,7 +216,7 @@ namespace CustomWMS2
                 return item?.InventoryCD?.Trim() ?? string.Empty;
             }
 
-            private void RequestEstimatedContentRefresh(string reason)
+            private void RequestRefresh(string reason)
             {
                 WmsShipmentExt wmsExt = Basis.Graph.GetExtension<WmsShipmentExt>();
 
@@ -224,6 +235,24 @@ namespace CustomWMS2
             }
         }
 
+        public sealed class TransferSelectedRowCommand : TransferExpectedBaseCommand
+        {
+            public override string Code => "TRANSFERSELECTED";
+            public override string ButtonName => "TransferSelectedExpectedRow";
+            public override string DisplayName => "Transfer Selected Row";
+
+            protected override bool UseEnteredQty => false;
+        }
+
+        public sealed class TransferQtyFromSelectedRowCommand : TransferExpectedBaseCommand
+        {
+            public override string Code => "TRANSFERSELECTEDQTY";
+            public override string ButtonName => "TransferQtyFromSelectedExpectedRow";
+            public override string DisplayName => "Transfer Qty From Selected Row";
+
+            protected override bool UseEnteredQty => true;
+        }
+
         [PXOverride]
         public virtual ScanMode<PickPackShip> DecorateScanMode(
             ScanMode<PickPackShip> original,
@@ -235,11 +264,12 @@ namespace CustomWMS2
 
             if (packMode != null)
             {
-                WmsDebugTrace.Info($"{TracePrefix} Appending TransferTopExpectedRowCommand to PackMode.");
+                WmsDebugTrace.Info($"{TracePrefix} Appending transfer commands to PackMode.");
 
                 packMode.Intercept.CreateCommands.ByAppend(basis => new PickPackShip.ScanCommand[]
                 {
-                    new TransferTopExpectedRowCommand()
+                    new TransferSelectedRowCommand(),
+                    new TransferQtyFromSelectedRowCommand()
                 });
             }
 
