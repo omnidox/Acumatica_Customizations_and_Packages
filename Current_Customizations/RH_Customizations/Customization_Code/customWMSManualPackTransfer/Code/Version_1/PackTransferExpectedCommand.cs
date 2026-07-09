@@ -19,7 +19,7 @@ namespace CustomWMS
 
         public static bool IsActive()
         {
-            PXTrace.WriteInformation($"{TracePrefix} IsActive TRUE. Version={Version}");
+            WmsDebugTrace.Info($"{TracePrefix} IsActive TRUE. Version={Version}");
             return true;
         }
 
@@ -33,7 +33,7 @@ namespace CustomWMS
 
             protected override bool Process()
             {
-                PXTrace.WriteInformation($"{TracePrefix} Process ENTER. Version={Version}");
+                WmsDebugTrace.Info($"{TracePrefix} Process ENTER. Version={Version}");
 
                 PickPackShip.PackMode.Logic packLogic =
                     Basis.Get<PickPackShip.PackMode.Logic>();
@@ -46,7 +46,7 @@ namespace CustomWMS
                 if (package == null || package.ShipmentNbr == null || package.LineNbr == null)
                 {
                     Basis.ReportError("No selected package was found.");
-                    PXTrace.WriteWarning($"{TracePrefix} No valid selected package.");
+                    WmsDebugTrace.Warning($"{TracePrefix} No valid selected package.");
                     return true;
                 }
 
@@ -55,14 +55,14 @@ namespace CustomWMS
                 if (expectedRow == null)
                 {
                     Basis.ReportWarning("No remaining expected content was found for this package.");
-                    PXTrace.WriteInformation($"{TracePrefix} No incomplete expected row found.");
+                    WmsDebugTrace.Info($"{TracePrefix} No incomplete expected row found.");
                     return true;
                 }
 
                 if (expectedRow.ShipmentSplitLineNbr == null)
                 {
                     Basis.ReportError("The expected row does not have a shipment split line number.");
-                    PXTrace.WriteWarning($"{TracePrefix} Expected row missing ShipmentSplitLineNbr.");
+                    WmsDebugTrace.Warning($"{TracePrefix} Expected row missing ShipmentSplitLineNbr.");
                     return true;
                 }
 
@@ -73,7 +73,7 @@ namespace CustomWMS
                 if (split == null)
                 {
                     Basis.ReportError("The matching shipment split was not found.");
-                    PXTrace.WriteWarning(
+                    WmsDebugTrace.Warning(
                         $"{TracePrefix} Matching SOShipLineSplit not found. ShipmentNbr={expectedRow.ShipmentNbr}, SplitLineNbr={expectedRow.ShipmentSplitLineNbr}");
                     return true;
                 }
@@ -83,7 +83,7 @@ namespace CustomWMS
                 if (transferQty <= 0m)
                 {
                     Basis.ReportWarning("The selected expected row has no remaining quantity to transfer.");
-                    PXTrace.WriteInformation($"{TracePrefix} Remaining qty is zero.");
+                    WmsDebugTrace.Info($"{TracePrefix} Remaining qty is zero.");
                     return true;
                 }
 
@@ -97,7 +97,7 @@ namespace CustomWMS
                     if (availableOnSplit <= 0m)
                     {
                         Basis.ReportWarning("The matching shipment split is already fully packed.");
-                        PXTrace.WriteInformation($"{TracePrefix} Split already fully packed.");
+                        WmsDebugTrace.Info($"{TracePrefix} Split already fully packed.");
                         return true;
                     }
 
@@ -105,7 +105,7 @@ namespace CustomWMS
                         transferQty = availableOnSplit;
                 }
 
-                PXTrace.WriteInformation(
+                WmsDebugTrace.Info(
                     $"{TracePrefix} Calling PackSplit. ShipmentNbr={split.ShipmentNbr}, LineNbr={split.LineNbr}, SplitLineNbr={split.SplitLineNbr}, InventoryID={split.InventoryID}, LotSerialNbr={split.LotSerialNbr}, PackageLineNbr={package.LineNbr}, TransferQty={transferQty}");
 
                 bool packed = confirmLogic.PackSplit(split, package, transferQty);
@@ -113,7 +113,7 @@ namespace CustomWMS
                 if (!packed)
                 {
                     Basis.ReportError("The selected expected row could not be transferred.");
-                    PXTrace.WriteWarning($"{TracePrefix} PackSplit returned false.");
+                    WmsDebugTrace.Warning($"{TracePrefix} PackSplit returned false.");
                     return true;
                 }
 
@@ -131,7 +131,7 @@ namespace CustomWMS
                     GetInventoryCD(split.InventoryID),
                     transferQty);
 
-                PXTrace.WriteInformation($"{TracePrefix} Process EXIT success.");
+                WmsDebugTrace.Info($"{TracePrefix} Process EXIT success.");
                 return true;
             }
 
@@ -220,7 +220,7 @@ namespace CustomWMS
                 Basis.Graph.PackageDetailExt.PackageDetailSplit.View.Clear();
                 Basis.Graph.PackageDetailExt.PackageDetailSplit.View.RequestRefresh();
 
-                PXTrace.WriteInformation($"{TracePrefix} Refresh requested. Reason={reason}");
+                WmsDebugTrace.Info($"{TracePrefix} Refresh requested. Reason={reason}");
             }
         }
 
@@ -235,7 +235,7 @@ namespace CustomWMS
 
             if (packMode != null)
             {
-                PXTrace.WriteInformation($"{TracePrefix} Appending TransferTopExpectedRowCommand to PackMode.");
+                WmsDebugTrace.Info($"{TracePrefix} Appending TransferTopExpectedRowCommand to PackMode.");
 
                 packMode.Intercept.CreateCommands.ByAppend(basis => new PickPackShip.ScanCommand[]
                 {
