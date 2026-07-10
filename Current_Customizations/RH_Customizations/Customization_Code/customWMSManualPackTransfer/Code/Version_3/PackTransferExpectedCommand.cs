@@ -15,23 +15,54 @@ namespace CustomWMS2
     public class PackTransferExpectedCommand : PickPackShip.ScanExtension
     {
         private const string TracePrefix = "[PackTransferExpectedCommand]";
-        private const string Version = "2026-07-09-V5-SELECTED-AND-ALL-REMAINING-01";
+        private const string Version = "2026-07-10-V6-ROLE-RESTRICTED-TRANSFER-01";
 
         public static bool IsActive()
         {
-            WmsDebugTrace.Info($"{TracePrefix} IsActive TRUE. Version={Version}");
+            WmsDebugTrace.Info(
+                $"{TracePrefix} IsActive TRUE. Version={Version}");
+
             return true;
         }
 
-        public abstract class TransferExpectedBaseCommand : PickPackShip.ScanCommand
+        public abstract class TransferExpectedBaseCommand
+            : PickPackShip.ScanCommand
         {
             protected abstract bool TransferAllRemaining { get; }
 
-            protected override bool IsEnabled => true;
+            /// <summary>
+            /// Disables the command button when the current user does not
+            /// belong to an approved role.
+            /// </summary>
+            protected override bool IsEnabled =>
+                WmsTransferAuthorization.IsAuthorized();
 
             protected override bool Process()
             {
-                WmsDebugTrace.Info($"{TracePrefix} Process ENTER. Version={Version}, Command={Code}");
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Process ENTER. Version={Version}, Command={Code}");
+
+                /*
+                 * Server-side authorization check.
+                 *
+                 * This protects the operation even if someone attempts to
+                 * invoke the command through a command barcode or another
+                 * non-UI execution path.
+                 */
+                if (!WmsTransferAuthorization.IsAuthorized())
+                {
+                    Basis.ReportError(
+                        "You do not have permission to use manual package transfer.");
+
+                    WmsDebugTrace.Warning(
+                        $"{TracePrefix} Unauthorized transfer attempt. Command={Code}");
+
+                    /*
+                     * Return true because the command was recognized and
+                     * handled, but permission was denied.
+                     */
+                    return true;
+                }
 
                 PickPackShip.PackMode.Logic packLogic =
                     Basis.Get<PickPackShip.PackMode.Logic>();
@@ -41,9 +72,15 @@ namespace CustomWMS2
 
                 SOPackageDetailEx package = packLogic?.SelectedPackage;
 
-                if (package == null || package.ShipmentNbr == null || package.LineNbr == null)
+                if (package == null ||
+                    package.ShipmentNbr == null ||
+                    package.LineNbr == null)
                 {
                     Basis.ReportError("No selected package was found.");
+
+                    WmsDebugTrace.Warning(
+                        $"{TracePrefix} No valid selected package. Command={Code}");
+
                     return true;
                 }
 
@@ -57,6 +94,10 @@ namespace CustomWMS2
                         TransferAllRemaining
                             ? "No remaining expected content was found for this package."
                             : "Please select an expected content row with remaining quantity first.");
+
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} No rows available to transfer. Command={Code}");
+
                     return true;
                 }
 
@@ -67,7 +108,9 @@ namespace CustomWMS2
                 {
                     if (expectedRow?.ShipmentSplitLineNbr == null)
                     {
-                        WmsDebugTrace.Warning($"{TracePrefix} Skipping row because ShipmentSplitLineNbr is missing.");
+                        WmsDebugTrace.Warning(
+                            $"{TracePrefix} Skipping row because ShipmentSplitLineNbr is missing.");
+
                         continue;
                     }
 
@@ -78,15 +121,23 @@ namespace CustomWMS2
                     if (split == null)
                     {
                         WmsDebugTrace.Warning(
-                            $"{TracePrefix} Skipping row because matching SOShipLineSplit was not found. ShipmentNbr={expectedRow.ShipmentNbr}, SplitLineNbr={expectedRow.ShipmentSplitLineNbr}");
+                            $"{TracePrefix} Skipping row because matching SOShipLineSplit was not found. " +
+                            $"ShipmentNbr={expectedRow.ShipmentNbr}, " +
+                            $"SplitLineNbr={expectedRow.ShipmentSplitLineNbr}");
+
                         continue;
                     }
 
-                    decimal transferQty = GetRemainingQtyForPackage(package, expectedRow);
+                    decimal transferQty =
+                        GetRemainingQtyForPackage(package, expectedRow);
 
                     if (transferQty <= 0m)
                     {
-                        WmsDebugTrace.Info($"{TracePrefix} Skipping row because remaining qty is zero.");
+                        WmsDebugTrace.Info(
+                            $"{TracePrefix} Skipping row because remaining qty is zero. " +
+                            $"ShipmentNbr={expectedRow.ShipmentNbr}, " +
+                            $"SplitLineNbr={expectedRow.ShipmentSplitLineNbr}");
+
                         continue;
                     }
 
@@ -95,29 +146,48 @@ namespace CustomWMS2
 
                     if (targetQty != null)
                     {
-                        decimal availableOnSplit = targetQty.Value - currentPackedOnSplit;
+                        decimal availableOnSplit =
+                            targetQty.Value - currentPackedOnSplit;
 
                         if (availableOnSplit <= 0m)
                         {
-                            WmsDebugTrace.Info($"{TracePrefix} Skipping row because split is already fully packed.");
+                            WmsDebugTrace.Info(
+                                $"{TracePrefix} Skipping row because split is already fully packed. " +
+                                $"ShipmentNbr={split.ShipmentNbr}, " +
+                                $"SplitLineNbr={split.SplitLineNbr}");
+
                             continue;
                         }
 
-                        transferQty = Math.Min(transferQty, availableOnSplit);
+                        transferQty =
+                            Math.Min(transferQty, availableOnSplit);
                     }
 
                     if (transferQty <= 0m)
                         continue;
 
                     WmsDebugTrace.Info(
-                        $"{TracePrefix} Calling PackSplit. Command={Code}, ShipmentNbr={split.ShipmentNbr}, LineNbr={split.LineNbr}, SplitLineNbr={split.SplitLineNbr}, InventoryID={split.InventoryID}, LotSerialNbr={split.LotSerialNbr}, PackageLineNbr={package.LineNbr}, TransferQty={transferQty}");
+                        $"{TracePrefix} Calling PackSplit. " +
+                        $"Command={Code}, " +
+                        $"ShipmentNbr={split.ShipmentNbr}, " +
+                        $"LineNbr={split.LineNbr}, " +
+                        $"SplitLineNbr={split.SplitLineNbr}, " +
+                        $"InventoryID={split.InventoryID}, " +
+                        $"LotSerialNbr={split.LotSerialNbr}, " +
+                        $"PackageLineNbr={package.LineNbr}, " +
+                        $"TransferQty={transferQty}");
 
-                    bool packed = confirmLogic.PackSplit(split, package, transferQty);
+                    bool packed =
+                        confirmLogic.PackSplit(split, package, transferQty);
 
                     if (!packed)
                     {
                         WmsDebugTrace.Warning(
-                            $"{TracePrefix} PackSplit returned false. ShipmentNbr={split.ShipmentNbr}, SplitLineNbr={split.SplitLineNbr}, TransferQty={transferQty}");
+                            $"{TracePrefix} PackSplit returned false. " +
+                            $"ShipmentNbr={split.ShipmentNbr}, " +
+                            $"SplitLineNbr={split.SplitLineNbr}, " +
+                            $"TransferQty={transferQty}");
+
                         continue;
                     }
 
@@ -128,6 +198,10 @@ namespace CustomWMS2
                 if (transferredRows == 0)
                 {
                     Basis.ReportWarning("No rows were transferred.");
+
+                    WmsDebugTrace.Warning(
+                        $"{TracePrefix} No rows were successfully transferred. Command={Code}");
+
                     return true;
                 }
 
@@ -151,14 +225,19 @@ namespace CustomWMS2
                     transferredTotalQty);
 
                 WmsDebugTrace.Info(
-                    $"{TracePrefix} Process EXIT success. Command={Code}, Rows={transferredRows}, Qty={transferredTotalQty}");
+                    $"{TracePrefix} Process EXIT success. " +
+                    $"Command={Code}, " +
+                    $"Rows={transferredRows}, " +
+                    $"Qty={transferredTotalQty}");
 
                 return true;
             }
 
-            private WmsPlan GetSelectedExpectedRow(SOPackageDetailEx package)
+            private WmsPlan GetSelectedExpectedRow(
+                SOPackageDetailEx package)
             {
-                WmsShipmentExt wmsExt = Basis.Graph.GetExtension<WmsShipmentExt>();
+                WmsShipmentExt wmsExt =
+                    Basis.Graph.GetExtension<WmsShipmentExt>();
 
                 WmsPlan current =
                     wmsExt?.SelectedPackageContentsView?.Current
@@ -167,8 +246,13 @@ namespace CustomWMS2
                 if (current == null)
                     return null;
 
-                if (!string.Equals(current.ShipmentNbr, package.ShipmentNbr, StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(
+                    current.ShipmentNbr,
+                    package.ShipmentNbr,
+                    StringComparison.OrdinalIgnoreCase))
+                {
                     return null;
+                }
 
                 if (current.PackageLineNbr != package.LineNbr)
                     return null;
@@ -179,20 +263,28 @@ namespace CustomWMS2
                 return current;
             }
 
-            private List<WmsPlan> GetAllRemainingExpectedRows(SOPackageDetailEx package)
+            private List<WmsPlan> GetAllRemainingExpectedRows(
+                SOPackageDetailEx package)
             {
                 List<WmsPlan> plannedRows =
                     PXSelectReadonly<
                         WmsPlan,
                         Where<
-                            WmsPlan.shipmentNbr, Equal<Required<WmsPlan.shipmentNbr>>,
-                            And<WmsPlan.packageLineNbr, Equal<Required<WmsPlan.packageLineNbr>>>>>
-                    .Select(Basis, package.ShipmentNbr, package.LineNbr)
+                            WmsPlan.shipmentNbr,
+                            Equal<Required<WmsPlan.shipmentNbr>>,
+                            And<
+                                WmsPlan.packageLineNbr,
+                                Equal<Required<WmsPlan.packageLineNbr>>>>>
+                    .Select(
+                        Basis,
+                        package.ShipmentNbr,
+                        package.LineNbr)
                     .RowCast<WmsPlan>()
                     .ToList();
 
                 return plannedRows
-                    .Where(row => GetRemainingQtyForPackage(package, row) > 0m)
+                    .Where(row =>
+                        GetRemainingQtyForPackage(package, row) > 0m)
                     .OrderBy(row => row.DefaultIssueFrom)
                     .ThenBy(row => row.OrderNbr)
                     .ThenBy(row => row.StoreNbr)
@@ -201,7 +293,9 @@ namespace CustomWMS2
                     .ToList();
             }
 
-            private decimal GetRemainingQtyForPackage(SOPackageDetailEx package, WmsPlan row)
+            private decimal GetRemainingQtyForPackage(
+                SOPackageDetailEx package,
+                WmsPlan row)
             {
                 decimal expectedQty = row.PackedQty ?? 0m;
 
@@ -209,26 +303,53 @@ namespace CustomWMS2
                     PXSelectReadonly<
                         SOShipLineSplitPackage,
                         Where<
-                            SOShipLineSplitPackage.shipmentNbr, Equal<Required<SOShipLineSplitPackage.shipmentNbr>>,
-                            And<SOShipLineSplitPackage.packageLineNbr, Equal<Required<SOShipLineSplitPackage.packageLineNbr>>,
-                            And<SOShipLineSplitPackage.shipmentSplitLineNbr, Equal<Required<SOShipLineSplitPackage.shipmentSplitLineNbr>>>>>>
-                    .Select(Basis, package.ShipmentNbr, package.LineNbr, row.ShipmentSplitLineNbr)
+                            SOShipLineSplitPackage.shipmentNbr,
+                            Equal<
+                                Required<
+                                    SOShipLineSplitPackage.shipmentNbr>>,
+                            And<
+                                SOShipLineSplitPackage.packageLineNbr,
+                                Equal<
+                                    Required<
+                                        SOShipLineSplitPackage.packageLineNbr>>,
+                                And<
+                                    SOShipLineSplitPackage.shipmentSplitLineNbr,
+                                    Equal<
+                                        Required<
+                                            SOShipLineSplitPackage.shipmentSplitLineNbr>>>>>>
+                    .Select(
+                        Basis,
+                        package.ShipmentNbr,
+                        package.LineNbr,
+                        row.ShipmentSplitLineNbr)
                     .RowCast<SOShipLineSplitPackage>()
                     .Sum(x => x.PackedQty ?? 0m);
 
                 decimal remaining = expectedQty - actualQty;
 
-                return remaining > 0m ? remaining : 0m;
+                return remaining > 0m
+                    ? remaining
+                    : 0m;
             }
 
-            private SOShipLineSplit GetShipmentSplit(string shipmentNbr, int? splitLineNbr)
+            private SOShipLineSplit GetShipmentSplit(
+                string shipmentNbr,
+                int? splitLineNbr)
             {
                 return PXSelect<
                     SOShipLineSplit,
                     Where<
-                        SOShipLineSplit.shipmentNbr, Equal<Required<SOShipLineSplit.shipmentNbr>>,
-                        And<SOShipLineSplit.splitLineNbr, Equal<Required<SOShipLineSplit.splitLineNbr>>>>>
-                .Select(Basis, shipmentNbr, splitLineNbr)
+                        SOShipLineSplit.shipmentNbr,
+                        Equal<Required<SOShipLineSplit.shipmentNbr>>,
+                        And<
+                            SOShipLineSplit.splitLineNbr,
+                            Equal<
+                                Required<
+                                    SOShipLineSplit.splitLineNbr>>>>>
+                .Select(
+                    Basis,
+                    shipmentNbr,
+                    splitLineNbr)
                 .RowCast<SOShipLineSplit>()
                 .FirstOrDefault();
             }
@@ -241,17 +362,25 @@ namespace CustomWMS2
                 InventoryItem item =
                     PXSelectReadonly<
                         InventoryItem,
-                        Where<InventoryItem.inventoryID, Equal<Required<InventoryItem.inventoryID>>>>
-                    .Select(Basis, inventoryID)
+                        Where<
+                            InventoryItem.inventoryID,
+                            Equal<
+                                Required<
+                                    InventoryItem.inventoryID>>>>
+                    .Select(
+                        Basis,
+                        inventoryID)
                     .RowCast<InventoryItem>()
                     .FirstOrDefault();
 
-                return item?.InventoryCD?.Trim() ?? string.Empty;
+                return item?.InventoryCD?.Trim()
+                    ?? string.Empty;
             }
 
             private void RequestRefresh(string reason)
             {
-                WmsShipmentExt wmsExt = Basis.Graph.GetExtension<WmsShipmentExt>();
+                WmsShipmentExt wmsExt =
+                    Basis.Graph.GetExtension<WmsShipmentExt>();
 
                 if (wmsExt?.SelectedPackageContentsView != null)
                 {
@@ -260,50 +389,84 @@ namespace CustomWMS2
                     wmsExt.SelectedPackageContentsView.View.RequestRefresh();
                 }
 
-                Basis.Graph.PackageDetailExt.PackageDetailSplit.Cache.Clear();
-                Basis.Graph.PackageDetailExt.PackageDetailSplit.View.Clear();
-                Basis.Graph.PackageDetailExt.PackageDetailSplit.View.RequestRefresh();
+                Basis.Graph.PackageDetailExt
+                    .PackageDetailSplit.Cache.Clear();
 
-                WmsDebugTrace.Info($"{TracePrefix} Refresh requested. Reason={reason}");
+                Basis.Graph.PackageDetailExt
+                    .PackageDetailSplit.View.Clear();
+
+                Basis.Graph.PackageDetailExt
+                    .PackageDetailSplit.View.RequestRefresh();
+
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Refresh requested. Reason={reason}");
             }
         }
 
-        public sealed class TransferSelectedRowCommand : TransferExpectedBaseCommand
+        public sealed class TransferSelectedRowCommand
+            : TransferExpectedBaseCommand
         {
-            public override string Code => "TRANSFERSELECTED";
-            public override string ButtonName => "TransferSelectedExpectedRow";
-            public override string DisplayName => "Transfer Selected Row";
+            public override string Code =>
+                "TRANSFERSELECTED";
 
-            protected override bool TransferAllRemaining => false;
+            public override string ButtonName =>
+                "TransferSelectedExpectedRow";
+
+            public override string DisplayName =>
+                "Transfer Selected Row";
+
+            protected override bool TransferAllRemaining =>
+                false;
         }
 
-        public sealed class TransferAllRemainingCommand : TransferExpectedBaseCommand
+        public sealed class TransferAllRemainingCommand
+            : TransferExpectedBaseCommand
         {
-            public override string Code => "TRANSFERALLREMAINING";
-            public override string ButtonName => "TransferAllRemainingExpectedRows";
-            public override string DisplayName => "Transfer All Remaining";
+            public override string Code =>
+                "TRANSFERALLREMAINING";
 
-            protected override bool TransferAllRemaining => true;
+            public override string ButtonName =>
+                "TransferAllRemainingExpectedRows";
+
+            public override string DisplayName =>
+                "Transfer All Remaining";
+
+            protected override bool TransferAllRemaining =>
+                true;
         }
 
         [PXOverride]
         public virtual ScanMode<PickPackShip> DecorateScanMode(
             ScanMode<PickPackShip> original,
-            Func<ScanMode<PickPackShip>, ScanMode<PickPackShip>> base_DecorateScanMode)
+            Func<
+                ScanMode<PickPackShip>,
+                ScanMode<PickPackShip>> base_DecorateScanMode)
         {
-            ScanMode<PickPackShip> mode = base_DecorateScanMode(original);
+            ScanMode<PickPackShip> mode =
+                base_DecorateScanMode(original);
 
-            PickPackShip.PackMode packMode = mode as PickPackShip.PackMode;
+            PickPackShip.PackMode packMode =
+                mode as PickPackShip.PackMode;
 
             if (packMode != null)
             {
-                WmsDebugTrace.Info($"{TracePrefix} Appending transfer commands to PackMode.");
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Appending transfer commands to PackMode. " +
+                    $"Authorized={WmsTransferAuthorization.IsAuthorized()}");
 
-                packMode.Intercept.CreateCommands.ByAppend(basis => new PickPackShip.ScanCommand[]
-                {
-                    new TransferSelectedRowCommand(),
-                    new TransferAllRemainingCommand()
-                });
+                /*
+                 * Always register the commands so the WMS/browser/mobile
+                 * command schema stays consistent.
+                 *
+                 * IsEnabled determines whether the user can click them.
+                 * Process() performs the final server-side authorization.
+                 */
+                packMode.Intercept.CreateCommands.ByAppend(
+                    basis => new PickPackShip.ScanCommand[]
+                    {
+                        new TransferSelectedRowCommand(),
+                        new TransferAllRemainingCommand()
+                    });
             }
 
             return mode;
@@ -314,7 +477,9 @@ namespace CustomWMS2
     {
         public static List<T> SingleToList<T>(this T item)
         {
-            return item == null ? new List<T>() : new List<T> { item };
+            return item == null
+                ? new List<T>()
+                : new List<T> { item };
         }
     }
 }
