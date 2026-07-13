@@ -28,11 +28,13 @@ namespace MonthlyForecastReferenceTable
         {
             public class Customer :
                 PX.Objects.AR.Customer.PK.ForeignKeyOf<UsrMonthlyForecast>
-                    .By<customerID> { }
+                    .By<customerID>
+            { }
 
             public class InventoryItem :
                 PX.Objects.IN.InventoryItem.PK.ForeignKeyOf<UsrMonthlyForecast>
-                    .By<inventoryID> { }
+                    .By<inventoryID>
+            { }
         }
 
         #region CustomerID
@@ -83,11 +85,11 @@ namespace MonthlyForecastReferenceTable
         #endregion
 
         #region ForecastQty
-        [PXDBDecimal(6)]
-        [PXDefault(TypeCode.Decimal, "0.0")]
+        [PXDBInt]
+        [PXDefault(0)]
         [PXUIField(DisplayName = "Forecast Qty")]
-        public virtual decimal? ForecastQty { get; set; }
-        public abstract class forecastQty : BqlDecimal.Field<forecastQty> { }
+        public virtual int? ForecastQty { get; set; }
+        public abstract class forecastQty : BqlInt.Field<forecastQty> { }
         #endregion
 
         #region NoteID
