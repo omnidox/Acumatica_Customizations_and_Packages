@@ -1,7 +1,7 @@
 USE [AcumaticaDB]
 GO
 
-/****** Object:  Table [dbo].[UsrMonthlyForecast]    Script Date: 7/7/2026 12:30:44 PM ******/
+/****** Object:  Table [dbo].[UsrMonthlyForecast]    Script Date: 7/13/2026 9:18:34 AM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -11,7 +11,7 @@ GO
 CREATE TABLE [dbo].[UsrMonthlyForecast](
 	[CompanyID] [int] NOT NULL,
 	[InventoryID] [int] NOT NULL,
-	[ForecastQty] [decimal](25, 6) NOT NULL,
+	[ForecastQty] [int] NOT NULL,
 	[NoteID] [uniqueidentifier] NULL,
 	[CreatedByID] [uniqueidentifier] NULL,
 	[CreatedByScreenID] [char](8) NULL,
