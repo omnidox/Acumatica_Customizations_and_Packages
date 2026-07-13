@@ -17,11 +17,10 @@
     <Levels>
       <px:PXGridLevel DataMember="ForecastRecords">
         <Columns>
-          <px:PXGridColumn DataField="CustomerID" Width="150px" />
-          <px:PXGridColumn DataField="InventoryID" Width="150px" />
-          <px:PXGridColumn DataField="ForecastDate" Width="100px" />
-          <px:PXGridColumn DataField="FinPeriodID" Width="120px" />
-          <px:PXGridColumn DataField="ForecastYear" Width="100px" />
-          <px:PXGridColumn DataField="ForecastMonth" Width="100px" />
-          <px:PXGridColumn TextAlign="Right" DataField="ForecastQty" Width="120px" /></Columns></px:PXGridLevel></Levels>
+          <px:PXGridColumn DataField="CustomerID" Width="150px" ></px:PXGridColumn>
+          <px:PXGridColumn DataField="InventoryID" Width="150px" ></px:PXGridColumn>
+          <px:PXGridColumn DataField="ForecastType" Width="120px" ></px:PXGridColumn>
+          <px:PXGridColumn DataField="ForecastYear" Width="100px" ></px:PXGridColumn>
+          <px:PXGridColumn DataField="ForecastMonth" Width="100px" ></px:PXGridColumn>
+          <px:PXGridColumn TextAlign="Right" DataField="ForecastQty" Width="120px" ></px:PXGridColumn></Columns></px:PXGridLevel></Levels>
     <Mode AllowUpload="True" InitNewRow="True" AllowAddNew="True" AllowUpdate="True" AllowDelete="True" /></px:PXGrid></asp:Content>
