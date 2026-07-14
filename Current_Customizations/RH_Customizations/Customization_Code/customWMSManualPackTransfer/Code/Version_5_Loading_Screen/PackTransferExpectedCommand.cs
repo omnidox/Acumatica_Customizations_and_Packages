@@ -18,7 +18,7 @@ namespace CustomWMS2
             "[PackTransferExpectedCommand]";
 
         private const string Version =
-            "2026-07-13-V7-SHIPMENT-WIDE-PACK-01";
+            "2026-07-14-V8-SHIPMENT-WIDE-LONG-RUN-01";
 
         public static bool IsActive()
         {
@@ -27,6 +27,8 @@ namespace CustomWMS2
 
             return true;
         }
+
+        #region Package-Level Commands
 
         public abstract class TransferExpectedBaseCommand
             : PickPackShip.ScanCommand
@@ -60,7 +62,8 @@ namespace CustomWMS2
                 PickPackShip.PackMode.ConfirmState.Logic confirmLogic =
                     Basis.Get<PickPackShip.PackMode.ConfirmState.Logic>();
 
-                SOPackageDetailEx package = packLogic?.SelectedPackage;
+                SOPackageDetailEx package =
+                    packLogic?.SelectedPackage;
 
                 if (package == null ||
                     package.ShipmentNbr == null ||
@@ -109,9 +112,10 @@ namespace CustomWMS2
                         continue;
                     }
 
-                    SOShipLineSplit split = GetShipmentSplit(
-                        expectedRow.ShipmentNbr,
-                        expectedRow.ShipmentSplitLineNbr);
+                    SOShipLineSplit split =
+                        GetShipmentSplit(
+                            expectedRow.ShipmentNbr,
+                            expectedRow.ShipmentSplitLineNbr);
 
                     if (split == null)
                     {
@@ -434,9 +438,48 @@ namespace CustomWMS2
             }
         }
 
+        public sealed class TransferSelectedRowCommand
+            : TransferExpectedBaseCommand
+        {
+            public override string Code =>
+                "TRANSFERSELECTED";
+
+            public override string ButtonName =>
+                "TransferSelectedExpectedRow";
+
+            public override string DisplayName =>
+                "Transfer Selected Row";
+
+            protected override bool TransferAllRemaining =>
+                false;
+        }
+
+        public sealed class TransferAllRemainingCommand
+            : TransferExpectedBaseCommand
+        {
+            public override string Code =>
+                "TRANSFERALLREMAINING";
+
+            public override string ButtonName =>
+                "TransferAllRemainingExpectedRows";
+
+            public override string DisplayName =>
+                "Transfer All Remaining";
+
+            protected override bool TransferAllRemaining =>
+                true;
+        }
+
+        #endregion
+
+        #region Shipment-Wide Long-Running Command
+
         /// <summary>
         /// Packs every remaining expected row in every carton
         /// belonging to the current shipment.
+        ///
+        /// The processing is executed through the native WMS
+        /// ScanLongRunAwaiter mechanism.
         /// </summary>
         public sealed class PackEntireShipmentCommand
             : PickPackShip.ScanCommand
@@ -469,7 +512,7 @@ namespace CustomWMS2
             protected override bool Process()
             {
                 WmsDebugTrace.Info(
-                    $"{TracePrefix} Shipment-wide Process ENTER. " +
+                    $"{TracePrefix} Shipment-wide command ENTER. " +
                     $"Version={Version}, Command={Code}");
 
                 if (!WmsTransferAuthorization.IsAuthorized())
@@ -484,12 +527,6 @@ namespace CustomWMS2
                     return true;
                 }
 
-                PickPackShip.PackMode.Logic packLogic =
-                    Basis.Get<PickPackShip.PackMode.Logic>();
-
-                PickPackShip.PackMode.ConfirmState.Logic confirmLogic =
-                    Basis.Get<PickPackShip.PackMode.ConfirmState.Logic>();
-
                 SOShipment shipment =
                     Basis.Graph.Document.Current;
 
@@ -502,19 +539,180 @@ namespace CustomWMS2
                     Basis.ReportError(
                         "No shipment was selected.");
 
-                    WmsDebugTrace.Warning(
-                        $"{TracePrefix} Shipment-wide packing blocked " +
-                        $"because no shipment was selected.");
-
                     return true;
                 }
+
+                PickPackShip.PackMode.Logic packLogic =
+                    Basis.Get<PickPackShip.PackMode.Logic>();
 
                 SOPackageDetailEx originalPackage =
                     packLogic?.SelectedPackage
                     ?? Basis.Graph.Packages.Current;
 
+                ShipmentPackLongRunData operationData =
+                    new ShipmentPackLongRunData
+                    {
+                        ShipmentNbr = shipmentNbr,
+                        OriginalPackageLineNbr =
+                            originalPackage?.LineNbr
+                    };
+
+                /*
+                 * WaitFor() is the native barcode-driven WMS long-running
+                 * operation mechanism.
+                 *
+                 * The framework:
+                 *  - places the scanner into WAIT state;
+                 *  - displays "Wait until the operation is completed.";
+                 *  - clones the current WMS graph;
+                 *  - executes this delegate asynchronously;
+                 *  - refreshes the state when processing finishes.
+                 */
+                Basis
+                    .WaitFor<ShipmentPackLongRunData>(
+                        (longRunBasis, data) =>
+                        {
+                            ExecuteShipmentWidePack(
+                                longRunBasis,
+                                data);
+                        })
+                    .WithDescription(
+                        "Packing all cartons for shipment {0}.",
+                        shipmentNbr)
+                    .OnSuccess(success =>
+                        success
+                            .Say(
+                                "Shipment-wide packing operation completed.")
+                            .ResetFull()
+                            .Do(
+                                (completedBasis, data) =>
+                                {
+                                    if (data.AlreadyFullyPacked)
+                                    {
+                                        completedBasis.ReportWarning(
+                                            "All expected carton contents were already packed.");
+                                    }
+                                    else
+                                    {
+                                        completedBasis.ReportInfo(
+                                            "Packed the entire shipment. " +
+                                            "Cartons={0}, Rows={1}, Qty={2}.",
+                                            data.AffectedCartons,
+                                            data.TransferredRows,
+                                            data.TransferredQty);
+                                    }
+
+                                    WmsDebugTrace.Info(
+                                        $"{TracePrefix} Long operation SUCCESS. " +
+                                        $"ShipmentNbr={data.ShipmentNbr}, " +
+                                        $"Cartons={data.AffectedCartons}, " +
+                                        $"Rows={data.TransferredRows}, " +
+                                        $"Qty={data.TransferredQty}");
+                                }))
+                    .OnFail(fail =>
+                        fail
+                            .Say(
+                                "Shipment-wide packing failed. " +
+                                "Review the error and try again.")
+                            .Do(
+                                (failedBasis, data) =>
+                                {
+                                    WmsDebugTrace.Error(
+                                        $"{TracePrefix} Long operation FAILED. " +
+                                        $"ShipmentNbr={data?.ShipmentNbr}");
+                                }))
+                    .BeginAwait(operationData);
+
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Shipment-wide long operation started. " +
+                    $"ShipmentNbr={shipmentNbr}");
+
+                return true;
+            }
+
+            private static void ExecuteShipmentWidePack(
+                PickPackShip longRunBasis,
+                ShipmentPackLongRunData data)
+            {
+                if (longRunBasis == null)
+                    throw new PXException(
+                        "The WMS processing context could not be created.");
+
+                if (data == null ||
+                    string.IsNullOrWhiteSpace(data.ShipmentNbr))
+                {
+                    throw new PXException(
+                        "The shipment number was not supplied to the long-running operation.");
+                }
+
+                if (!WmsTransferAuthorization.IsAuthorized())
+                {
+                    throw new PXException(
+                        "You do not have permission to pack an entire shipment.");
+                }
+
+                string shipmentNbr =
+                    data.ShipmentNbr;
+
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Long operation processing ENTER. " +
+                    $"ShipmentNbr={shipmentNbr}");
+
+                /*
+                 * Ensure that the cloned graph is operating on the requested
+                 * shipment.
+                 */
+                SOShipment shipment =
+                    longRunBasis.Graph.Document.Current;
+
+                if (shipment == null ||
+                    !string.Equals(
+                        shipment.ShipmentNbr,
+                        shipmentNbr,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    shipment =
+                        PXSelect<
+                            SOShipment,
+                            Where<
+                                SOShipment.shipmentNbr,
+                                Equal<
+                                    Required<
+                                        SOShipment.shipmentNbr>>>>
+                        .Select(
+                            longRunBasis,
+                            shipmentNbr)
+                        .RowCast<SOShipment>()
+                        .FirstOrDefault();
+
+                    if (shipment == null)
+                    {
+                        throw new PXException(
+                            "Shipment {0} could not be found.",
+                            shipmentNbr);
+                    }
+
+                    longRunBasis.Graph.Document.Current =
+                        shipment;
+                }
+
+                PickPackShip.PackMode.Logic packLogic =
+                    longRunBasis.Get<
+                        PickPackShip.PackMode.Logic>();
+
+                PickPackShip.PackMode.ConfirmState.Logic confirmLogic =
+                    longRunBasis.Get<
+                        PickPackShip.PackMode.ConfirmState.Logic>();
+
+                if (packLogic == null ||
+                    confirmLogic == null)
+                {
+                    throw new PXException(
+                        "The Acumatica Pack mode logic could not be initialized.");
+                }
+
                 List<SOPackageDetailEx> packages =
-                    Basis.Graph.Packages
+                    longRunBasis.Graph.Packages
                         .SelectMain()
                         .Where(package =>
                             string.Equals(
@@ -527,14 +725,9 @@ namespace CustomWMS2
 
                 if (packages.Count == 0)
                 {
-                    Basis.ReportError(
-                        "No cartons were found for the selected shipment.");
-
-                    WmsDebugTrace.Warning(
-                        $"{TracePrefix} No packages found. " +
-                        $"ShipmentNbr={shipmentNbr}");
-
-                    return true;
+                    throw new PXException(
+                        "No cartons were found for shipment {0}.",
+                        shipmentNbr);
                 }
 
                 Dictionary<int?, SOPackageDetailEx> packageByLineNbr =
@@ -553,7 +746,7 @@ namespace CustomWMS2
                                 Required<
                                     WmsPlan.shipmentNbr>>>>
                     .Select(
-                        Basis,
+                        longRunBasis,
                         shipmentNbr)
                     .RowCast<WmsPlan>()
                     .Where(row =>
@@ -569,14 +762,9 @@ namespace CustomWMS2
 
                 if (expectedRows.Count == 0)
                 {
-                    Basis.ReportWarning(
-                        "No expected carton contents were found for the selected shipment.");
-
-                    WmsDebugTrace.Info(
-                        $"{TracePrefix} No expected rows found. " +
-                        $"ShipmentNbr={shipmentNbr}");
-
-                    return true;
+                    throw new PXException(
+                        "No expected carton contents were found for shipment {0}.",
+                        shipmentNbr);
                 }
 
                 List<SOShipLineSplitPackage> actualRows =
@@ -588,7 +776,7 @@ namespace CustomWMS2
                                 Required<
                                     SOShipLineSplitPackage.shipmentNbr>>>>
                     .Select(
-                        Basis,
+                        longRunBasis,
                         shipmentNbr)
                     .RowCast<SOShipLineSplitPackage>()
                     .ToList();
@@ -629,16 +817,10 @@ namespace CustomWMS2
                         expectedRow.PackageLineNbr,
                         out package))
                     {
-                        Basis.ReportError(
-                            "Expected content references carton {0}, but that carton was not found.",
+                        throw new PXException(
+                            "Expected content references carton {0}, " +
+                            "but that carton was not found.",
                             expectedRow.PackageLineNbr);
-
-                        WmsDebugTrace.Warning(
-                            $"{TracePrefix} Missing package. " +
-                            $"ShipmentNbr={shipmentNbr}, " +
-                            $"PackageLineNbr={expectedRow.PackageLineNbr}");
-
-                        return true;
                     }
 
                     PackageSplitKey key =
@@ -667,23 +849,20 @@ namespace CustomWMS2
                         expectedRow.ShipmentSplitLineNbr,
                         out split))
                     {
-                        split = GetShipmentSplit(
-                            shipmentNbr,
-                            expectedRow.ShipmentSplitLineNbr);
+                        split =
+                            GetShipmentSplit(
+                                longRunBasis,
+                                shipmentNbr,
+                                expectedRow.ShipmentSplitLineNbr);
 
                         if (split == null)
                         {
-                            Basis.ReportError(
-                                "The matching shipment split was not found for carton {0}.",
-                                expectedRow.PackageLineNbr);
-
-                            WmsDebugTrace.Warning(
-                                $"{TracePrefix} Missing SOShipLineSplit. " +
-                                $"ShipmentNbr={shipmentNbr}, " +
-                                $"PackageLineNbr={expectedRow.PackageLineNbr}, " +
-                                $"SplitLineNbr={expectedRow.ShipmentSplitLineNbr}");
-
-                            return true;
+                            throw new PXException(
+                                "The matching shipment split was not found. " +
+                                "Shipment={0}, Carton={1}, Split={2}.",
+                                shipmentNbr,
+                                expectedRow.PackageLineNbr,
+                                expectedRow.ShipmentSplitLineNbr);
                         }
 
                         splitByLineNbr[
@@ -694,7 +873,6 @@ namespace CustomWMS2
                     workItems.Add(
                         new ShipmentPackWorkItem
                         {
-                            ExpectedRow = expectedRow,
                             Package = package,
                             Split = split,
                             RemainingQty = remainingQty
@@ -703,14 +881,8 @@ namespace CustomWMS2
 
                 if (workItems.Count == 0)
                 {
-                    Basis.ReportWarning(
-                        "All expected carton contents are already packed.");
-
-                    WmsDebugTrace.Info(
-                        $"{TracePrefix} Shipment already fully packed. " +
-                        $"ShipmentNbr={shipmentNbr}");
-
-                    return true;
+                    data.AlreadyFullyPacked = true;
+                    return;
                 }
 
                 int transferredRows = 0;
@@ -746,16 +918,7 @@ namespace CustomWMS2
                             currentActualOnSplit;
 
                         if (availableOnSplit <= 0m)
-                        {
-                            WmsDebugTrace.Info(
-                                $"{TracePrefix} Shipment-wide row skipped " +
-                                $"because split is fully packed. " +
-                                $"ShipmentNbr={shipmentNbr}, " +
-                                $"PackageLineNbr={package.LineNbr}, " +
-                                $"SplitLineNbr={split.SplitLineNbr}");
-
                             continue;
-                        }
 
                         transferQty =
                             Math.Min(
@@ -767,24 +930,22 @@ namespace CustomWMS2
                         continue;
 
                     /*
-                     * Make the carton being processed the active package.
-                     * This preserves the same package context used by the
-                     * normal Acumatica Pack workflow.
+                     * Set the package context before calling the same
+                     * PackSplit method used by normal WMS packing.
                      */
-                    Basis.Graph.Packages.Current =
+                    longRunBasis.Graph.Packages.Current =
                         package;
 
                     packLogic.PackageLineNbrUI =
                         package.LineNbr;
 
                     WmsDebugTrace.Info(
-                        $"{TracePrefix} Shipment-wide PackSplit. " +
+                        $"{TracePrefix} Long-run PackSplit. " +
                         $"ShipmentNbr={shipmentNbr}, " +
                         $"PackageLineNbr={package.LineNbr}, " +
                         $"LineNbr={split.LineNbr}, " +
                         $"SplitLineNbr={split.SplitLineNbr}, " +
                         $"InventoryID={split.InventoryID}, " +
-                        $"LotSerialNbr={split.LotSerialNbr}, " +
                         $"TransferQty={transferQty}");
 
                     bool packed =
@@ -795,20 +956,12 @@ namespace CustomWMS2
 
                     if (!packed)
                     {
-                        Basis.ReportError(
+                        throw new PXException(
                             "Unable to pack inventory {0} into carton {1}.",
-                            GetInventoryCD(split.InventoryID),
+                            GetInventoryCD(
+                                longRunBasis,
+                                split.InventoryID),
                             package.LineNbr);
-
-                        WmsDebugTrace.Warning(
-                            $"{TracePrefix} Shipment-wide PackSplit " +
-                            $"returned false. " +
-                            $"ShipmentNbr={shipmentNbr}, " +
-                            $"PackageLineNbr={package.LineNbr}, " +
-                            $"SplitLineNbr={split.SplitLineNbr}, " +
-                            $"TransferQty={transferQty}");
-
-                        return true;
                     }
 
                     totalActualQtyBySplit[
@@ -824,53 +977,55 @@ namespace CustomWMS2
 
                 if (transferredRows == 0)
                 {
-                    Basis.ReportWarning(
-                        "No shipment contents were packed.");
-
-                    return true;
+                    throw new PXException(
+                        "No shipment contents could be packed.");
                 }
 
                 confirmLogic.EnsureShipmentUserLinkForPack();
 
-                /*
-                 * Restore the package that was selected before the
-                 * shipment-wide operation.
-                 */
-                SOPackageDetailEx packageToRestore =
-                    originalPackage
+                SOPackageDetailEx packageToRestore = null;
+
+                if (data.OriginalPackageLineNbr != null)
+                {
+                    packageByLineNbr.TryGetValue(
+                        data.OriginalPackageLineNbr,
+                        out packageToRestore);
+                }
+
+                packageToRestore =
+                    packageToRestore
                     ?? packages.FirstOrDefault();
 
                 if (packageToRestore != null)
                 {
-                    Basis.Graph.Packages.Current =
+                    longRunBasis.Graph.Packages.Current =
                         packageToRestore;
 
                     packLogic.PackageLineNbrUI =
                         packageToRestore.LineNbr;
                 }
 
-                Basis.Save.Press();
+                longRunBasis.Save.Press();
 
-                RequestShipmentRefresh(
-                    "Shipment-wide automatic packing");
+                data.AffectedCartons =
+                    affectedPackageLineNbrs.Count;
 
-                Basis.ReportInfo(
-                    "Packed the entire shipment. Cartons={0}, Rows={1}, Qty={2}.",
-                    affectedPackageLineNbrs.Count,
-                    transferredRows,
-                    transferredTotalQty);
+                data.TransferredRows =
+                    transferredRows;
+
+                data.TransferredQty =
+                    transferredTotalQty;
 
                 WmsDebugTrace.Info(
-                    $"{TracePrefix} Shipment-wide Process EXIT success. " +
+                    $"{TracePrefix} Long operation processing EXIT. " +
                     $"ShipmentNbr={shipmentNbr}, " +
-                    $"Cartons={affectedPackageLineNbrs.Count}, " +
-                    $"Rows={transferredRows}, " +
-                    $"Qty={transferredTotalQty}");
-
-                return true;
+                    $"Cartons={data.AffectedCartons}, " +
+                    $"Rows={data.TransferredRows}, " +
+                    $"Qty={data.TransferredQty}");
             }
 
-            private SOShipLineSplit GetShipmentSplit(
+            private static SOShipLineSplit GetShipmentSplit(
+                PickPackShip basis,
                 string shipmentNbr,
                 int? splitLineNbr)
             {
@@ -887,14 +1042,15 @@ namespace CustomWMS2
                                 Required<
                                     SOShipLineSplit.splitLineNbr>>>>>
                     .Select(
-                        Basis,
+                        basis,
                         shipmentNbr,
                         splitLineNbr)
                     .RowCast<SOShipLineSplit>()
                     .FirstOrDefault();
             }
 
-            private string GetInventoryCD(
+            private static string GetInventoryCD(
+                PickPackShip basis,
                 int? inventoryID)
             {
                 if (inventoryID == null)
@@ -909,7 +1065,7 @@ namespace CustomWMS2
                                 Required<
                                     InventoryItem.inventoryID>>>>
                     .Select(
-                        Basis,
+                        basis,
                         inventoryID)
                     .RowCast<InventoryItem>()
                     .FirstOrDefault();
@@ -918,41 +1074,24 @@ namespace CustomWMS2
                     ?? string.Empty;
             }
 
-            private void RequestShipmentRefresh(
-                string reason)
+            [Serializable]
+            private sealed class ShipmentPackLongRunData
             {
-                WmsShipmentExt wmsExt =
-                    Basis.Graph.GetExtension<WmsShipmentExt>();
+                public string ShipmentNbr { get; set; }
 
-                if (wmsExt?.SelectedPackageContentsView != null)
-                {
-                    wmsExt.SelectedPackageContentsView.Cache.Clear();
-                    wmsExt.SelectedPackageContentsView.View.Clear();
-                    wmsExt.SelectedPackageContentsView.View.RequestRefresh();
-                }
+                public int? OriginalPackageLineNbr { get; set; }
 
-                Basis.Graph.PackageDetailExt
-                    .PackageDetailSplit.Cache.Clear();
+                public int AffectedCartons { get; set; }
 
-                Basis.Graph.PackageDetailExt
-                    .PackageDetailSplit.View.Clear();
+                public int TransferredRows { get; set; }
 
-                Basis.Graph.PackageDetailExt
-                    .PackageDetailSplit.View.RequestRefresh();
+                public decimal TransferredQty { get; set; }
 
-                Basis.Graph.Packages.Cache.Clear();
-                Basis.Graph.Packages.View.Clear();
-                Basis.Graph.Packages.View.RequestRefresh();
-
-                WmsDebugTrace.Info(
-                    $"{TracePrefix} Shipment refresh requested. " +
-                    $"Reason={reason}");
+                public bool AlreadyFullyPacked { get; set; }
             }
 
             private sealed class ShipmentPackWorkItem
             {
-                public WmsPlan ExpectedRow { get; set; }
-
                 public SOPackageDetailEx Package { get; set; }
 
                 public SOShipLineSplit Split { get; set; }
@@ -967,7 +1106,9 @@ namespace CustomWMS2
                     int? packageLineNbr,
                     int? shipmentSplitLineNbr)
                 {
-                    PackageLineNbr = packageLineNbr;
+                    PackageLineNbr =
+                        packageLineNbr;
+
                     ShipmentSplitLineNbr =
                         shipmentSplitLineNbr;
                 }
@@ -989,8 +1130,9 @@ namespace CustomWMS2
                 public override bool Equals(
                     object obj)
                 {
-                    return obj is PackageSplitKey &&
-                           Equals((PackageSplitKey)obj);
+                    return
+                        obj is PackageSplitKey &&
+                        Equals((PackageSplitKey)obj);
                 }
 
                 public override int GetHashCode()
@@ -1013,37 +1155,7 @@ namespace CustomWMS2
             }
         }
 
-        public sealed class TransferSelectedRowCommand
-            : TransferExpectedBaseCommand
-        {
-            public override string Code =>
-                "TRANSFERSELECTED";
-
-            public override string ButtonName =>
-                "TransferSelectedExpectedRow";
-
-            public override string DisplayName =>
-                "Transfer Selected Row";
-
-            protected override bool TransferAllRemaining =>
-                false;
-        }
-
-        public sealed class TransferAllRemainingCommand
-            : TransferExpectedBaseCommand
-        {
-            public override string Code =>
-                "TRANSFERALLREMAINING";
-
-            public override string ButtonName =>
-                "TransferAllRemainingExpectedRows";
-
-            public override string DisplayName =>
-                "Transfer All Remaining";
-
-            protected override bool TransferAllRemaining =>
-                true;
-        }
+        #endregion
 
         [PXOverride]
         public virtual ScanMode<PickPackShip> DecorateScanMode(
