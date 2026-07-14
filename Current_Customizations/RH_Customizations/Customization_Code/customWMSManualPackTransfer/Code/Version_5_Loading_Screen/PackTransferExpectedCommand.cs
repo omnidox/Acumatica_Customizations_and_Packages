@@ -117,6 +117,16 @@ namespace CustomWMS2
                             expectedRow.ShipmentNbr,
                             expectedRow.ShipmentSplitLineNbr);
 
+                    PXTrace.WriteInformation(
+                        $"BAD ROW TEST " +
+                        $"Split={split.SplitLineNbr} " +
+                        $"Inventory={split.InventoryID} " +
+                        $"Qty={split.Qty} " +
+                        $"Picked={split.PickedQty} " +
+                        $"Packed={split.PackedQty} " +
+                        $"Lot={split.LotSerialNbr} " +
+                        $"Location={split.LocationID}");
+
                     if (split == null)
                     {
                         WmsDebugTrace.Warning(
