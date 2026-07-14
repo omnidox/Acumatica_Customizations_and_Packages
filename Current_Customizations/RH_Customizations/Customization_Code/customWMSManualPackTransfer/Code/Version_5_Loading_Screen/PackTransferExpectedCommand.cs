@@ -18,7 +18,7 @@ namespace CustomWMS2
             "[PackTransferExpectedCommand]";
 
         private const string Version =
-            "2026-07-14-V8-SHIPMENT-WIDE-LONG-RUN-01";
+            "2026-07-14-V9-SPLIT-DIAGNOSTICS-01";
 
         public static bool IsActive()
         {
@@ -128,6 +128,30 @@ namespace CustomWMS2
                         continue;
                     }
 
+                    /*
+                     * Diagnostic immediately after loading the underlying
+                     * shipment split.
+                     */
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} LOADED SPLIT | " +
+                        $"ExpectedRecordID={expectedRow.RecordID}, " +
+                        $"ExpectedPackage={expectedRow.PackageLineNbr}, " +
+                        $"ExpectedSplit={expectedRow.ShipmentSplitLineNbr}, " +
+                        $"ExpectedInventory={expectedRow.InventoryID}, " +
+                        $"ExpectedLot={expectedRow.LotSerialNbr}, " +
+                        $"ExpectedQty={expectedRow.PackedQty}, " +
+                        $"SplitShipmentNbr={split.ShipmentNbr}, " +
+                        $"SplitLineNbr={split.SplitLineNbr}, " +
+                        $"SplitShipmentLineNbr={split.LineNbr}, " +
+                        $"SplitInventory={split.InventoryID}, " +
+                        $"SplitLocation={split.LocationID}, " +
+                        $"SplitLot={split.LotSerialNbr}, " +
+                        $"SplitQty={split.Qty}, " +
+                        $"SplitPickedQty={split.PickedQty}, " +
+                        $"SplitPackedQty={split.PackedQty}, " +
+                        $"IsUnassigned={split.IsUnassigned}, " +
+                        $"HasGeneratedLotSerialNbr={split.HasGeneratedLotSerialNbr}");
+
                     decimal transferQty =
                         GetRemainingQtyForPackage(
                             package,
@@ -144,24 +168,51 @@ namespace CustomWMS2
                         continue;
                     }
 
+                    /*
+                     * This is the only declaration of targetQty in this scope.
+                     */
                     decimal? targetQty =
                         confirmLogic.TargetQty(split);
 
                     decimal currentPackedOnSplit =
                         split.PackedQty ?? 0m;
 
+                    decimal initialTransferQty =
+                        transferQty;
+
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} TARGET QTY DIAGNOSTIC | " +
+                        $"ShipmentNbr={split.ShipmentNbr}, " +
+                        $"PackageLineNbr={package.LineNbr}, " +
+                        $"SplitLineNbr={split.SplitLineNbr}, " +
+                        $"SplitQty={split.Qty}, " +
+                        $"PickedQty={split.PickedQty}, " +
+                        $"PackedQty={split.PackedQty}, " +
+                        $"TargetQty={targetQty}, " +
+                        $"PackageRemainingBeforeLimit={initialTransferQty}");
+
                     if (targetQty != null)
                     {
                         decimal availableOnSplit =
                             targetQty.Value - currentPackedOnSplit;
 
+                        WmsDebugTrace.Info(
+                            $"{TracePrefix} SPLIT AVAILABILITY | " +
+                            $"ShipmentNbr={split.ShipmentNbr}, " +
+                            $"SplitLineNbr={split.SplitLineNbr}, " +
+                            $"TargetQty={targetQty}, " +
+                            $"CurrentSplitPackedQty={currentPackedOnSplit}, " +
+                            $"AvailableOnSplit={availableOnSplit}");
+
                         if (availableOnSplit <= 0m)
                         {
                             WmsDebugTrace.Info(
                                 $"{TracePrefix} Skipping row because split " +
-                                $"is already fully packed. " +
+                                $"is already fully packed according to TargetQty. " +
                                 $"ShipmentNbr={split.ShipmentNbr}, " +
-                                $"SplitLineNbr={split.SplitLineNbr}");
+                                $"SplitLineNbr={split.SplitLineNbr}, " +
+                                $"TargetQty={targetQty}, " +
+                                $"CurrentPackedOnSplit={currentPackedOnSplit}");
 
                             continue;
                         }
@@ -173,27 +224,32 @@ namespace CustomWMS2
                     }
 
                     if (transferQty <= 0m)
+                    {
+                        WmsDebugTrace.Warning(
+                            $"{TracePrefix} Transfer quantity became zero " +
+                            $"after applying split limits. " +
+                            $"ShipmentNbr={split.ShipmentNbr}, " +
+                            $"SplitLineNbr={split.SplitLineNbr}, " +
+                            $"InitialTransferQty={initialTransferQty}, " +
+                            $"TargetQty={targetQty}, " +
+                            $"SplitPackedQty={currentPackedOnSplit}");
+
                         continue;
-
-                    decimal? targetQty = confirmLogic.TargetQty(split);
-
-                    WmsDebugTrace.Info(
-                        $"{TracePrefix} TargetQty={targetQty}, " +
-                        $"SplitQty={split.Qty}, " +
-                        $"PickedQty={split.PickedQty}, " +
-                        $"PackedQty={split.PackedQty}, " +
-                        $"Completed={split.Completed}, " +
-                        $"Confirmed={split.Confirmed}");
+                    }
 
                     decimal totalPackedAcrossPackages =
                         PXSelectReadonly<
                             SOShipLineSplitPackage,
                             Where<
                                 SOShipLineSplitPackage.shipmentNbr,
-                                    Equal<Required<SOShipLineSplitPackage.shipmentNbr>>,
+                                    Equal<
+                                        Required<
+                                            SOShipLineSplitPackage.shipmentNbr>>,
                                 And<
                                     SOShipLineSplitPackage.shipmentSplitLineNbr,
-                                    Equal<Required<SOShipLineSplitPackage.shipmentSplitLineNbr>>>>>
+                                    Equal<
+                                        Required<
+                                            SOShipLineSplitPackage.shipmentSplitLineNbr>>>>>
                         .Select(
                             Basis,
                             split.ShipmentNbr,
@@ -203,14 +259,17 @@ namespace CustomWMS2
 
                     WmsDebugTrace.Info(
                         $"{TracePrefix} SPLIT DIAGNOSTIC | " +
+                        $"Command={Code}, " +
                         $"ExpectedRecordID={expectedRow.RecordID}, " +
+                        $"ExpectedShipment={expectedRow.ShipmentNbr}, " +
                         $"ExpectedPackage={expectedRow.PackageLineNbr}, " +
                         $"ExpectedSplit={expectedRow.ShipmentSplitLineNbr}, " +
                         $"ExpectedInventory={expectedRow.InventoryID}, " +
                         $"ExpectedLot={expectedRow.LotSerialNbr}, " +
                         $"ExpectedQty={expectedRow.PackedQty}, " +
-                        $"CalculatedRemaining={transferQty}, " +
+                        $"CalculatedTransferQty={transferQty}, " +
                         $"SplitLineNbr={split.SplitLineNbr}, " +
+                        $"SplitShipmentLineNbr={split.LineNbr}, " +
                         $"SplitInventory={split.InventoryID}, " +
                         $"SplitLocation={split.LocationID}, " +
                         $"SplitLot={split.LotSerialNbr}, " +
@@ -219,7 +278,9 @@ namespace CustomWMS2
                         $"SplitPackedQty={split.PackedQty}, " +
                         $"TargetQty={targetQty}, " +
                         $"TotalPackedAcrossPackages={totalPackedAcrossPackages}, " +
-                        $"IsUnassigned={split.IsUnassigned}");
+                        $"IsUnassigned={split.IsUnassigned}, " +
+                        $"HasGeneratedLotSerialNbr={split.HasGeneratedLotSerialNbr}, " +
+                        $"HasPick={Basis.HasPick}");
 
                     WmsDebugTrace.Info(
                         $"{TracePrefix} Calling PackSplit. " +
@@ -238,12 +299,24 @@ namespace CustomWMS2
                             package,
                             transferQty);
 
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} PackSplit RESULT | " +
+                        $"Command={Code}, " +
+                        $"ShipmentNbr={split.ShipmentNbr}, " +
+                        $"PackageLineNbr={package.LineNbr}, " +
+                        $"SplitLineNbr={split.SplitLineNbr}, " +
+                        $"InventoryID={split.InventoryID}, " +
+                        $"TransferQty={transferQty}, " +
+                        $"PackedResult={packed}");
+
                     if (!packed)
                     {
                         WmsDebugTrace.Warning(
                             $"{TracePrefix} PackSplit returned false. " +
                             $"ShipmentNbr={split.ShipmentNbr}, " +
+                            $"PackageLineNbr={package.LineNbr}, " +
                             $"SplitLineNbr={split.SplitLineNbr}, " +
+                            $"InventoryID={split.InventoryID}, " +
                             $"TransferQty={transferQty}");
 
                         continue;
@@ -338,7 +411,9 @@ namespace CustomWMS2
                         WmsPlan,
                         Where<
                             WmsPlan.shipmentNbr,
-                            Equal<Required<WmsPlan.shipmentNbr>>,
+                            Equal<
+                                Required<
+                                    WmsPlan.shipmentNbr>>,
                             And<
                                 WmsPlan.packageLineNbr,
                                 Equal<
@@ -603,17 +678,6 @@ namespace CustomWMS2
                             originalPackage?.LineNbr
                     };
 
-                /*
-                 * WaitFor() is the native barcode-driven WMS long-running
-                 * operation mechanism.
-                 *
-                 * The framework:
-                 *  - places the scanner into WAIT state;
-                 *  - displays "Wait until the operation is completed.";
-                 *  - clones the current WMS graph;
-                 *  - executes this delegate asynchronously;
-                 *  - refreshes the state when processing finishes.
-                 */
                 Basis
                     .WaitFor<ShipmentPackLongRunData>(
                         (longRunBasis, data) =>
@@ -681,8 +745,10 @@ namespace CustomWMS2
                 ShipmentPackLongRunData data)
             {
                 if (longRunBasis == null)
+                {
                     throw new PXException(
                         "The WMS processing context could not be created.");
+                }
 
                 if (data == null ||
                     string.IsNullOrWhiteSpace(data.ShipmentNbr))
@@ -704,10 +770,6 @@ namespace CustomWMS2
                     $"{TracePrefix} Long operation processing ENTER. " +
                     $"ShipmentNbr={shipmentNbr}");
 
-                /*
-                 * Ensure that the cloned graph is operating on the requested
-                 * shipment.
-                 */
                 SOShipment shipment =
                     longRunBasis.Graph.Document.Current;
 
@@ -975,10 +1037,6 @@ namespace CustomWMS2
                     if (transferQty <= 0m)
                         continue;
 
-                    /*
-                     * Set the package context before calling the same
-                     * PackSplit method used by normal WMS packing.
-                     */
                     longRunBasis.Graph.Packages.Current =
                         package;
 
