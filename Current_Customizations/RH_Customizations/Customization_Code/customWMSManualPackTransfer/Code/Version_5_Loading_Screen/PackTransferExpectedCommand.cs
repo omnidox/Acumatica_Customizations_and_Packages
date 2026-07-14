@@ -175,6 +175,52 @@ namespace CustomWMS2
                     if (transferQty <= 0m)
                         continue;
 
+                    decimal? targetQty = confirmLogic.TargetQty(split);
+
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} TargetQty={targetQty}, " +
+                        $"SplitQty={split.Qty}, " +
+                        $"PickedQty={split.PickedQty}, " +
+                        $"PackedQty={split.PackedQty}, " +
+                        $"Completed={split.Completed}, " +
+                        $"Confirmed={split.Confirmed}");
+
+                    decimal totalPackedAcrossPackages =
+                        PXSelectReadonly<
+                            SOShipLineSplitPackage,
+                            Where<
+                                SOShipLineSplitPackage.shipmentNbr,
+                                    Equal<Required<SOShipLineSplitPackage.shipmentNbr>>,
+                                And<
+                                    SOShipLineSplitPackage.shipmentSplitLineNbr,
+                                    Equal<Required<SOShipLineSplitPackage.shipmentSplitLineNbr>>>>>
+                        .Select(
+                            Basis,
+                            split.ShipmentNbr,
+                            split.SplitLineNbr)
+                        .RowCast<SOShipLineSplitPackage>()
+                        .Sum(x => x.PackedQty ?? 0m);
+
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} SPLIT DIAGNOSTIC | " +
+                        $"ExpectedRecordID={expectedRow.RecordID}, " +
+                        $"ExpectedPackage={expectedRow.PackageLineNbr}, " +
+                        $"ExpectedSplit={expectedRow.ShipmentSplitLineNbr}, " +
+                        $"ExpectedInventory={expectedRow.InventoryID}, " +
+                        $"ExpectedLot={expectedRow.LotSerialNbr}, " +
+                        $"ExpectedQty={expectedRow.PackedQty}, " +
+                        $"CalculatedRemaining={transferQty}, " +
+                        $"SplitLineNbr={split.SplitLineNbr}, " +
+                        $"SplitInventory={split.InventoryID}, " +
+                        $"SplitLocation={split.LocationID}, " +
+                        $"SplitLot={split.LotSerialNbr}, " +
+                        $"SplitQty={split.Qty}, " +
+                        $"SplitPickedQty={split.PickedQty}, " +
+                        $"SplitPackedQty={split.PackedQty}, " +
+                        $"TargetQty={targetQty}, " +
+                        $"TotalPackedAcrossPackages={totalPackedAcrossPackages}, " +
+                        $"IsUnassigned={split.IsUnassigned}");
+
                     WmsDebugTrace.Info(
                         $"{TracePrefix} Calling PackSplit. " +
                         $"Command={Code}, " +
