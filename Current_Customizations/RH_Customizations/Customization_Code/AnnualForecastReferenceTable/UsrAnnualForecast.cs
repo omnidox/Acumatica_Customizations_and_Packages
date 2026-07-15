@@ -1,0 +1,390 @@
+using System;
+using PX.Data;
+using PX.Data.BQL;
+using PX.Data.ReferentialIntegrity.Attributes;
+using PX.Objects.AR;
+using PX.Objects.IN;
+
+namespace AnnualForecastReferenceTable
+{
+    [Serializable]
+    [PXCacheName("Annual Forecast")]
+    public class UsrAnnualForecast : PXBqlTable, IBqlTable
+    {
+        #region Primary Key
+
+        public class PK : PrimaryKeyOf<UsrAnnualForecast>
+            .By<
+                customerID,
+                inventoryID,
+                forecastYear,
+                forecastType>
+        {
+            public static UsrAnnualForecast Find(
+                PXGraph graph,
+                int? customerID,
+                int? inventoryID,
+                string forecastYear,
+                string forecastType)
+            {
+                return FindBy(
+                    graph,
+                    customerID,
+                    inventoryID,
+                    forecastYear,
+                    forecastType);
+            }
+        }
+
+        #endregion
+
+        #region Foreign Keys
+
+        public static class FK
+        {
+            public class Customer :
+                PX.Objects.AR.Customer.PK
+                    .ForeignKeyOf<UsrAnnualForecast>
+                    .By<customerID>
+            {
+            }
+
+            public class InventoryItem :
+                PX.Objects.IN.InventoryItem.PK
+                    .ForeignKeyOf<UsrAnnualForecast>
+                    .By<inventoryID>
+            {
+            }
+        }
+
+        #endregion
+
+        #region CustomerID
+
+        [Customer(IsKey = true)]
+        [PXDefault]
+        [PXUIField(DisplayName = "Customer")]
+        public virtual int? CustomerID { get; set; }
+
+        public abstract class customerID :
+            BqlInt.Field<customerID>
+        {
+        }
+
+        #endregion
+
+        #region InventoryID
+
+        [Inventory(IsKey = true)]
+        [PXDefault]
+        [PXUIField(DisplayName = "Inventory ID")]
+        public virtual int? InventoryID { get; set; }
+
+        public abstract class inventoryID :
+            BqlInt.Field<inventoryID>
+        {
+        }
+
+        #endregion
+
+        #region ForecastYear
+
+        [PXDBString(
+            4,
+            IsKey = true,
+            IsFixed = true,
+            InputMask = "0000")]
+        [PXDefault]
+        [PXUIField(DisplayName = "Forecast Year")]
+        public virtual string ForecastYear { get; set; }
+
+        public abstract class forecastYear :
+            BqlString.Field<forecastYear>
+        {
+        }
+
+        #endregion
+
+        #region ForecastType
+
+        [PXDBString(
+            2,
+            IsKey = true,
+            IsFixed = true,
+            InputMask = ">??")]
+        [PXDefault]
+        [PXUIField(DisplayName = "Forecast Type")]
+        public virtual string ForecastType { get; set; }
+
+        public abstract class forecastType :
+            BqlString.Field<forecastType>
+        {
+        }
+
+        #endregion
+
+        #region JanQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Jan")]
+        public virtual int? JanQty { get; set; }
+
+        public abstract class janQty :
+            BqlInt.Field<janQty>
+        {
+        }
+
+        #endregion
+
+        #region FebQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Feb")]
+        public virtual int? FebQty { get; set; }
+
+        public abstract class febQty :
+            BqlInt.Field<febQty>
+        {
+        }
+
+        #endregion
+
+        #region MarQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Mar")]
+        public virtual int? MarQty { get; set; }
+
+        public abstract class marQty :
+            BqlInt.Field<marQty>
+        {
+        }
+
+        #endregion
+
+        #region AprQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Apr")]
+        public virtual int? AprQty { get; set; }
+
+        public abstract class aprQty :
+            BqlInt.Field<aprQty>
+        {
+        }
+
+        #endregion
+
+        #region MayQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "May")]
+        public virtual int? MayQty { get; set; }
+
+        public abstract class mayQty :
+            BqlInt.Field<mayQty>
+        {
+        }
+
+        #endregion
+
+        #region JunQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Jun")]
+        public virtual int? JunQty { get; set; }
+
+        public abstract class junQty :
+            BqlInt.Field<junQty>
+        {
+        }
+
+        #endregion
+
+        #region JulQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Jul")]
+        public virtual int? JulQty { get; set; }
+
+        public abstract class julQty :
+            BqlInt.Field<julQty>
+        {
+        }
+
+        #endregion
+
+        #region AugQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Aug")]
+        public virtual int? AugQty { get; set; }
+
+        public abstract class augQty :
+            BqlInt.Field<augQty>
+        {
+        }
+
+        #endregion
+
+        #region SepQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Sep")]
+        public virtual int? SepQty { get; set; }
+
+        public abstract class sepQty :
+            BqlInt.Field<sepQty>
+        {
+        }
+
+        #endregion
+
+        #region OctQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Oct")]
+        public virtual int? OctQty { get; set; }
+
+        public abstract class octQty :
+            BqlInt.Field<octQty>
+        {
+        }
+
+        #endregion
+
+        #region NovQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Nov")]
+        public virtual int? NovQty { get; set; }
+
+        public abstract class novQty :
+            BqlInt.Field<novQty>
+        {
+        }
+
+        #endregion
+
+        #region DecQty
+
+        [PXDBInt]
+        [PXDefault(0)]
+        [PXUIField(DisplayName = "Dec")]
+        public virtual int? DecQty { get; set; }
+
+        public abstract class decQty :
+            BqlInt.Field<decQty>
+        {
+        }
+
+        #endregion
+
+        #region NoteID
+
+        [PXNote]
+        public virtual Guid? NoteID { get; set; }
+
+        public abstract class noteID :
+            BqlGuid.Field<noteID>
+        {
+        }
+
+        #endregion
+
+        #region CreatedByID
+
+        [PXDBCreatedByID]
+        public virtual Guid? CreatedByID { get; set; }
+
+        public abstract class createdByID :
+            BqlGuid.Field<createdByID>
+        {
+        }
+
+        #endregion
+
+        #region CreatedByScreenID
+
+        [PXDBCreatedByScreenID]
+        public virtual string CreatedByScreenID { get; set; }
+
+        public abstract class createdByScreenID :
+            BqlString.Field<createdByScreenID>
+        {
+        }
+
+        #endregion
+
+        #region CreatedDateTime
+
+        [PXDBCreatedDateTime]
+        public virtual DateTime? CreatedDateTime { get; set; }
+
+        public abstract class createdDateTime :
+            BqlDateTime.Field<createdDateTime>
+        {
+        }
+
+        #endregion
+
+        #region LastModifiedByID
+
+        [PXDBLastModifiedByID]
+        public virtual Guid? LastModifiedByID { get; set; }
+
+        public abstract class lastModifiedByID :
+            BqlGuid.Field<lastModifiedByID>
+        {
+        }
+
+        #endregion
+
+        #region LastModifiedByScreenID
+
+        [PXDBLastModifiedByScreenID]
+        public virtual string LastModifiedByScreenID { get; set; }
+
+        public abstract class lastModifiedByScreenID :
+            BqlString.Field<lastModifiedByScreenID>
+        {
+        }
+
+        #endregion
+
+        #region LastModifiedDateTime
+
+        [PXDBLastModifiedDateTime]
+        public virtual DateTime? LastModifiedDateTime { get; set; }
+
+        public abstract class lastModifiedDateTime :
+            BqlDateTime.Field<lastModifiedDateTime>
+        {
+        }
+
+        #endregion
+
+        #region Tstamp
+
+        [PXDBTimestamp]
+        public virtual byte[] Tstamp { get; set; }
+
+        public abstract class tstamp :
+            BqlByteArray.Field<tstamp>
+        {
+        }
+
+        #endregion
+    }
+}

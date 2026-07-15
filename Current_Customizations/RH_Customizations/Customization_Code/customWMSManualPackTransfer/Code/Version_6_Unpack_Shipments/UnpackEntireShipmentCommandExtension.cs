@@ -403,7 +403,7 @@ namespace CustomWMS2
                  * Save the original mode so it can be restored even when
                  * an exception occurs.
                  */
-                bool originalRemoveMode =
+                bool? originalRemoveMode =
                     longRunBasis.Remove;
 
                 /*
