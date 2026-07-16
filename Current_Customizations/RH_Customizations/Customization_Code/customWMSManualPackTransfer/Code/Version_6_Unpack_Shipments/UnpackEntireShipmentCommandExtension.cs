@@ -15,10 +15,11 @@ namespace CustomWMS2
     /// Adds an Unpack Entire Shipment command to Pick, Pack, and Ship.
     ///
     /// The command removes all package-content allocations belonging to
-    /// the current shipment through the standard WMS PackSplit logic while
-    /// the barcode state machine is placed into Remove mode.
+    /// the current shipment through the standard WMS PackSplit logic.
     ///
-    /// Empty carton records are preserved.
+    /// PackSplit performs removal when it receives a negative quantity.
+    ///
+    /// Empty SOPackageDetailEx carton records are preserved.
     /// </summary>
     public class UnpackEntireShipmentCommandExtension
         : PickPackShip.ScanExtension
@@ -27,7 +28,7 @@ namespace CustomWMS2
             "[UnpackEntireShipmentCommand]";
 
         private const string Version =
-            "2026-07-15-V2-COMPOSITE-SPLIT-TRANSACTION-01";
+            "2026-07-16-V3-NEGATIVE-PACKSPLIT-REMOVE-01";
 
         public static bool IsActive()
         {
@@ -144,7 +145,8 @@ namespace CustomWMS2
                     };
 
                 /*
-                 * Use the native WMS long-running operation mechanism.
+                 * Use the native barcode-driven WMS long-running
+                 * operation mechanism.
                  *
                  * The WMS screen enters the WAIT state while the cloned
                  * graph processes the shipment.
@@ -234,7 +236,7 @@ namespace CustomWMS2
                 }
 
                 /*
-                 * Repeat authorization in the long-running operation.
+                 * Repeat authorization inside the long-running operation.
                  */
                 if (!WmsTransferAuthorization.IsAuthorized())
                 {
@@ -247,6 +249,7 @@ namespace CustomWMS2
 
                 WmsDebugTrace.Info(
                     $"{TracePrefix} Long operation ENTER. " +
+                    $"Version={Version}, " +
                     $"ShipmentNbr={shipmentNbr}");
 
                 SOShipment shipment =
@@ -299,10 +302,10 @@ namespace CustomWMS2
                 }
 
                 /*
-                 * Load the cartons for this shipment.
+                 * Load all cartons belonging to this shipment.
                  *
-                 * These carton records are not deleted. They remain after
-                 * their package contents have been removed.
+                 * These SOPackageDetailEx records are preserved after
+                 * their package-content rows have been removed.
                  */
                 List<SOPackageDetailEx> packages =
                     longRunBasis.Graph.Packages
@@ -317,6 +320,13 @@ namespace CustomWMS2
                             package.LineNbr)
                         .ToList();
 
+                if (packages.Count == 0)
+                {
+                    throw new PXException(
+                        "No cartons were found for shipment {0}.",
+                        shipmentNbr);
+                }
+
                 Dictionary<int?, SOPackageDetailEx>
                     packageByLineNbr =
                         packages
@@ -327,9 +337,10 @@ namespace CustomWMS2
                                 group => group.First());
 
                 /*
-                 * Take a snapshot of the package-content rows before
-                 * removal begins. Do not enumerate a PXView while it
-                 * is being modified.
+                 * Take a snapshot of all package-content rows before
+                 * modifying the PackageDetailSplit view.
+                 *
+                 * Do not enumerate a PXView while deleting rows from it.
                  */
                 List<SOShipLineSplitPackage> packedRows =
                     PXSelectReadonly<
@@ -374,8 +385,8 @@ namespace CustomWMS2
                  *
                  * ShipmentNbr + LineNbr + SplitLineNbr
                  *
-                 * ShipmentNbr is already restricted by the query, so the
-                 * dictionary uses LineNbr + SplitLineNbr.
+                 * Because the query is already limited to one shipment,
+                 * the dictionary key only requires LineNbr + SplitLineNbr.
                  */
                 Dictionary<ShipmentSplitKey, SOShipLineSplit>
                     splitByKey =
@@ -384,8 +395,7 @@ namespace CustomWMS2
                             shipmentNbr);
 
                 /*
-                 * Validate all carton and split references before any
-                 * package content is removed.
+                 * Validate all references before changing any records.
                  */
                 ValidateWorkItems(
                     packedRows,
@@ -400,166 +410,171 @@ namespace CustomWMS2
                     new HashSet<int?>();
 
                 /*
-                 * Save the original mode so it can be restored even when
-                 * an exception occurs.
-                 */
-                bool? originalRemoveMode =
-                    longRunBasis.Remove;
-
-                /*
-                 * The transaction covers the entire removal loop and the
-                 * final graph save.
+                 * The complete operation runs in one transaction.
                  *
-                 * If an exception occurs, Complete() is not called and the
-                 * database changes are rolled back.
+                 * If PackSplit or Save throws an exception, Complete()
+                 * is not called and the database changes roll back.
                  */
                 using (PXTransactionScope transaction =
                     new PXTransactionScope())
                 {
-                    try
+                    foreach (
+                        SOShipLineSplitPackage packedRow
+                        in packedRows)
                     {
+                        SOPackageDetailEx package =
+                            packageByLineNbr[
+                                packedRow.PackageLineNbr];
+
+                        ShipmentSplitKey splitKey =
+                            new ShipmentSplitKey(
+                                packedRow.ShipmentLineNbr,
+                                packedRow.ShipmentSplitLineNbr);
+
+                        SOShipLineSplit split =
+                            splitByKey[splitKey];
+
                         /*
-                         * Tell the native WMS PackSplit logic that the
-                         * operation is an unpack/remove operation.
-                         *
-                         * Quantities passed to PackSplit remain positive.
+                         * Keep this value positive for validation,
+                         * reporting, totals, and user-facing messages.
                          */
-                        longRunBasis.Remove = true;
+                        decimal qtyToRemove =
+                            packedRow.PackedQty ?? 0m;
 
-                        foreach (
-                            SOShipLineSplitPackage packedRow
-                            in packedRows)
-                        {
-                            SOPackageDetailEx package =
-                                packageByLineNbr[
-                                    packedRow.PackageLineNbr];
+                        if (qtyToRemove <= 0m)
+                            continue;
 
-                            ShipmentSplitKey splitKey =
-                                new ShipmentSplitKey(
-                                    packedRow.ShipmentLineNbr,
-                                    packedRow.ShipmentSplitLineNbr);
+                        /*
+                         * PackSplit performs unpacking when the supplied
+                         * quantity is negative.
+                         */
+                        decimal signedRemovalQty =
+                            -qtyToRemove;
 
-                            SOShipLineSplit split =
-                                splitByKey[splitKey];
-
-                            decimal qtyToRemove =
-                                packedRow.PackedQty ?? 0m;
-
-                            if (qtyToRemove <= 0m)
-                                continue;
-
-                            /*
-                             * Do not modify a confirmed carton.
-                             */
-                            if (package.Confirmed == true)
-                            {
-                                throw new PXException(
-                                    "Carton {0} is confirmed and cannot be unpacked.",
-                                    GetCartonIdentifier(
-                                        package));
-                            }
-
-                            /*
-                             * Set the package context before using the
-                             * standard PackSplit removal logic.
-                             */
-                            longRunBasis.Graph.Packages.Current =
-                                package;
-
-                            packLogic.PackageLineNbrUI =
-                                package.LineNbr;
-
-                            WmsDebugTrace.Info(
-                                $"{TracePrefix} Removing package content. " +
-                                $"ShipmentNbr={shipmentNbr}, " +
-                                $"PackageLineNbr={package.LineNbr}, " +
-                                $"CartonNbr={GetCartonIdentifier(package)}, " +
-                                $"ShipmentLineNbr={split.LineNbr}, " +
-                                $"ShipmentSplitLineNbr={split.SplitLineNbr}, " +
-                                $"InventoryID={split.InventoryID}, " +
-                                $"Qty={qtyToRemove}, " +
-                                $"RemoveMode={longRunBasis.Remove}");
-
-                            /*
-                             * Pass a positive quantity. The Remove flag tells
-                             * PackSplit that the quantity must be unpacked.
-                             */
-                            bool removed =
-                                confirmLogic.PackSplit(
-                                    split,
-                                    package,
-                                    qtyToRemove);
-
-                            if (!removed)
-                            {
-                                throw new PXException(
-                                    "Unable to remove inventory {0} from carton {1}.",
-                                    GetInventoryCD(
-                                        longRunBasis,
-                                        split.InventoryID),
-                                    GetCartonIdentifier(
-                                        package));
-                            }
-
-                            removedRows++;
-                            removedQty +=
-                                qtyToRemove;
-
-                            affectedPackages.Add(
-                                package.LineNbr);
-                        }
-
-                        if (removedRows == 0)
+                        /*
+                         * Do not modify a confirmed carton.
+                         */
+                        if (package.Confirmed == true)
                         {
                             throw new PXException(
-                                "No package contents could be removed.");
+                                "Carton {0} is confirmed and cannot be unpacked.",
+                                GetCartonIdentifier(
+                                    package));
                         }
 
                         /*
-                         * Restore the carton that was selected before the
-                         * shipment-wide operation.
+                         * Establish the package context used by PackSplit.
                          */
-                        SOPackageDetailEx packageToRestore =
-                            null;
+                        longRunBasis.Graph.Packages.Current =
+                            package;
 
-                        if (data.OriginalPackageLineNbr != null)
-                        {
-                            packageByLineNbr.TryGetValue(
-                                data.OriginalPackageLineNbr,
-                                out packageToRestore);
-                        }
+                        packLogic.PackageLineNbrUI =
+                            package.LineNbr;
 
-                        packageToRestore =
-                            packageToRestore
-                            ?? packages.FirstOrDefault();
-
-                        if (packageToRestore != null)
-                        {
-                            longRunBasis.Graph.Packages.Current =
-                                packageToRestore;
-
-                            packLogic.PackageLineNbrUI =
-                                packageToRestore.LineNbr;
-                        }
+                        WmsDebugTrace.Info(
+                            $"{TracePrefix} Removing package content. " +
+                            $"ShipmentNbr={shipmentNbr}, " +
+                            $"PackageLineNbr={package.LineNbr}, " +
+                            $"CartonNbr={GetCartonIdentifier(package)}, " +
+                            $"RecordID={packedRow.RecordID}, " +
+                            $"ShipmentLineNbr={split.LineNbr}, " +
+                            $"ShipmentSplitLineNbr={split.SplitLineNbr}, " +
+                            $"InventoryID={split.InventoryID}, " +
+                            $"CurrentPackagePackedQty={packedRow.PackedQty}, " +
+                            $"QtyToRemove={qtyToRemove}, " +
+                            $"SignedPackSplitQty={signedRemovalQty}");
 
                         /*
-                         * Save all WMS changes once after every package
-                         * content row has been processed.
+                         * Critical behavior:
                          *
-                         * No SOPackageDetailEx rows are deleted.
+                         * PackSplit checks whether qty is less than zero.
+                         * A negative quantity invokes its native removal
+                         * branch.
+                         *
+                         * If the package-content quantity reaches zero,
+                         * PackSplit deletes the SOShipLineSplitPackage row.
+                         *
+                         * The SOPackageDetailEx carton itself is not deleted.
                          */
-                        longRunBasis.Save.Press();
+                        bool removed =
+                            confirmLogic.PackSplit(
+                                split,
+                                package,
+                                signedRemovalQty);
 
-                        transaction.Complete();
-                    }
-                    finally
-                    {
+                        if (!removed)
+                        {
+                            throw new PXException(
+                                "Unable to remove inventory {0} from carton {1}.",
+                                GetInventoryCD(
+                                    longRunBasis,
+                                    split.InventoryID),
+                                GetCartonIdentifier(
+                                    package));
+                        }
+
+                        removedRows++;
+
                         /*
-                         * Always restore the original WMS Remove mode.
+                         * Accumulate the positive amount removed, not the
+                         * negative PackSplit argument.
                          */
-                        longRunBasis.Remove =
-                            originalRemoveMode;
+                        removedQty +=
+                            qtyToRemove;
+
+                        affectedPackages.Add(
+                            package.LineNbr);
+
+                        WmsDebugTrace.Info(
+                            $"{TracePrefix} Package content removed. " +
+                            $"ShipmentNbr={shipmentNbr}, " +
+                            $"PackageLineNbr={package.LineNbr}, " +
+                            $"RecordID={packedRow.RecordID}, " +
+                            $"RemovedQty={qtyToRemove}");
                     }
+
+                    if (removedRows == 0)
+                    {
+                        throw new PXException(
+                            "No package contents could be removed.");
+                    }
+
+                    /*
+                     * Restore the carton that was selected before the
+                     * shipment-wide operation.
+                     */
+                    SOPackageDetailEx packageToRestore =
+                        null;
+
+                    if (data.OriginalPackageLineNbr != null)
+                    {
+                        packageByLineNbr.TryGetValue(
+                            data.OriginalPackageLineNbr,
+                            out packageToRestore);
+                    }
+
+                    packageToRestore =
+                        packageToRestore
+                        ?? packages.FirstOrDefault();
+
+                    if (packageToRestore != null)
+                    {
+                        longRunBasis.Graph.Packages.Current =
+                            packageToRestore;
+
+                        packLogic.PackageLineNbrUI =
+                            packageToRestore.LineNbr;
+                    }
+
+                    /*
+                     * Save the package-content removals once after every
+                     * row has been processed.
+                     *
+                     * No SOPackageDetailEx carton rows are deleted.
+                     */
+                    longRunBasis.Save.Press();
+
+                    transaction.Complete();
                 }
 
                 data.AffectedCartons =
@@ -580,7 +595,7 @@ namespace CustomWMS2
             }
 
             /// <summary>
-            /// Loads the shipment splits and indexes them using the
+            /// Loads shipment splits and indexes them using the
             /// composite LineNbr + SplitLineNbr key.
             /// </summary>
             private static Dictionary<
@@ -618,8 +633,8 @@ namespace CustomWMS2
             }
 
             /// <summary>
-            /// Validates all work items before the transaction changes any
-            /// package-content allocations.
+            /// Validates every package and shipment-split reference
+            /// before the transaction changes package content.
             /// </summary>
             private static void ValidateWorkItems(
                 IEnumerable<SOShipLineSplitPackage> packedRows,
@@ -692,8 +707,8 @@ namespace CustomWMS2
                     return string.Empty;
 
                 /*
-                 * LineNbr is always available without requiring a direct
-                 * dependency on a separate package DAC extension.
+                 * LineNbr is available without introducing a dependency
+                 * on a separate SOPackageDetail DAC extension.
                  */
                 return package.LineNbr?.ToString()
                     ?? string.Empty;
@@ -731,8 +746,8 @@ namespace CustomWMS2
                     .PackageDetailSplit.View.RequestRefresh();
 
                 /*
-                 * Refresh the carton view, but do not delete any carton
-                 * records.
+                 * Refresh the carton view without deleting any
+                 * SOPackageDetailEx records.
                  */
                 basis.Graph.Packages.Cache.Clear();
                 basis.Graph.Packages.View.Clear();
@@ -744,8 +759,8 @@ namespace CustomWMS2
             }
 
             /// <summary>
-            /// Composite key corresponding to the identifying shipment
-            /// line and split numbers.
+            /// Composite key corresponding to the shipment line number
+            /// and shipment split line number.
             /// </summary>
             private struct ShipmentSplitKey
                 : IEquatable<ShipmentSplitKey>
@@ -846,13 +861,14 @@ namespace CustomWMS2
             {
                 WmsDebugTrace.Info(
                     $"{TracePrefix} Appending shipment-wide unpack command. " +
+                    $"Version={Version}, " +
                     $"Authorized={WmsTransferAuthorization.IsAuthorized()}");
 
                 /*
                  * Always register the command to keep the WMS command
                  * schema consistent.
                  *
-                 * IsEnabled and Process perform authorization checks.
+                 * IsEnabled and Process both enforce authorization.
                  */
                 packMode.Intercept.CreateCommands.ByAppend(
                     basis => new PickPackShip.ScanCommand[]
