@@ -1,0 +1,25 @@
+<Customization level="26" description="" product-version="25.201">
+    <File AppRelativePath="Bin\PX.OIDCDemo.Ext.dll" />
+    <OAuthClient>
+        <data-set>
+            <relations format-version="3" relations-version="20160101" main-table="OAuthClient">
+                <link from="OAuthClientRedirectUri (ClientID)" to="OAuthClient (ClientID)" />
+                <link from="OAuthClientSecret (ClientID)" to="OAuthClient (ClientID)" />
+            </relations>
+            <layout>
+                <table name="OAuthClient">
+                    <table name="OAuthClientRedirectUri" uplink="(ClientID) = (ClientID)" />
+                    <table name="OAuthClientSecret" uplink="(ClientID) = (ClientID)" />
+                </table>
+            </layout>
+            <data>
+                <OAuthClient>
+                    <row ClientID="3df0bc1c-ef49-a57d-a42c-c3db0d6f3f31" ClientName="Acumatica Community" Enabled="1" Flow="AuthorizationCode" Plugin="PX.OIDCDemo.Ext.OIDCCustomClaimProvider">
+                        <OAuthClientRedirectUri RedirectUriID="69a59da3-899a-4510-84cb-f1c7fa44fd7b" RedirectUri="https://getpostman.com/oauth2/callback" />
+                        <OAuthClientSecret SecretID="a2ac31bc-6961-44cf-a248-8397c9921901" Type="SharedSecret" Value="cqNtorMgC5TBTWmtBrWxCDGWWID/IpPJLlECWLr91XU=" Description="NcbAZ8vA2bC9L38ItmOlvg" />
+                    </row>
+                </OAuthClient>
+            </data>
+        </data-set>
+    </OAuthClient>
+</Customization>
