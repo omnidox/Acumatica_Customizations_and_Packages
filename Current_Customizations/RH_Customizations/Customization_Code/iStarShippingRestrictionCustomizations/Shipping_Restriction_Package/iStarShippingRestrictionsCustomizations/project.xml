@@ -1,0 +1,532 @@
+<Customization level="61" description="Additional Shipping Restrictions" product-version="25.201">
+    <Page path="~/pages/so/so302000.aspx" pageSource="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" />
+    <Automation screen="SO302000">
+        <WorkflowContainer ScreenID="SO302000" EnableWorkflowIDField="False" EnableWorkflowSubTypeField="False" StateField="STATUS">
+            <Workflow IsActive="False" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" WorkflowGUID="e2e18d8d-b34a-8dd4-cd49-c1aa44faf7ce" Description="Default workflow" LineNbr="0">
+                <States>
+                    <State IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="_" IsInitial="True" StateLineNbr="0" Layout="200 50" />
+                    <State IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="H" IsInitial="False" StateLineNbr="1" Layout="450 200" />
+                    <State IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="N" IsInitial="False" StateLineNbr="2" Layout="700 350" />
+                    <State IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="F" IsInitial="False" StateLineNbr="3" Layout="950 500" />
+                    <State IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="Y" IsInitial="False" StateLineNbr="4" Layout="1200 650" />
+                    <State IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="I" IsInitial="False" StateLineNbr="5" Layout="1450 800" />
+                    <State IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="C" IsInitial="False" StateLineNbr="6" Layout="1700 950" />
+                    <State IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="R" IsInitial="False" StateLineNbr="7" Layout="1950 1100" />
+                </States>
+                <Transitions>
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="71b7b641-eb71-6b3d-cf5e-60c8445b0397" ActionName="initializeState" FromStateName="_" TargetStateName="H" TransitionLineNbr="0" ConditionID="3f3207f4-4aeb-a8b0-e27b-f696092e63b0" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="bd21c3ed-f29d-def5-2d67-2603901f204a" ActionName="releaseFromHold" FromStateName="H" TargetStateName="N" TransitionLineNbr="0" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="9ee21431-49d9-3421-c583-0153e0ef5384" ActionName="putOnHold" FromStateName="N" TargetStateName="H" TransitionLineNbr="0" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="43e86f79-abb3-2628-6bbb-192c701d444f" ActionName="OnShipmentCorrected" FromStateName="F" TargetStateName="N" TransitionLineNbr="0" ConditionID="61b33ae6-3ea9-a44f-a137-42776599f988" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="f2fcfc0d-d853-0232-8b2c-a8480d6c85e9" ActionName="OnInvoiceUnlinked" FromStateName="Y" TargetStateName="F" TransitionLineNbr="0" ConditionID="368fb068-8082-ca89-bbd6-b6a804b3273a" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="7f6c5051-4296-9b7a-f491-c65f3cd8741d" ActionName="OnInvoiceUnlinked" FromStateName="I" TargetStateName="F" TransitionLineNbr="0" ConditionID="368fb068-8082-ca89-bbd6-b6a804b3273a" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="2ddf4ca5-b516-52db-387e-cfcbb27ce2ab" ActionName="OnInvoiceUnlinked" FromStateName="C" TargetStateName="F" TransitionLineNbr="0" ConditionID="368fb068-8082-ca89-bbd6-b6a804b3273a" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="76857334-70f7-9a82-e1fe-d361eb12f121" ActionName="initializeState" FromStateName="_" TargetStateName="F" TransitionLineNbr="1" ConditionID="368fb068-8082-ca89-bbd6-b6a804b3273a" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="48ec386c-4a02-40eb-6e03-6c9f5522e848" ActionName="OnShipmentConfirmed" FromStateName="N" TargetStateName="F" TransitionLineNbr="1" ConditionID="368fb068-8082-ca89-bbd6-b6a804b3273a" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="64037bb2-c2cc-0dc3-2ea1-b6771a5005cd" ActionName="UpdateIN" FromStateName="F" TargetStateName="C" TransitionLineNbr="1" ConditionID="6768945c-39c3-20ab-cc18-3581bddf42be" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="12f32a92-e650-313f-454c-1dcaabe576f9" ActionName="OnInvoiceLinked" FromStateName="Y" TargetStateName="I" TransitionLineNbr="1" ConditionID="dc4b50cc-50ac-6cd1-41ea-8acd22349acd" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="66212483-1b44-9f12-7066-4b6685a99b51" ActionName="OnInvoiceUnlinked" FromStateName="I" TargetStateName="Y" TransitionLineNbr="1" ConditionID="10389cd2-d688-84e5-36da-32035ca4c98f" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="652ebaea-051a-807f-3ed4-5187935f3632" ActionName="OnInvoiceUnlinked" FromStateName="C" TargetStateName="Y" TransitionLineNbr="1" ConditionID="10389cd2-d688-84e5-36da-32035ca4c98f" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="53c68a7a-0f2c-397e-0410-d20c6222967d" ActionName="initializeState" FromStateName="_" TargetStateName="Y" TransitionLineNbr="2" ConditionID="10389cd2-d688-84e5-36da-32035ca4c98f" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="6cd42bf3-5e17-c93f-b1a7-f0aaabc517c7" ActionName="OnInvoiceLinked" FromStateName="F" TargetStateName="I" TransitionLineNbr="2" ConditionID="dc4b50cc-50ac-6cd1-41ea-8acd22349acd" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="5c194481-8eb1-fe36-c107-ecda46aacf09" ActionName="OnInvoiceReleased" FromStateName="I" TargetStateName="C" TransitionLineNbr="2" ConditionID="ecf855bf-661e-4589-25e1-2c98535fd06a" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="8001e7e7-b7be-92a3-96e0-ae762e8cc509" ActionName="OnInvoiceCancelled" FromStateName="C" TargetStateName="I" TransitionLineNbr="2" ConditionID="dc4b50cc-50ac-6cd1-41ea-8acd22349acd" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="a6a1103b-f44b-0296-4856-3ac05e7daa28" ActionName="initializeState" FromStateName="_" TargetStateName="I" TransitionLineNbr="3" ConditionID="dc4b50cc-50ac-6cd1-41ea-8acd22349acd" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="19ff01e1-16bf-1336-f18a-adc231153258" ActionName="OnInvoiceLinked" FromStateName="F" TargetStateName="Y" TransitionLineNbr="3" ConditionID="10389cd2-d688-84e5-36da-32035ca4c98f" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="d190bb97-4eaa-7645-1b91-98588c989869" ActionName="OnInvoiceCancelled" FromStateName="I" TargetStateName="Y" TransitionLineNbr="3" ConditionID="10389cd2-d688-84e5-36da-32035ca4c98f" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="5d2d0044-3e7a-42c5-eb27-be89f98f1176" ActionName="initializeState" FromStateName="_" TargetStateName="C" TransitionLineNbr="4" ConditionID="ecf855bf-661e-4589-25e1-2c98535fd06a" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="5c7d6047-9512-1369-b3eb-b57acc88c711" ActionName="initializeState" FromStateName="_" TargetStateName="N" TransitionLineNbr="5" DisablePersist="False" TriggeredBy="1" />
+                </Transitions>
+                <StateProperties>
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="0" FieldName="&lt;All Fields&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="1" FieldName="SHIPMENTNBR" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="2" FieldName="EXCLUDEFROMINTERCOMPANYPROC" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="3" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLine" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="4" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLineSplit" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="5" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentAddress" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="6" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentContact" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="7" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOOrderShipment" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="0" FieldName="&lt;All Fields&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="1" FieldName="SHIPMENTNBR" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="2" FieldName="EXCLUDEFROMINTERCOMPANYPROC" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="3" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLine" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="4" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLineSplit" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="5" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentAddress" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="6" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentContact" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="7" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOOrderShipment" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="0" FieldName="&lt;All Fields&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="1" FieldName="SHIPMENTNBR" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="2" FieldName="EXCLUDEFROMINTERCOMPANYPROC" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="3" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLine" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="4" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLineSplit" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="5" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentAddress" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="6" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentContact" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="7" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOOrderShipment" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="0" FieldName="&lt;All Fields&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="1" FieldName="SHIPMENTNBR" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="2" FieldName="EXCLUDEFROMINTERCOMPANYPROC" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="3" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLine" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="4" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLineSplit" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="5" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentAddress" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="6" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentContact" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="7" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOOrderShipment" StateName="C" />
+                </StateProperties>
+                <StateActions>
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="initializeState" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="_" AutoRun="True" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="releaseFromHold" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="H" AutoRun="False" Connotation="Success" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="validateAddresses" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="H" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="printPickListAction" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="H" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="confirmShipmentAction" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="N" AutoRun="False" Connotation="Success" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="putOnHold" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="N" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="printShipmentConfirmation" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="N" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="3" ActionName="validateAddresses" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="N" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="4" ActionName="getReturnLabelsAction" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="N" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="5" ActionName="printPickListAction" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="N" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="createInvoice" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="F" AutoRun="False" Connotation="Success" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="UpdateIN" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="printShipmentConfirmation" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="3" ActionName="correctShipmentAction" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="4" ActionName="printLabels" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="5" ActionName="printCommercialInvoices" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="6" ActionName="validateAddresses" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="7" ActionName="emailShipment" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="8" ActionName="generatePOReceipt" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="9" ActionName="viewManifest" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="createInvoice" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="Y" AutoRun="False" Connotation="Success" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="printShipmentConfirmation" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="Y" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="printLabels" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="Y" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="3" ActionName="printCommercialInvoices" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="Y" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="4" ActionName="validateAddresses" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="Y" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="5" ActionName="generatePOReceipt" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="Y" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="validateAddresses" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="I" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="generatePOReceipt" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="I" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="viewManifest" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="I" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="printShipmentConfirmation" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="C" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="generatePOReceipt" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="C" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="viewManifest" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="C" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="createDropshipInvoice" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="R" AutoRun="False" />
+                </StateActions>
+                <StateHandlers>
+                    <StateHandler IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="0" HandlerName="OnShipmentConfirmed" StateName="N" />
+                    <StateHandler IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="0" HandlerName="OnInvoiceLinked" StateName="F" />
+                    <StateHandler IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="1" HandlerName="OnShipmentCorrected" StateName="F" />
+                    <StateHandler IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="0" HandlerName="OnInvoiceLinked" StateName="Y" />
+                    <StateHandler IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="1" HandlerName="OnInvoiceUnlinked" StateName="Y" />
+                    <StateHandler IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="0" HandlerName="OnInvoiceUnlinked" StateName="I" />
+                    <StateHandler IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="1" HandlerName="OnInvoiceReleased" StateName="I" />
+                    <StateHandler IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="2" HandlerName="OnInvoiceCancelled" StateName="I" />
+                    <StateHandler IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="0" HandlerName="OnInvoiceUnlinked" StateName="C" />
+                    <StateHandler IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="1" HandlerName="OnInvoiceCancelled" StateName="C" />
+                </StateHandlers>
+                <TransitionFields>
+                    <TransitionField IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="bd21c3ed-f29d-def5-2d67-2603901f204a" FieldName="HOLD" IsFromScheme="True" TransitionFieldLineNbr="0" Value="False" />
+                    <TransitionField IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="9ee21431-49d9-3421-c583-0153e0ef5384" FieldName="HOLD" IsFromScheme="True" TransitionFieldLineNbr="0" Value="True" />
+                </TransitionFields>
+                <OnEnterStateFields>
+                    <OnEnterStateField IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateName="C" FieldName="GOTREADYFORARCHIVEAT" IsFromScheme="True" OnEnterStateFieldLineNbr="0" Value="@Today" />
+                </OnEnterStateFields>
+                <OnLeaveStateFields>
+                    <OnLeaveStateField IsActive="True" IsSystem="True" IsSystemReadonly="True" IsCustomized="False" IsCustomizedRecursive="False" StateName="C" FieldName="GOTREADYFORARCHIVEAT" IsFromScheme="True" OnLeaveStateFieldLineNbr="0" />
+                </OnLeaveStateFields>
+            </Workflow>
+            <Workflow IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="True" WorkflowGUID="e417fb2e-5552-426e-adf5-da2fb81b5ed6" Description="Shipment_Validation_Workflow" LineNbr="1">
+                <States>
+                    <State IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="_" IsInitial="True" StateLineNbr="0" Layout="200 50" />
+                    <State IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="H" IsInitial="False" StateLineNbr="1" Layout="450 200" />
+                    <State IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="N" IsInitial="False" StateLineNbr="2" Layout="700 350" />
+                    <State IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="True" Identifier="F" IsInitial="False" StateLineNbr="3" Layout="950 500" />
+                    <State IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="Y" IsInitial="False" StateLineNbr="4" Layout="1200 650" />
+                    <State IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="I" IsInitial="False" StateLineNbr="5" Layout="1450 800" />
+                    <State IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="True" Identifier="C" IsInitial="False" StateLineNbr="6" Layout="1700 950" />
+                    <State IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" Identifier="R" IsInitial="False" StateLineNbr="7" Layout="1950 1100" />
+                </States>
+                <Transitions>
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="71b7b641-eb71-6b3d-cf5e-60c8445b0397" ActionName="initializeState" FromStateName="_" TargetStateName="H" TransitionLineNbr="0" ConditionID="3f3207f4-4aeb-a8b0-e27b-f696092e63b0" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="bd21c3ed-f29d-def5-2d67-2603901f204a" ActionName="releaseFromHold" FromStateName="H" TargetStateName="N" TransitionLineNbr="0" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="9ee21431-49d9-3421-c583-0153e0ef5384" ActionName="putOnHold" FromStateName="N" TargetStateName="H" TransitionLineNbr="0" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="43e86f79-abb3-2628-6bbb-192c701d444f" ActionName="OnShipmentCorrected" FromStateName="F" TargetStateName="N" TransitionLineNbr="0" ConditionID="61b33ae6-3ea9-a44f-a137-42776599f988" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="f2fcfc0d-d853-0232-8b2c-a8480d6c85e9" ActionName="OnInvoiceUnlinked" FromStateName="Y" TargetStateName="F" TransitionLineNbr="0" ConditionID="368fb068-8082-ca89-bbd6-b6a804b3273a" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="7f6c5051-4296-9b7a-f491-c65f3cd8741d" ActionName="OnInvoiceUnlinked" FromStateName="I" TargetStateName="F" TransitionLineNbr="0" ConditionID="368fb068-8082-ca89-bbd6-b6a804b3273a" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="2ddf4ca5-b516-52db-387e-cfcbb27ce2ab" ActionName="OnInvoiceUnlinked" FromStateName="C" TargetStateName="F" TransitionLineNbr="0" ConditionID="368fb068-8082-ca89-bbd6-b6a804b3273a" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="76857334-70f7-9a82-e1fe-d361eb12f121" ActionName="initializeState" FromStateName="_" TargetStateName="F" TransitionLineNbr="1" ConditionID="368fb068-8082-ca89-bbd6-b6a804b3273a" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="48ec386c-4a02-40eb-6e03-6c9f5522e848" ActionName="OnShipmentConfirmed" FromStateName="N" TargetStateName="F" TransitionLineNbr="1" ConditionID="368fb068-8082-ca89-bbd6-b6a804b3273a" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="64037bb2-c2cc-0dc3-2ea1-b6771a5005cd" ActionName="UpdateIN" FromStateName="F" TargetStateName="C" TransitionLineNbr="1" ConditionID="6768945c-39c3-20ab-cc18-3581bddf42be" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="12f32a92-e650-313f-454c-1dcaabe576f9" ActionName="OnInvoiceLinked" FromStateName="Y" TargetStateName="I" TransitionLineNbr="1" ConditionID="dc4b50cc-50ac-6cd1-41ea-8acd22349acd" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="66212483-1b44-9f12-7066-4b6685a99b51" ActionName="OnInvoiceUnlinked" FromStateName="I" TargetStateName="Y" TransitionLineNbr="1" ConditionID="10389cd2-d688-84e5-36da-32035ca4c98f" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="652ebaea-051a-807f-3ed4-5187935f3632" ActionName="OnInvoiceUnlinked" FromStateName="C" TargetStateName="Y" TransitionLineNbr="1" ConditionID="10389cd2-d688-84e5-36da-32035ca4c98f" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="53c68a7a-0f2c-397e-0410-d20c6222967d" ActionName="initializeState" FromStateName="_" TargetStateName="Y" TransitionLineNbr="2" ConditionID="10389cd2-d688-84e5-36da-32035ca4c98f" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="6cd42bf3-5e17-c93f-b1a7-f0aaabc517c7" ActionName="OnInvoiceLinked" FromStateName="F" TargetStateName="I" TransitionLineNbr="2" ConditionID="dc4b50cc-50ac-6cd1-41ea-8acd22349acd" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="5c194481-8eb1-fe36-c107-ecda46aacf09" ActionName="OnInvoiceReleased" FromStateName="I" TargetStateName="C" TransitionLineNbr="2" ConditionID="ecf855bf-661e-4589-25e1-2c98535fd06a" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="8001e7e7-b7be-92a3-96e0-ae762e8cc509" ActionName="OnInvoiceCancelled" FromStateName="C" TargetStateName="I" TransitionLineNbr="2" ConditionID="dc4b50cc-50ac-6cd1-41ea-8acd22349acd" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="a6a1103b-f44b-0296-4856-3ac05e7daa28" ActionName="initializeState" FromStateName="_" TargetStateName="I" TransitionLineNbr="3" ConditionID="dc4b50cc-50ac-6cd1-41ea-8acd22349acd" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="19ff01e1-16bf-1336-f18a-adc231153258" ActionName="OnInvoiceLinked" FromStateName="F" TargetStateName="Y" TransitionLineNbr="3" ConditionID="10389cd2-d688-84e5-36da-32035ca4c98f" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="d190bb97-4eaa-7645-1b91-98588c989869" ActionName="OnInvoiceCancelled" FromStateName="I" TargetStateName="Y" TransitionLineNbr="3" ConditionID="10389cd2-d688-84e5-36da-32035ca4c98f" DisablePersist="False" TriggeredBy="2" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="5d2d0044-3e7a-42c5-eb27-be89f98f1176" ActionName="initializeState" FromStateName="_" TargetStateName="C" TransitionLineNbr="4" ConditionID="ecf855bf-661e-4589-25e1-2c98535fd06a" DisablePersist="False" TriggeredBy="1" />
+                    <Transition IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="5c7d6047-9512-1369-b3eb-b57acc88c711" ActionName="initializeState" FromStateName="_" TargetStateName="N" TransitionLineNbr="5" DisablePersist="False" TriggeredBy="1" />
+                </Transitions>
+                <StateProperties>
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="0" FieldName="&lt;All Fields&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="1" FieldName="SHIPMENTNBR" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="2" FieldName="EXCLUDEFROMINTERCOMPANYPROC" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="3" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLine" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="4" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLineSplit" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="5" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentAddress" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="6" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentContact" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="7" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOOrderShipment" StateName="F" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="0" FieldName="&lt;All Fields&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="1" FieldName="SHIPMENTNBR" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="2" FieldName="EXCLUDEFROMINTERCOMPANYPROC" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="3" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLine" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="4" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLineSplit" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="5" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentAddress" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="6" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentContact" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="7" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOOrderShipment" StateName="Y" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="0" FieldName="&lt;All Fields&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="1" FieldName="SHIPMENTNBR" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="2" FieldName="EXCLUDEFROMINTERCOMPANYPROC" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="3" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLine" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="4" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLineSplit" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="5" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentAddress" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="6" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentContact" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="7" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOOrderShipment" StateName="I" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="0" FieldName="&lt;All Fields&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="1" FieldName="SHIPMENTNBR" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="2" FieldName="EXCLUDEFROMINTERCOMPANYPROC" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="3" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLine" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="4" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipLineSplit" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="5" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentAddress" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="6" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipmentContact" StateName="C" />
+                    <StateProperty IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StatePropertyLineNbr="7" FieldName="&lt;Table&gt;" IsDisabled="True" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOOrderShipment" StateName="C" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="8" FieldName="USRTCCUSTOMFIELD3" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="9" FieldName="USRTCCUSTOMFIELD4" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="10" FieldName="USRTCCUSTOMFIELD5" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="11" FieldName="USRTCCUSTOMFIELD6" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="12" FieldName="USRTCCUSTOMFIELD7" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="13" FieldName="USRTCCUSTOMFIELD8" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="14" FieldName="USRTCCUSTOMFIELD9" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="15" FieldName="USRTCCUSTOMFIELD10" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="F" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="8" FieldName="USRTCCUSTOMFIELD3" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="9" FieldName="USRTCCUSTOMFIELD4" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="10" FieldName="USRTCCUSTOMFIELD5" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="11" FieldName="USRTCCUSTOMFIELD6" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="12" FieldName="USRTCCUSTOMFIELD7" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="13" FieldName="USRTCCUSTOMFIELD8" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="14" FieldName="USRTCCUSTOMFIELD9" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                    <StateProperty IsActive="True" StatePropertyLineNbr="15" FieldName="USRTCCUSTOMFIELD10" IsDisabled="False" IsHide="False" IsRequired="False" ObjectName="PX.Objects.SO.SOShipment" StateName="C" />
+                </StateProperties>
+                <StateActions>
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="initializeState" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="_" AutoRun="True" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="releaseFromHold" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="H" AutoRun="False" Connotation="Success" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="validateAddresses" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="H" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="printPickListAction" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="H" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="confirmShipmentAction" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="N" AutoRun="False" Connotation="Success" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="putOnHold" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="N" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="printShipmentConfirmation" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="N" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="3" ActionName="validateAddresses" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="N" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="4" ActionName="getReturnLabelsAction" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="N" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="5" ActionName="printPickListAction" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="N" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="createInvoice" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="F" AutoRun="False" Connotation="Success" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="UpdateIN" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="printShipmentConfirmation" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="3" ActionName="correctShipmentAction" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="4" ActionName="printLabels" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="5" ActionName="printCommercialInvoices" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="6" ActionName="validateAddresses" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="7" ActionName="emailShipment" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="8" ActionName="generatePOReceipt" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="9" ActionName="viewManifest" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="F" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="createInvoice" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="Y" AutoRun="False" Connotation="Success" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="printShipmentConfirmation" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="Y" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="printLabels" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="Y" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="3" ActionName="printCommercialInvoices" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="Y" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="4" ActionName="validateAddresses" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="Y" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="5" ActionName="generatePOReceipt" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="Y" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="validateAddresses" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="I" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="generatePOReceipt" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="I" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="viewManifest" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="I" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="printShipmentConfirmation" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="C" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="1" ActionName="generatePOReceipt" IsDisabled="False" IsHide="False" IsTopLevel="False" StateName="C" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="2" ActionName="viewManifest" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="C" AutoRun="False" />
+                    <StateAction IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateActionLineNbr="0" ActionName="createDropshipInvoice" IsDisabled="False" IsHide="False" IsTopLevel="True" StateName="R" AutoRun="False" />
+                </StateActions>
+                <StateHandlers>
+                    <StateHandler IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="0" HandlerName="OnShipmentConfirmed" StateName="N" />
+                    <StateHandler IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="0" HandlerName="OnInvoiceLinked" StateName="F" />
+                    <StateHandler IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="1" HandlerName="OnShipmentCorrected" StateName="F" />
+                    <StateHandler IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="0" HandlerName="OnInvoiceLinked" StateName="Y" />
+                    <StateHandler IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="1" HandlerName="OnInvoiceUnlinked" StateName="Y" />
+                    <StateHandler IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="0" HandlerName="OnInvoiceUnlinked" StateName="I" />
+                    <StateHandler IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="1" HandlerName="OnInvoiceReleased" StateName="I" />
+                    <StateHandler IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="2" HandlerName="OnInvoiceCancelled" StateName="I" />
+                    <StateHandler IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="0" HandlerName="OnInvoiceUnlinked" StateName="C" />
+                    <StateHandler IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateEventHandlerLineNbr="1" HandlerName="OnInvoiceCancelled" StateName="C" />
+                </StateHandlers>
+                <TransitionFields>
+                    <TransitionField IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="bd21c3ed-f29d-def5-2d67-2603901f204a" FieldName="HOLD" IsFromScheme="True" TransitionFieldLineNbr="0" Value="False" />
+                    <TransitionField IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" TransitionID="9ee21431-49d9-3421-c583-0153e0ef5384" FieldName="HOLD" IsFromScheme="True" TransitionFieldLineNbr="0" Value="True" />
+                </TransitionFields>
+                <OnEnterStateFields>
+                    <OnEnterStateField IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateName="C" FieldName="GOTREADYFORARCHIVEAT" IsFromScheme="True" OnEnterStateFieldLineNbr="0" Value="@Today" />
+                </OnEnterStateFields>
+                <OnLeaveStateFields>
+                    <OnLeaveStateField IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" StateName="C" FieldName="GOTREADYFORARCHIVEAT" IsFromScheme="True" OnLeaveStateFieldLineNbr="0" />
+                </OnLeaveStateFields>
+            </Workflow>
+        </WorkflowContainer>
+        <Actions ScreenID="SO302000">
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="initializeState" ActionType="G" After="Last" PlacementInCategory="0" BatchMode="False" WindowMode="S" HideCondition="True" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="releaseFromHold" ActionType="G" After="initializeState" PlacementInCategory="0" BatchMode="False" MenuFolderType="Processing Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="putOnHold" ActionType="G" After="confirmShipmentAction" PlacementInCategory="0" AfterInMenu="releaseFromHold" BatchMode="False" MenuFolderType="Processing Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="True" IsCustomizedRecursive="False" ActionName="confirmShipmentAction" ActionType="G" After="putOnHold" PlacementInCategory="0" DisableCondition="4bb69090-f81c-4981-886f-c1ab520c7370" MassProcessingScreen="SO503000" BatchMode="True" MenuFolderType="Processing Category" WindowMode="S" ExposedToMobile="False">
+                <OriginalState IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="confirmShipmentAction" ActionType="G" After="putOnHold" PlacementInCategory="0" DisableCondition="ab7d52e4-6f3c-9405-8c2d-b1ce9ad829b0" MassProcessingScreen="SO503000" BatchMode="True" MenuFolderType="Processing Category" WindowMode="S" ExposedToMobile="False" />
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="createInvoice" ActionType="G" After="confirmShipmentAction" PlacementInCategory="0" DisableCondition="2a1678f0-0540-ff87-6702-940dab033736" MassProcessingScreen="SO503000" BatchMode="True" MenuFolderType="Processing Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="createDropshipInvoice" ActionType="G" After="createInvoice" PlacementInCategory="0" MassProcessingScreen="SO503000" BatchMode="True" MenuFolderType="Processing Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="correctShipmentAction" ActionType="G" After="createDropshipInvoice" PlacementInCategory="0" DisableCondition="bb5fe564-b749-0c41-9c03-834a15d85317" BatchMode="False" MenuFolderType="Processing Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="generatePOReceipt" ActionType="G" After="correctShipmentAction" PlacementInCategory="0" DisableCondition="bb5fe564-b749-0c41-9c03-834a15d85317" BatchMode="False" MenuFolderType="Intercompany Category" WindowMode="S" HideCondition="b1910c9e-6d1d-2573-13f7-ec5ddb636f24" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="printPickListAction" ActionType="G" After="generatePOReceipt" PlacementInCategory="0" MassProcessingScreen="SO503000" BatchMode="True" MenuFolderType="Printing and Emailing Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="printShipmentConfirmation" ActionType="G" After="printPickListAction" PlacementInCategory="0" MassProcessingScreen="SO503000" BatchMode="True" MenuFolderType="Printing and Emailing Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields>
+                    <StateActionField IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" FieldName="CONFIRMATIONPRINTED" ActionName="printShipmentConfirmation" IsFromScheme="True" Value="True" StateActionFieldLineNbr="0" />
+                </StateActionFields>
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="emailShipment" ActionType="G" After="printShipmentConfirmation" PlacementInCategory="0" MassProcessingScreen="SO503000" BatchMode="False" MenuFolderType="Printing and Emailing Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="printLabels" ActionType="G" After="emailShipment" PlacementInCategory="0" MassProcessingScreen="SO503000" BatchMode="True" MenuFolderType="Labels Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="printCommercialInvoices" ActionType="G" After="printLabels" PlacementInCategory="0" MassProcessingScreen="SO503000" BatchMode="True" MenuFolderType="Labels Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="getReturnLabelsAction" ActionType="G" After="printCommercialInvoices" PlacementInCategory="0" BatchMode="False" MenuFolderType="Labels Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="UpdateIN" ActionType="G" After="getReturnLabelsAction" PlacementInCategory="0" MassProcessingScreen="SO503000" BatchMode="True" MenuFolderType="Other Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="validateAddresses" ActionType="G" After="UpdateIN" PlacementInCategory="0" BatchMode="False" MenuFolderType="Other Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="viewManifest" ActionType="G" After="validateAddresses" PlacementInCategory="0" DisableCondition="4d260f16-5403-1340-08ea-67a2d053eda6" BatchMode="False" MenuFolderType="Other Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="PacejetLink" ActionType="G" After="viewManifest" PlacementInCategory="0" BatchMode="False" MenuFolderType="Other Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="UpdatePacejet" ActionType="G" After="PacejetLink" PlacementInCategory="0" MassProcessingScreen="SO503000" BatchMode="True" MenuFolderType="Other Category" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Action IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" ActionName="UnlinkFromWorksheet" ActionType="G" After="UpdatePacejet" PlacementInCategory="0" BatchMode="False" MenuFolderType="Pick List" WindowMode="S" ExposedToMobile="False">
+                <StateActionFields />
+                <StateActionParams />
+                <NextActions />
+                <ActionSequenceFormFieldValues />
+            </Action>
+            <Category IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" DisplayName="Actions" CategoryName="Action" Placement="0" LineNbr="0" />
+            <Category IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" DisplayName="Inquiries" CategoryName="Inquiry" Placement="0" After="Action" LineNbr="1" />
+            <Category IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" DisplayName="Reports" CategoryName="Report" Placement="0" After="Inquiry" LineNbr="2" />
+            <Category IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" DisplayName="Processing" CategoryName="Processing Category" Placement="0" After="Report" LineNbr="3" />
+            <Category IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" DisplayName="Pick List" CategoryName="Pick List" Placement="0" After="Processing Category" LineNbr="4" />
+            <Category IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" DisplayName="Intercompany" CategoryName="Intercompany Category" Placement="0" After="Pick List" LineNbr="5" />
+            <Category IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" DisplayName="Printing and Emailing" CategoryName="Printing and Emailing Category" Placement="0" After="Intercompany Category" LineNbr="6" />
+            <Category IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" DisplayName="Labels" CategoryName="Labels Category" Placement="0" After="Printing and Emailing Category" LineNbr="7" />
+            <Category IsActive="True" IsSystem="True" IsCustomized="False" IsCustomizedRecursive="False" DisplayName="Other" CategoryName="Other Category" Placement="0" After="Labels Category" LineNbr="8" />
+            <Category IsActive="True" DisplayName="Approval" CategoryName="Approval" Placement="0" After="Other Category" LineNbr="9" />
+        </Actions>
+        <Conditions screen="SO302000">
+            <AutomationScreenCondition ConditionID="4bb69090-f81c-4981-886f-c1ab520c7370" ScreenID="SO302000" ConditionName="DisableConfirmShipmentForMissingUDFs" Order="1" AppendSystemCondition="True" ParentCondition="NOT( IsNotHeldByPicking )" JoinMethod="OR" InvertCondition="False">
+                <FilterRow LineNbr="1" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField1" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+                <FilterRow LineNbr="2" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField2" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+                <FilterRow LineNbr="3" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField2" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+                <FilterRow LineNbr="4" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField3" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+                <FilterRow LineNbr="5" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField4" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+                <FilterRow LineNbr="6" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField5" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+                <FilterRow LineNbr="7" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField6" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+                <FilterRow LineNbr="8" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField7" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+                <FilterRow LineNbr="9" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField8" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+                <FilterRow LineNbr="10" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField9" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+                <FilterRow LineNbr="11" CloseBrackets="0" OpenBrackets="0" FieldName="UsrTCCustomField10" Condition="12" Operator="1" Value2="" Value="" IsActive="True" IsFromScheme="True" />
+            </AutomationScreenCondition>
+        </Conditions>
+    </Automation>
+    <Graph ClassName="PickPackShipShipmentConfirmation_Extension" Source="#CDATA" IsNew="True" FileType="NewFile">
+        <CDATA name="Source"><![CDATA[using System;
+using System.Collections.Generic;
+using PX.Data;
+using PX.Objects.AR;
+using PX.Objects.SO;
+using PX.Objects.SO.GraphExtensions.SOShipmentEntryExt;
+
+namespace iStarShippingRestrictionsCustomizations
+{
+    public class ConfirmShipmentExtension_Extension
+        : PXGraphExtension<ConfirmShipmentExtension, SOShipmentEntry>
+    {
+        public static bool IsActive() => true;
+
+        private static readonly HashSet<string> BypassCustomerCDs =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "DKOHL"
+            };
+
+        public delegate void ValidateShipmentDelegate(SOShipment shiporder);
+
+        [PXOverride]
+        public virtual void ValidateShipment(
+            SOShipment shiporder,
+            ValidateShipmentDelegate baseMethod)
+        {
+            baseMethod?.Invoke(shiporder);
+
+            SOShipment shipment = Base.Document.Current ?? shiporder;
+            if (shipment == null)
+                return;
+
+            Customer customer = GetCustomer(shipment);
+
+            if (ShouldBypassShippingValidation(customer))
+            {
+                PXTrace.WriteInformation(
+                    $"Shipping restriction validation bypassed. " +
+                    $"Shipment={shipment.ShipmentNbr}, " +
+                    $"CustomerID={shipment.CustomerID}, " +
+                    $"CustomerCD={customer?.AcctCD?.Trim()}, " +
+                    $"CustomerName={customer?.AcctName}");
+
+                return;
+            }
+
+            // Validation 1: shipment must have package contents
+            PXResultset<SOShipLineSplitPackage> packageContents =
+                PXSelect<
+                    SOShipLineSplitPackage,
+                    Where<
+                        SOShipLineSplitPackage.shipmentNbr,
+                        Equal<Required<SOShipLineSplitPackage.shipmentNbr>>>>
+                .Select(Base, shipment.ShipmentNbr);
+
+            if (packageContents.Count == 0)
+            {
+                throw new PXException(
+                    "Please add contents to the package before confirming shipment.");
+            }
+
+            // Validation 2: every package must have GS1-128 / UCC128
+            PXResultset<SOPackageDetailEx> packages =
+                PXSelect<
+                    SOPackageDetailEx,
+                    Where<
+                        SOPackageDetailEx.shipmentNbr,
+                        Equal<Required<SOPackageDetailEx.shipmentNbr>>>>
+                .Select(Base, shipment.ShipmentNbr);
+
+            foreach (SOPackageDetailEx package in packages)
+            {
+                string ucc128 =
+                    Base.Packages.Cache.GetValue(package, "UsrTCUCC128") as string;
+
+                if (string.IsNullOrWhiteSpace(ucc128))
+                {
+                    throw new PXException(
+                        "GS1-128 is required for all packages before confirming shipment.");
+                }
+            }
+        }
+
+        private Customer GetCustomer(SOShipment shipment)
+        {
+            if (shipment?.CustomerID == null)
+                return null;
+
+            return Customer.PK.Find(Base, shipment.CustomerID);
+        }
+
+        private bool ShouldBypassShippingValidation(Customer customer)
+        {
+            string customerCD = customer?.AcctCD?.Trim();
+
+            if (string.IsNullOrWhiteSpace(customerCD))
+                return false;
+
+            return BypassCustomerCDs.Contains(customerCD);
+        }
+    }
+}]]></CDATA>
+    </Graph>
+</Customization>
