@@ -197,14 +197,16 @@ namespace CustomWMS
                 base_GetSplitsToPack()
                     .ToList();
 
+            string baseSplitsDescription =
+                string.Join(
+                    " | ",
+                    baseSplits.Select(
+                        DescribeSplit));
+
             WmsDebugTrace.Info(
                 $"{TracePrefix} Base splits count=" +
                 $"{baseSplits.Count}. " +
-                $"Splits=" +
-                $"{string.Join(
-                    " | ",
-                    baseSplits.Select(
-                        DescribeSplit))}");
+                $"Splits={baseSplitsDescription}");
 
             if (Basis.Remove.GetValueOrDefault())
             {
@@ -279,16 +281,18 @@ namespace CustomWMS
                                 .ShipmentSplitLineNbr)
                     .ToList();
 
+            string filteredSplitsDescription =
+                string.Join(
+                    " | ",
+                    filteredSplits.Select(
+                        DescribeSplit));
+
             WmsDebugTrace.Info(
                 $"{TracePrefix} Filtered splits count=" +
                 $"{filteredSplits.Count}. " +
                 $"ExpectedSplitLineNbr=" +
                 $"{expectedTopRow.ShipmentSplitLineNbr}. " +
-                $"Filtered=" +
-                $"{string.Join(
-                    " | ",
-                    filteredSplits.Select(
-                        DescribeSplit))}");
+                $"Filtered={filteredSplitsDescription}");
 
             return filteredSplits;
         }
@@ -550,28 +554,30 @@ namespace CustomWMS
         }
 
         private void TraceExpectedVsScanned(
-            string source,
-            WmsPlan expectedTopRow)
+           string source,
+           WmsPlan expectedTopRow)
         {
+            string scannedInventoryCD =
+                GetInventoryCD(
+                    Basis.InventoryID);
+
+            string expectedInventoryCD =
+                GetInventoryCD(
+                    expectedTopRow?.InventoryID);
+
             WmsDebugTrace.Info(
                 $"{TracePrefix} {source} compare. " +
                 $"ScannedInventoryID={Basis.InventoryID}, " +
-                $"ScannedInventoryCD=" +
-                $"{GetInventoryCD(Basis.InventoryID)}, " +
-                $"ScannedLotSerialNbr=" +
-                $"{Basis.LotSerialNbr}, " +
+                $"ScannedInventoryCD={scannedInventoryCD}, " +
+                $"ScannedLotSerialNbr={Basis.LotSerialNbr}, " +
                 $"ScannedQty={Basis.Qty}, " +
-                $"ExpectedInventoryID=" +
-                $"{expectedTopRow?.InventoryID}, " +
-                $"ExpectedInventoryCD=" +
-                $"{GetInventoryCD(
-                    expectedTopRow?.InventoryID)}, " +
+                $"ExpectedInventoryID={expectedTopRow?.InventoryID}, " +
+                $"ExpectedInventoryCD={expectedInventoryCD}, " +
                 $"ExpectedSplitLineNbr=" +
                 $"{expectedTopRow?.ShipmentSplitLineNbr}, " +
                 $"ExpectedLotSerialNbr=" +
                 $"{expectedTopRow?.LotSerialNbr}");
         }
-
         private string DescribePlan(
             WmsPlan row)
         {
