@@ -221,7 +221,20 @@ namespace CustomWMS
             "SelectedPackageContentsView";
 
         private const string Version =
-            "2026-07-21-ORDERED-BASE-VIEW-SETVALUEEXT-01";
+            "2026-07-21-PK-INVENTORY-CACHE-01";
+
+        /*
+         * Graph-instance lookup cache.
+         *
+         * This prevents repeated InventoryItem lookups when Acumatica
+         * executes the view delegate multiple times during one callback.
+         *
+         * Only stable lookup data is cached here. Calculated package rows
+         * and remaining quantities are intentionally not cached.
+         */
+        private readonly Dictionary<int?, string>
+            _inventoryCodeCache =
+                new Dictionary<int?, string>();
 
         public static bool IsActive()
         {
@@ -737,49 +750,85 @@ namespace CustomWMS
         }
 
         /*
-         * Load inventory codes once per view execution.
+         * Resolve InventoryCD only for the inventory IDs required by the
+         * current package.
          *
-         * The delegate sorts by InventoryCD while the BQL command retains
-         * the older InventoryID default sort as a fallback/default view
-         * definition.
+         * Previous implementation:
+         *
+         *     PXSelectReadonly<InventoryItem>.Select(Base)
+         *
+         * selected the complete accessible InventoryItem table and then
+         * filtered the results in memory. Request Profiler showed that
+         * query returning approximately 42,450 rows per execution.
+         *
+         * The PK finder instead performs an indexed lookup by InventoryID.
+         * It also uses Acumatica's graph/cache lookup behavior.
+         *
+         * The graph-instance dictionary prevents repeated lookups if the
+         * delegate executes multiple times during the same callback.
          */
         private Dictionary<int?, string>
             GetInventoryCodes(
                 IEnumerable<RowCalc> rows)
         {
-            HashSet<int?> inventoryIDs =
-                new HashSet<int?>(
-                    rows
-                        .Where(item =>
-                            item?.Row?.InventoryID != null)
-                        .Select(item =>
-                            item.Row.InventoryID));
+            int?[] inventoryIDs =
+                rows
+                    .Where(item =>
+                        item?.Row?.InventoryID != null)
+                    .Select(item =>
+                        item.Row.InventoryID)
+                    .Distinct()
+                    .ToArray();
 
-            if (inventoryIDs.Count == 0)
+            if (inventoryIDs.Length == 0)
             {
-                return new Dictionary<int?, string>();
+                return _inventoryCodeCache;
             }
 
-            List<InventoryItem> inventoryItems =
-                PXSelectReadonly<InventoryItem>
-                    .Select(Base)
-                    .RowCast<InventoryItem>()
-                    .Where(item =>
-                        inventoryIDs.Contains(
-                            item.InventoryID))
-                    .ToList();
+            int lookupCount =
+                0;
 
-            return inventoryItems
-                .GroupBy(item =>
-                    item.InventoryID)
-                .ToDictionary(
-                    group => group.Key,
-                    group =>
-                        group
-                            .Select(item =>
-                                item.InventoryCD?.Trim())
-                            .FirstOrDefault()
-                        ?? string.Empty);
+            int cacheHitCount =
+                0;
+
+            foreach (int? inventoryID in inventoryIDs)
+            {
+                if (inventoryID == null)
+                {
+                    continue;
+                }
+
+                string existingInventoryCD;
+
+                if (_inventoryCodeCache.TryGetValue(
+                    inventoryID,
+                    out existingInventoryCD))
+                {
+                    cacheHitCount++;
+
+                    continue;
+                }
+
+                InventoryItem inventoryItem =
+                    InventoryItem.PK.Find(
+                        Base,
+                        inventoryID);
+
+                _inventoryCodeCache[inventoryID] =
+                    inventoryItem?.InventoryCD?.Trim()
+                    ?? string.Empty;
+
+                lookupCount++;
+            }
+
+            WmsDebugTrace.Info(
+                $"{TracePrefix} Inventory codes resolved. " +
+                $"RequestedIDs={inventoryIDs.Length}, " +
+                $"PKLookups={lookupCount}, " +
+                $"ExtensionCacheHits={cacheHitCount}, " +
+                $"CachedCodes={_inventoryCodeCache.Count}");
+
+            return _inventoryCodeCache;
         }
 
         private string GetInventoryCD(
@@ -898,6 +947,8 @@ namespace CustomWMS
          * - WmsPlan cache clearing
          * - SelectedPackageContentsView.Cache.Clear()
          * - Dictionary-backed FieldSelecting display values
+         * - Unrestricted InventoryItem table selection
+         * - Caching of calculated package quantities
          */
 
         private sealed class RowCalc
