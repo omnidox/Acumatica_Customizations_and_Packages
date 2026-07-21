@@ -198,7 +198,7 @@ namespace CustomWMS
             "[SelectedPackageSort]";
 
         private const string Version =
-            "2026-07-14-SHIPMENT-WIDE-PACKED-QTY-01";
+            "2026-07-21-COPY-DISPLAY-ROWS-TEST-01";
 
         public static bool IsActive()
         {
@@ -275,9 +275,13 @@ namespace CustomWMS
 
                 foreach (RowCalc item in allRows)
                 {
-                    ApplyCalculatedValues(item);
+                    WmsPlan displayRow =
+                        CreateDisplayRow(item);
 
-                    yield return item.Row;
+                    if (displayRow != null)
+                    {
+                        yield return displayRow;
+                    }
                 }
 
                 yield break;
@@ -309,46 +313,64 @@ namespace CustomWMS
 
             foreach (RowCalc item in sortedRows)
             {
-                ApplyCalculatedValues(item);
+                WmsPlan displayRow =
+                    CreateDisplayRow(item);
 
-                yield return item.Row;
+                if (displayRow != null)
+                {
+                    yield return displayRow;
+                }
             }
         }
 
-        private void ApplyCalculatedValues(
+        /*
+         * TEST 1:
+         *
+         * Create a copy of the selected WmsPlan row and populate the
+         * unbound display fields directly on the copy.
+         *
+         * This avoids calling SetValueExt against the original row in
+         * the graph cache. The goal is to prevent a display calculation
+         * from changing the cache status or invoking unnecessary field
+         * events during shipment persistence.
+         */
+        private WmsPlan CreateDisplayRow(
             RowCalc item)
         {
             if (item?.Row == null)
-                return;
+            {
+                return null;
+            }
 
-            PXCache cache =
-                Base.Caches<WmsPlan>();
+            WmsPlan displayRow =
+                PXCache<WmsPlan>.CreateCopy(
+                    item.Row);
 
-            cache.SetValueExt<
-                SelectedPackageContentsExt.remainingQty>(
-                    item.Row,
-                    item.RemainingQty);
+            SelectedPackageContentsExt extension =
+                displayRow.GetExtension<
+                    SelectedPackageContentsExt>();
 
-            cache.SetValueExt<
-                SelectedPackageContentsExt.skippedStatus>(
-                    item.Row,
-                    item.SkipSortOrder == 1);
+            extension.RemainingQty =
+                item.RemainingQty;
 
-            cache.SetValueExt<
-                SelectedPackageContentsExt.usrCompletedSortOrder>(
-                    item.Row,
-                    item.CompletedSortOrder);
+            extension.SkippedStatus =
+                item.SkipSortOrder == 1;
 
-            cache.SetValueExt<
-                SelectedPackageContentsExt.usrSkipSortOrder>(
-                    item.Row,
-                    item.SkipSortOrder);
+            extension.UsrCompletedSortOrder =
+                item.CompletedSortOrder;
+
+            extension.UsrSkipSortOrder =
+                item.SkipSortOrder;
 
             WmsDebugTrace.Info(
-                $"{TracePrefix} Applied values: " +
-                $"RecordID={item.Row.RecordID}, " +
+                $"{TracePrefix} Created display copy: " +
+                $"RecordID={displayRow.RecordID}, " +
                 $"RemainingQty={item.RemainingQty}, " +
-                $"SkippedStatus={item.SkipSortOrder == 1}");
+                $"SkippedStatus={item.SkipSortOrder == 1}, " +
+                $"CompletedSortOrder={item.CompletedSortOrder}, " +
+                $"SkipSortOrder={item.SkipSortOrder}");
+
+            return displayRow;
         }
 
         private bool ShouldBypassTopRowWorkflow()
@@ -398,14 +420,8 @@ namespace CustomWMS
                 .ToList();
 
             /*
-             * IMPORTANT:
-             *
-             * Load actual packed rows from the ENTIRE shipment instead
+             * Load actual packed rows from the entire shipment instead
              * of only the currently selected carton.
-             *
-             * This prevents a shipment split from appearing as remaining
-             * in its expected carton when the same split has already been
-             * fully packed into a different carton.
              */
             List<SOShipLineSplitPackage> shipmentActualRows =
                 PXSelectReadonly<
@@ -438,12 +454,7 @@ namespace CustomWMS
                                 row => row.PackedQty ?? 0m));
 
             /*
-             * This package-only dictionary is not used to decide whether
-             * the row remains visible. It is retained for diagnostics so
-             * the trace can distinguish:
-             *
-             *  - quantity packed in the expected carton; and
-             *  - quantity packed anywhere in the shipment.
+             * Package-only values are retained for diagnostic tracing.
              */
             Dictionary<int?, decimal>
                 packageActualQtyBySplit =
@@ -485,8 +496,8 @@ namespace CustomWMS
                     out packedAcrossShipment);
 
                 /*
-                 * Remaining quantity is now based on the total quantity
-                 * already packed for this split across all cartons.
+                 * Remaining quantity is based on the total quantity
+                 * already packed for the split across all cartons.
                  */
                 decimal remainingQty =
                     expectedQty -
@@ -530,13 +541,18 @@ namespace CustomWMS
                 result.Add(
                     new RowCalc
                     {
-                        Row = row,
+                        Row =
+                            row,
+
                         RealShipmentSplitLineNbr =
                             realShipmentSplitLineNbr,
+
                         RemainingQty =
                             remainingQty,
+
                         CompletedSortOrder =
                             completed ? 1 : 0,
+
                         SkipSortOrder =
                             skipped ? 1 : 0
                     });
@@ -555,7 +571,9 @@ namespace CustomWMS
             int? inventoryID)
         {
             if (inventoryID == null)
+            {
                 return string.Empty;
+            }
 
             InventoryItem item =
                 PXSelectReadonly<
@@ -596,6 +614,13 @@ namespace CustomWMS
                 "Packed row deleted");
         }
 
+        /*
+         * This refresh logic is intentionally unchanged for Test 1.
+         *
+         * If concurrency continues to fail after removing SetValueExt,
+         * the next isolated test should evaluate these cache-clearing
+         * operations.
+         */
         private void RequestEstimatedContentRefresh(
             string reason)
         {
