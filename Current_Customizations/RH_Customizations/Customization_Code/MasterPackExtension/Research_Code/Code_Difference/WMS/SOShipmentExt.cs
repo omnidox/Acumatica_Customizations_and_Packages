@@ -6,23 +6,23 @@ using PX.Objects.SO;
 
 namespace WMS
 {
-	// Token: 0x02000019 RID: 25
+	// Token: 0x0200001B RID: 27
 	public class SOShipmentExt : PXCacheExtension<SOShipment>
 	{
-		// Token: 0x060000F9 RID: 249 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x06000110 RID: 272 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x17000041 RID: 65
-		// (get) Token: 0x060000FA RID: 250 RVA: 0x000080DF File Offset: 0x000062DF
-		// (set) Token: 0x060000FB RID: 251 RVA: 0x000080E7 File Offset: 0x000062E7
+		// Token: 0x17000045 RID: 69
+		// (get) Token: 0x06000111 RID: 273 RVA: 0x000095EF File Offset: 0x000077EF
+		// (set) Token: 0x06000112 RID: 274 RVA: 0x000095F7 File Offset: 0x000077F7
 		[PXDBString(50, IsUnicode = true)]
 		[PXUIField(DisplayName = "EDI Store Number")]
 		public string UsrTCStoreNumber { get; set; }
 
-		// Token: 0x02000071 RID: 113
+		// Token: 0x0200007B RID: 123
 		[Nullable(new byte[]
 		{
 			0,

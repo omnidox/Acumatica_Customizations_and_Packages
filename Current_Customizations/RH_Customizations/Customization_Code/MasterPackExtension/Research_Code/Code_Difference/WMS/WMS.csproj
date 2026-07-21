@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{40A9A48E-2C31-46D4-9FCA-D6796AC7D303}</ProjectGuid>
+    <ProjectGuid>{2BC5D39A-88F7-4D8F-964D-6EA144B65501}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>WMS</RootNamespace>

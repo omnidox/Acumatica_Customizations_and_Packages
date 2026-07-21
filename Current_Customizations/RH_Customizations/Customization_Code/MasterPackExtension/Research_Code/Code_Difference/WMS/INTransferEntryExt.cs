@@ -11,16 +11,16 @@ using PX.Objects.PO;
 
 namespace WMS
 {
-	// Token: 0x0200000A RID: 10
+	// Token: 0x0200000C RID: 12
 	public class INTransferEntryExt : PXGraphExtension<INTransferEntry.SiteStatusLookup, INTransferEntry>
 	{
-		// Token: 0x06000035 RID: 53 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x06000041 RID: 65 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x06000036 RID: 54 RVA: 0x00002560 File Offset: 0x00000760
+		// Token: 0x06000042 RID: 66 RVA: 0x00002794 File Offset: 0x00000994
 		protected void _(Events.RowInserting<INTran> row, PXRowInserting baseMethod)
 		{
 			if (baseMethod != null)
@@ -34,7 +34,7 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x06000037 RID: 55 RVA: 0x000025BC File Offset: 0x000007BC
+		// Token: 0x06000043 RID: 67 RVA: 0x000027F0 File Offset: 0x000009F0
 		protected void _(Events.FieldUpdated<INSiteStatusFilter, INTransferEntry.SiteStatusLookup.INTransferStatusFilter.receiptNbr> args)
 		{
 			bool flag = args.Row == null;
@@ -69,27 +69,27 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x04000015 RID: 21
+		// Token: 0x04000019 RID: 25
 		public static string CurrentRefNbr = string.Empty;
 
-		// Token: 0x0200002F RID: 47
+		// Token: 0x02000031 RID: 49
 		[Serializable]
 		public class INSiteStatusSelectedExt : PXCacheExtension<INTransferEntry.SiteStatusLookup.INSiteStatusSelected>
 		{
-			// Token: 0x06000146 RID: 326 RVA: 0x00002082 File Offset: 0x00000282
+			// Token: 0x0600015D RID: 349 RVA: 0x000022B4 File Offset: 0x000004B4
 			public static bool IsActive()
 			{
 				return true;
 			}
 
-			// Token: 0x17000059 RID: 89
-			// (get) Token: 0x06000147 RID: 327 RVA: 0x0000854A File Offset: 0x0000674A
-			// (set) Token: 0x06000148 RID: 328 RVA: 0x00008552 File Offset: 0x00006752
+			// Token: 0x1700005D RID: 93
+			// (get) Token: 0x0600015E RID: 350 RVA: 0x00009A5A File Offset: 0x00007C5A
+			// (set) Token: 0x0600015F RID: 351 RVA: 0x00009A62 File Offset: 0x00007C62
 			[PXDBDecimal(BqlField = typeof(POReceiptLine.receiptQty))]
 			[PXUIField(DisplayName = "Original Receipt Qty")]
 			public decimal? UsrActualQty { get; set; }
 
-			// Token: 0x02000089 RID: 137
+			// Token: 0x02000093 RID: 147
 			[Nullable(new byte[]
 			{
 				0,

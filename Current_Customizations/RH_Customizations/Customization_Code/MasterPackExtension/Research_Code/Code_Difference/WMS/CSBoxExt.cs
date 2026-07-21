@@ -6,24 +6,24 @@ using PX.Objects.CS;
 
 namespace WMS
 {
-	// Token: 0x02000004 RID: 4
+	// Token: 0x02000006 RID: 6
 	public class CSBoxExt : PXCacheExtension<CSBox>
 	{
-		// Token: 0x06000004 RID: 4 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x06000010 RID: 16 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x17000001 RID: 1
-		// (get) Token: 0x06000005 RID: 5 RVA: 0x00002085 File Offset: 0x00000285
-		// (set) Token: 0x06000006 RID: 6 RVA: 0x0000208D File Offset: 0x0000028D
+		// Token: 0x17000005 RID: 5
+		// (get) Token: 0x06000011 RID: 17 RVA: 0x000022B7 File Offset: 0x000004B7
+		// (set) Token: 0x06000012 RID: 18 RVA: 0x000022BF File Offset: 0x000004BF
 		[PXDBBool]
 		[PXDBDefault(PersistingCheck = 2)]
 		[PXUIField(DisplayName = "Can Be Used as Master Pack Carton")]
 		public bool? UsrUseAsParentBox { get; set; }
 
-		// Token: 0x0200001E RID: 30
+		// Token: 0x02000020 RID: 32
 		[Nullable(new byte[]
 		{
 			0,

@@ -16,22 +16,22 @@ using PX.Objects.SO.WMS;
 
 namespace WMS
 {
-	// Token: 0x0200000B RID: 11
+	// Token: 0x0200000D RID: 13
 	public class PackModeLogicExt : BarcodeDrivenStateMachine<PickPackShip, PickPackShip.Host>.ScanExtension<PickPackShip.PackMode.Logic>
 	{
-		// Token: 0x0600003A RID: 58 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x06000046 RID: 70 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x0600003B RID: 59 RVA: 0x000026C8 File Offset: 0x000008C8
+		// Token: 0x06000047 RID: 71 RVA: 0x000028FC File Offset: 0x00000AFC
 		public static string GetStyleKey(string orderNbr, int? inventoryID)
 		{
 			return string.Format("{0}|{1}", ((orderNbr != null) ? orderNbr.Trim().ToUpperInvariant() : null) ?? string.Empty, inventoryID.GetValueOrDefault());
 		}
 
-		// Token: 0x0600003C RID: 60 RVA: 0x000026FC File Offset: 0x000008FC
+		// Token: 0x06000048 RID: 72 RVA: 0x00002930 File Offset: 0x00000B30
 		private int? GetCurrentPackageLineNbr()
 		{
 			PickPackShip.PackMode.Logic @base = base.Base2;
@@ -66,7 +66,7 @@ namespace WMS
 			return result;
 		}
 
-		// Token: 0x0600003D RID: 61 RVA: 0x00002788 File Offset: 0x00000988
+		// Token: 0x06000049 RID: 73 RVA: 0x000029BC File Offset: 0x00000BBC
 		public Dictionary<string, decimal> GetExpectedStyleTotals(int? packageLineNbr = null)
 		{
 			PickPackShip basis = base.Basis;
@@ -111,7 +111,7 @@ namespace WMS
 			return result;
 		}
 
-		// Token: 0x0600003E RID: 62 RVA: 0x000028BC File Offset: 0x00000ABC
+		// Token: 0x0600004A RID: 74 RVA: 0x00002AF0 File Offset: 0x00000CF0
 		[return: TupleElementNames(new string[]
 		{
 			"LineNbr",
@@ -172,7 +172,7 @@ namespace WMS
 			return result2;
 		}
 
-		// Token: 0x0600003F RID: 63 RVA: 0x00002A54 File Offset: 0x00000C54
+		// Token: 0x0600004B RID: 75 RVA: 0x00002C88 File Offset: 0x00000E88
 		public decimal GetSelectedPackageEstimatedQtyForSplit(SOShipLineSplit split, int? packageLineNbr = null)
 		{
 			SOShipLineSplit split2 = split;
@@ -268,7 +268,7 @@ namespace WMS
 			return result;
 		}
 
-		// Token: 0x06000040 RID: 64 RVA: 0x00002C10 File Offset: 0x00000E10
+		// Token: 0x0600004C RID: 76 RVA: 0x00002E44 File Offset: 0x00001044
 		private Dictionary<string, decimal> GetActualStyleTotals(int? packageLineNbr = null)
 		{
 			PickPackShip basis = base.Basis;
@@ -324,20 +324,20 @@ namespace WMS
 			return result2;
 		}
 
-		// Token: 0x06000041 RID: 65 RVA: 0x00002DB4 File Offset: 0x00000FB4
+		// Token: 0x0600004D RID: 77 RVA: 0x00002FE8 File Offset: 0x000011E8
 		private static decimal GetDictionaryQty(Dictionary<string, decimal> totals, string styleKey)
 		{
 			decimal qty;
 			return totals.TryGetValue(styleKey, out qty) ? qty : 0m;
 		}
 
-		// Token: 0x06000042 RID: 66 RVA: 0x00002DD4 File Offset: 0x00000FD4
+		// Token: 0x0600004E RID: 78 RVA: 0x00003008 File Offset: 0x00001208
 		private static bool QuantitiesMatch(decimal leftQty, decimal rightQty)
 		{
 			return Math.Abs(leftQty - rightQty) <= 0.000001m;
 		}
 
-		// Token: 0x06000043 RID: 67 RVA: 0x00002DF4 File Offset: 0x00000FF4
+		// Token: 0x0600004F RID: 79 RVA: 0x00003028 File Offset: 0x00001228
 		public decimal GetSelectedPackageEstimatedQty(SOShipLineSplit split, string orderNbr, int? packageLineNbr = null)
 		{
 			bool flag = split == null;
@@ -353,7 +353,7 @@ namespace WMS
 			return result;
 		}
 
-		// Token: 0x06000044 RID: 68 RVA: 0x00002E30 File Offset: 0x00001030
+		// Token: 0x06000050 RID: 80 RVA: 0x00003064 File Offset: 0x00001264
 		public decimal GetSelectedPackageActualQty(SOShipLineSplit split, string orderNbr, int? packageLineNbr = null)
 		{
 			bool flag = split == null;
@@ -369,7 +369,7 @@ namespace WMS
 			return result;
 		}
 
-		// Token: 0x06000045 RID: 69 RVA: 0x00002E6C File Offset: 0x0000106C
+		// Token: 0x06000051 RID: 81 RVA: 0x000030A0 File Offset: 0x000012A0
 		public bool DoesSelectedPackageMatchEstimates(int? packageLineNbr = null)
 		{
 			Dictionary<string, decimal> expectedTotals = this.GetExpectedStyleTotals(packageLineNbr);
@@ -388,7 +388,7 @@ namespace WMS
 			return result;
 		}
 
-		// Token: 0x06000046 RID: 70 RVA: 0x00002EE8 File Offset: 0x000010E8
+		// Token: 0x06000052 RID: 82 RVA: 0x0000311C File Offset: 0x0000131C
 		public string GetSelectedPackageMismatchMessage(int? packageLineNbr = null)
 		{
 			bool flag = this.DoesSelectedPackageMatchEstimates(packageLineNbr);
@@ -404,19 +404,19 @@ namespace WMS
 			return result;
 		}
 
-		// Token: 0x06000047 RID: 71 RVA: 0x00002F10 File Offset: 0x00001110
+		// Token: 0x06000053 RID: 83 RVA: 0x00003144 File Offset: 0x00001344
 		public decimal GetSelectedPackageEstimatedTotal(SOPackageDetailEx package)
 		{
 			return (package == null || package.LineNbr == null) ? 0m : this.GetExpectedStyleTotals(package.LineNbr).Values.Sum();
 		}
 
-		// Token: 0x06000048 RID: 72 RVA: 0x00002F54 File Offset: 0x00001154
+		// Token: 0x06000054 RID: 84 RVA: 0x00003188 File Offset: 0x00001388
 		public decimal GetSelectedPackageActualTotal(SOPackageDetailEx package)
 		{
 			return (package == null || package.LineNbr == null) ? 0m : this.GetActualStyleTotals(package.LineNbr).Values.Sum();
 		}
 
-		// Token: 0x06000049 RID: 73 RVA: 0x00002F98 File Offset: 0x00001198
+		// Token: 0x06000055 RID: 85 RVA: 0x000031CC File Offset: 0x000013CC
 		public PXResult<CSBox> GetBoxByCartonID(string cartonID)
 		{
 			return PXSelectBase<CSBox, PXViewOf<CSBox>.BasedOn<SelectFromBase<CSBox, TypeArrayOf<IFbqlJoin>.Append<TypeArrayOf<IFbqlJoin>.Empty, FbqlJoins.Inner<SOPackageDetailEx>.On<BqlOperand<CSBox.boxID, IBqlString>.IsEqual<SOPackageDetailEx.boxID>>>>.Where<BqlOperand<SOPackageDetailExExt.usrCartonNbr, IBqlString>.IsEqual<P.AsString>>>.Config>.SelectSingleBound(base.Basis, null, new object[]
@@ -425,7 +425,7 @@ namespace WMS
 			});
 		}
 
-		// Token: 0x0600004A RID: 74 RVA: 0x00002FCC File Offset: 0x000011CC
+		// Token: 0x06000056 RID: 86 RVA: 0x00003200 File Offset: 0x00001400
 		[PXOverride]
 		public virtual IEnumerable pickedForPack(PackModeLogicExt.PickedForPackDelegate baseMethod)
 		{
@@ -489,7 +489,7 @@ namespace WMS
 			return result2;
 		}
 
-		// Token: 0x0600004B RID: 75 RVA: 0x000030CC File Offset: 0x000012CC
+		// Token: 0x06000057 RID: 87 RVA: 0x00003300 File Offset: 0x00001500
 		[PXOverride]
 		public virtual ScanState<PickPackShip> DecorateScanState(ScanState<PickPackShip> scanState, Func<ScanState<PickPackShip>, ScanState<PickPackShip>> base_DecorateScanState)
 		{
@@ -687,7 +687,7 @@ namespace WMS
 			return scanState;
 		}
 
-		// Token: 0x0600004C RID: 76 RVA: 0x00003244 File Offset: 0x00001444
+		// Token: 0x06000058 RID: 88 RVA: 0x00003478 File Offset: 0x00001678
 		private PXResult<INItemXRef, InventoryItem> ReadItemById(string barcode, INPrimaryAlternateType? additionalAlternateType = null)
 		{
 			InventoryItem inventory = InventoryItem.UK.Find(base.Basis, barcode, 0);
@@ -713,7 +713,7 @@ namespace WMS
 			return result;
 		}
 
-		// Token: 0x0600004D RID: 77 RVA: 0x000032D0 File Offset: 0x000014D0
+		// Token: 0x06000059 RID: 89 RVA: 0x00003504 File Offset: 0x00001704
 		protected PXResult<INItemXRef, InventoryItem> ReadItemByBarcode(string barcode, INPrimaryAlternateType? additionalAlternateType = null)
 		{
 			PXViewOf<INItemXRef>.BasedOn<SelectFromBase<INItemXRef, TypeArrayOf<IFbqlJoin>.Append<TypeArrayOf<IFbqlJoin>.Empty, FbqlJoins.Inner<InventoryItem>.On<INItemXRef.FK.InventoryItem>>>.Where<BqlOperand<INItemXRef.alternateID, IBqlString>.IsEqual<P.AsString>>.Order<By<BqlField<INItemXRef.alternateType, IBqlString>.Asc>>>.ReadOnly view = new PXViewOf<INItemXRef>.BasedOn<SelectFromBase<INItemXRef, TypeArrayOf<IFbqlJoin>.Append<TypeArrayOf<IFbqlJoin>.Empty, FbqlJoins.Inner<InventoryItem>.On<INItemXRef.FK.InventoryItem>>>.Where<BqlOperand<INItemXRef.alternateID, IBqlString>.IsEqual<P.AsString>>.Order<By<BqlField<INItemXRef.alternateType, IBqlString>.Asc>>>.ReadOnly(base.Basis);
@@ -750,7 +750,7 @@ namespace WMS
 			return item;
 		}
 
-		// Token: 0x0600004E RID: 78 RVA: 0x0000339C File Offset: 0x0000159C
+		// Token: 0x0600005A RID: 90 RVA: 0x000035D0 File Offset: 0x000017D0
 		[PXOverride]
 		public virtual ScanCommand<PickPackShip> DecorateScanCommand(ScanCommand<PickPackShip> original, Func<ScanCommand<PickPackShip>, ScanCommand<PickPackShip>> base_DecorateScanCommand)
 		{
@@ -801,7 +801,7 @@ namespace WMS
 			return original;
 		}
 
-		// Token: 0x0600004F RID: 79 RVA: 0x00003414 File Offset: 0x00001614
+		// Token: 0x0600005B RID: 91 RVA: 0x00003648 File Offset: 0x00001848
 		[PXOverride]
 		public bool HasSingleAutoPackage(string shipmentNbr, out SOPackageDetailEx package, PackModeLogicExt.HasSingleAutoPackageDelegate baseMethod)
 		{
@@ -809,7 +809,7 @@ namespace WMS
 			return false;
 		}
 
-		// Token: 0x06000050 RID: 80 RVA: 0x0000342C File Offset: 0x0000162C
+		// Token: 0x0600005C RID: 92 RVA: 0x00003660 File Offset: 0x00001860
 		[PXOverride]
 		public virtual bool IsPackageEmpty(SOPackageDetailEx package, PackModeLogicExt.IsPackageEmptyDelegate baseMethod)
 		{
@@ -824,13 +824,13 @@ namespace WMS
 			return baseMethod(package);
 		}
 
-		// Token: 0x06000051 RID: 81 RVA: 0x00003460 File Offset: 0x00001660
+		// Token: 0x0600005D RID: 93 RVA: 0x00003694 File Offset: 0x00001894
 		public bool AutoConfirmPackage(bool skipBoxWeightInput)
 		{
 			return true;
 		}
 
-		// Token: 0x06000052 RID: 82 RVA: 0x00003474 File Offset: 0x00001674
+		// Token: 0x0600005E RID: 94 RVA: 0x000036A8 File Offset: 0x000018A8
 		[PXOverride]
 		public virtual bool? TryAutoConfirmCurrentPackageAndLoadNext(string boxBarcode, PackModeLogicExt.TryAutoConfirmCurrentPackageAndLoadNextDelegate besaMethod)
 		{
@@ -853,23 +853,23 @@ namespace WMS
 			return new bool?(false);
 		}
 
-		// Token: 0x04000016 RID: 22
+		// Token: 0x0400001A RID: 26
 		private const decimal QtyComparisonTolerance = 0.000001m;
 
-		// Token: 0x02000031 RID: 49
-		// (Invoke) Token: 0x0600014D RID: 333
+		// Token: 0x02000033 RID: 51
+		// (Invoke) Token: 0x06000164 RID: 356
 		public delegate IEnumerable PickedForPackDelegate();
 
-		// Token: 0x02000032 RID: 50
-		// (Invoke) Token: 0x06000151 RID: 337
+		// Token: 0x02000034 RID: 52
+		// (Invoke) Token: 0x06000168 RID: 360
 		public delegate bool HasSingleAutoPackageDelegate(string shipmentNbr, out SOPackageDetailEx package);
 
-		// Token: 0x02000033 RID: 51
-		// (Invoke) Token: 0x06000155 RID: 341
+		// Token: 0x02000035 RID: 53
+		// (Invoke) Token: 0x0600016C RID: 364
 		public delegate bool IsPackageEmptyDelegate(SOPackageDetailEx package);
 
-		// Token: 0x02000034 RID: 52
-		// (Invoke) Token: 0x06000159 RID: 345
+		// Token: 0x02000036 RID: 54
+		// (Invoke) Token: 0x06000170 RID: 368
 		public delegate bool? TryAutoConfirmCurrentPackageAndLoadNextDelegate(string boxBarcode);
 	}
 }

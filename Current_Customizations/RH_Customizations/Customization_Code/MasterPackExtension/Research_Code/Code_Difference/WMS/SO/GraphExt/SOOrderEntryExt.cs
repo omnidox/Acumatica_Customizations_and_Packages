@@ -8,16 +8,16 @@ using WMS.SO.DACExt;
 
 namespace WMS.SO.GraphExt
 {
-	// Token: 0x0200001A RID: 26
+	// Token: 0x0200001C RID: 28
 	public class SOOrderEntryExt : PXGraphExtension<SOOrderEntry>
 	{
-		// Token: 0x060000FD RID: 253 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x06000114 RID: 276 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x060000FE RID: 254 RVA: 0x000080FC File Offset: 0x000062FC
+		// Token: 0x06000115 RID: 277 RVA: 0x0000960C File Offset: 0x0000780C
 		protected void _(Events.RowPersisting<SOOrder> e)
 		{
 			SOOrder row = e.Row;

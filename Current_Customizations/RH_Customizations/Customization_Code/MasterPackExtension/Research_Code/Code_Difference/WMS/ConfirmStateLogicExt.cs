@@ -11,16 +11,16 @@ using PX.Objects.SO.WMS;
 
 namespace WMS
 {
-	// Token: 0x0200000C RID: 12
+	// Token: 0x0200000E RID: 14
 	public class ConfirmStateLogicExt : BarcodeDrivenStateMachine<PickPackShip, PickPackShip.Host>.ScanExtension<PickPackShip.PackMode.ConfirmState.Logic>
 	{
-		// Token: 0x0600005F RID: 95 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x0600006B RID: 107 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x06000060 RID: 96 RVA: 0x00003BF0 File Offset: 0x00001DF0
+		// Token: 0x0600006C RID: 108 RVA: 0x00003E24 File Offset: 0x00002024
 		[PXOverride]
 		public virtual IEnumerable<SOShipLineSplit> GetSplitsToPack(Func<IEnumerable<SOShipLineSplit>> base_GetSplitsToPack)
 		{
@@ -100,7 +100,7 @@ namespace WMS
 			return result;
 		}
 
-		// Token: 0x06000061 RID: 97 RVA: 0x00003E88 File Offset: 0x00002088
+		// Token: 0x0600006D RID: 109 RVA: 0x000040BC File Offset: 0x000022BC
 		[PXOverride]
 		public virtual FlowStatus Confirm(ConfirmStateLogicExt.ConfirmDelegate baseMethod)
 		{
@@ -183,8 +183,8 @@ namespace WMS
 			return result;
 		}
 
-		// Token: 0x02000039 RID: 57
-		// (Invoke) Token: 0x06000171 RID: 369
+		// Token: 0x0200003B RID: 59
+		// (Invoke) Token: 0x06000188 RID: 392
 		public delegate FlowStatus ConfirmDelegate();
 	}
 }

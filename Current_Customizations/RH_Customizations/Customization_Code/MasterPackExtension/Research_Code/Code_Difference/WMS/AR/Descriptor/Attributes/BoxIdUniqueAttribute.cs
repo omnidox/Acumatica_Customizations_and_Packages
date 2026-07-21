@@ -8,10 +8,10 @@ using WMS.AR.GraphExt;
 
 namespace WMS.AR.Descriptor.Attributes
 {
-	// Token: 0x0200001D RID: 29
+	// Token: 0x0200001F RID: 31
 	public class BoxIdUniqueAttribute : PXEventSubscriberAttribute, IPXFieldUpdatedSubscriber
 	{
-		// Token: 0x06000131 RID: 305 RVA: 0x00008404 File Offset: 0x00006604
+		// Token: 0x06000148 RID: 328 RVA: 0x00009914 File Offset: 0x00007B14
 		public void FieldUpdated(PXCache cache, PXFieldUpdatedEventArgs e)
 		{
 			CustomerBoxesDAC box = e.Row as CustomerBoxesDAC;
@@ -22,7 +22,7 @@ namespace WMS.AR.Descriptor.Attributes
 			}
 		}
 
-		// Token: 0x06000132 RID: 306 RVA: 0x00008434 File Offset: 0x00006634
+		// Token: 0x06000149 RID: 329 RVA: 0x00009944 File Offset: 0x00007B44
 		private void ValidateBox(PXCache cache, CustomerBoxesDAC box)
 		{
 			bool flag = !string.IsNullOrWhiteSpace(box.BoxID) && this.IsBoxExist(cache.Graph, box);
@@ -32,7 +32,7 @@ namespace WMS.AR.Descriptor.Attributes
 			}
 		}
 
-		// Token: 0x06000133 RID: 307 RVA: 0x0000847C File Offset: 0x0000667C
+		// Token: 0x0600014A RID: 330 RVA: 0x0000998C File Offset: 0x00007B8C
 		private bool IsBoxExist(PXGraph graph, CustomerBoxesDAC box)
 		{
 			return PXSelectBase<CustomerBoxesDAC, PXViewOf<CustomerBoxesDAC>.BasedOn<SelectFromBase<CustomerBoxesDAC, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<CustomerBoxesDAC.boxID, IBqlString>.IsEqual<P.AsString>>>.ReadOnly.Config>.Select(graph, new object[]

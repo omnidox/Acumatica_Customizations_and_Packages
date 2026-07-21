@@ -6,24 +6,24 @@ using PX.Objects.SO;
 
 namespace WMS.SO.DACExt
 {
-	// Token: 0x0200001B RID: 27
+	// Token: 0x0200001D RID: 29
 	public class SOOrderTypeExt : PXCacheExtension<SOOrderType>
 	{
-		// Token: 0x06000100 RID: 256 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x06000117 RID: 279 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x17000042 RID: 66
-		// (get) Token: 0x06000101 RID: 257 RVA: 0x00008273 File Offset: 0x00006473
-		// (set) Token: 0x06000102 RID: 258 RVA: 0x0000827B File Offset: 0x0000647B
+		// Token: 0x17000046 RID: 70
+		// (get) Token: 0x06000118 RID: 280 RVA: 0x00009783 File Offset: 0x00007983
+		// (set) Token: 0x06000119 RID: 281 RVA: 0x0000978B File Offset: 0x0000798B
 		[PXDBBool]
 		[PXDefault(false, PersistingCheck = 2)]
 		[PXUIField(DisplayName = "TC Order Type")]
 		public bool? UsrIsTCOrderType { get; set; }
 
-		// Token: 0x02000072 RID: 114
+		// Token: 0x0200007C RID: 124
 		[Nullable(new byte[]
 		{
 			0,

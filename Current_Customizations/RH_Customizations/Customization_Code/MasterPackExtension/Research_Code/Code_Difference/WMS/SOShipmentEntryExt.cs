@@ -15,16 +15,47 @@ using WMS.AR.GraphExt;
 
 namespace WMS
 {
-	// Token: 0x02000018 RID: 24
+	// Token: 0x0200001A RID: 26
 	public class SOShipmentEntryExt : PXGraphExtension<CarrierRatesExt, SOShipmentEntry>
 	{
-		// Token: 0x060000D8 RID: 216 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x060000E4 RID: 228 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x060000D9 RID: 217 RVA: 0x00004558 File Offset: 0x00002758
+		// Token: 0x060000E5 RID: 229 RVA: 0x0000478C File Offset: 0x0000298C
+		[PXOverride]
+		public void Persist(SOShipmentEntryExt.PersistDelegate baseMethod)
+		{
+			try
+			{
+				baseMethod();
+			}
+			catch (PXLockViolationException ex)
+			{
+				bool flag = base.Base.Document.Current != null && ex.Table == typeof(SOShipment);
+				if (flag)
+				{
+					SOShipment current = base.Base.Document.Current;
+					SOShipment fresh = PXSelectBase<SOShipment, PXViewOf<SOShipment>.BasedOn<SelectFromBase<SOShipment, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<SOShipment.shipmentNbr, IBqlString>.IsEqual<P.AsString>>>.ReadOnly.Config>.Select(base.Base, new object[]
+					{
+						current.ShipmentNbr
+					}).TopFirst;
+					bool flag2 = fresh != null;
+					if (flag2)
+					{
+						object newTstamp = base.Base.Document.Cache.GetValue(fresh, "tstamp");
+						base.Base.Document.Cache.SetValue(current, "tstamp", newTstamp);
+						baseMethod();
+						return;
+					}
+				}
+				throw;
+			}
+		}
+
+		// Token: 0x060000E6 RID: 230 RVA: 0x00004870 File Offset: 0x00002A70
 		protected void _(Events.FieldVerifying<SOPackageDetailExt.usrIsParentBox> e)
 		{
 			bool flag = e == null;
@@ -44,7 +75,7 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x060000DA RID: 218 RVA: 0x000045DC File Offset: 0x000027DC
+		// Token: 0x060000E7 RID: 231 RVA: 0x000048F4 File Offset: 0x00002AF4
 		protected void _(Events.RowSelected<SOPackageDetail> e)
 		{
 			bool flag = e.Row == null;
@@ -60,7 +91,7 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x060000DB RID: 219 RVA: 0x00004694 File Offset: 0x00002894
+		// Token: 0x060000E8 RID: 232 RVA: 0x000049AC File Offset: 0x00002BAC
 		protected void _(Events.FieldUpdated<SOPackageDetailExt.usrIsParentBox> e)
 		{
 			bool flag = e == null;
@@ -98,7 +129,7 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x060000DC RID: 220 RVA: 0x000048A8 File Offset: 0x00002AA8
+		// Token: 0x060000E9 RID: 233 RVA: 0x00004BC0 File Offset: 0x00002DC0
 		protected void _(Events.FieldVerifying<SOPackageDetailEx.boxID> e)
 		{
 			bool flag = e == null || !e.ExternalCall;
@@ -143,73 +174,265 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x060000DD RID: 221 RVA: 0x000049C8 File Offset: 0x00002BC8
-		protected void _(Events.RowSelected<SOPackageDetailEx> e)
+		// Token: 0x060000EA RID: 234 RVA: 0x00004CE0 File Offset: 0x00002EE0
+		protected void _(Events.RowInserted<SOPackageDetailEx> e)
 		{
-			SOPackageDetailEx row = e.Row;
-			bool flag = row == null;
+			bool flag = e.Row == null;
 			if (!flag)
 			{
-				this.UpdateOrderAndStoreInfo(row);
-				this.UpdatePackageQuantities(row);
-				this.SetBoxNbrStr(base.Base.Packages.Select(Array.Empty<object>()).FirstTableItems.ToList<SOPackageDetailEx>());
+				List<SOPackageDetailEx> freshPackages = base.Base.Packages.Select(Array.Empty<object>()).FirstTableItems.ToList<SOPackageDetailEx>();
+				this.SetBoxNbrStr(freshPackages);
 			}
 		}
 
-		// Token: 0x060000DE RID: 222 RVA: 0x00004A20 File Offset: 0x00002C20
+		// Token: 0x060000EB RID: 235 RVA: 0x00004D28 File Offset: 0x00002F28
+		protected void _(Events.RowDeleted<SOPackageDetailEx> e)
+		{
+			bool flag = e.Row == null;
+			if (!flag)
+			{
+				List<SOPackageDetailEx> freshPackages = base.Base.Packages.Select(Array.Empty<object>()).FirstTableItems.ToList<SOPackageDetailEx>();
+				this.SetBoxNbrStr(freshPackages);
+			}
+		}
+
+		// Token: 0x060000EC RID: 236 RVA: 0x00004D70 File Offset: 0x00002F70
+		protected void _(Events.RowInserted<SelectedPackageContents> e)
+		{
+			bool flag = e.Row == null;
+			if (!flag)
+			{
+				this.RecalculatePackageByLineNbr(e.Row.PackageLineNbr);
+			}
+		}
+
+		// Token: 0x060000ED RID: 237 RVA: 0x00004DA0 File Offset: 0x00002FA0
+		protected void _(Events.RowUpdated<SelectedPackageContents> e)
+		{
+			bool flag = e.Row == null;
+			if (!flag)
+			{
+				this.RecalculatePackageByLineNbr(e.Row.PackageLineNbr);
+				bool flag2;
+				if (e.OldRow != null)
+				{
+					int? packageLineNbr = e.OldRow.PackageLineNbr;
+					int? packageLineNbr2 = e.Row.PackageLineNbr;
+					flag2 = !(packageLineNbr.GetValueOrDefault() == packageLineNbr2.GetValueOrDefault() & packageLineNbr != null == (packageLineNbr2 != null));
+				}
+				else
+				{
+					flag2 = false;
+				}
+				bool flag3 = flag2;
+				if (flag3)
+				{
+					this.RecalculatePackageByLineNbr(e.OldRow.PackageLineNbr);
+				}
+			}
+		}
+
+		// Token: 0x060000EE RID: 238 RVA: 0x00004E30 File Offset: 0x00003030
+		protected void _(Events.RowDeleted<SelectedPackageContents> e)
+		{
+			bool flag = e.Row == null;
+			if (!flag)
+			{
+				this.RecalculatePackageByLineNbr(e.Row.PackageLineNbr);
+			}
+		}
+
+		// Token: 0x060000EF RID: 239 RVA: 0x00004E60 File Offset: 0x00003060
+		protected void _(Events.RowInserted<SOShipLineSplitPackage> e)
+		{
+			bool flag = e.Row == null;
+			if (!flag)
+			{
+				this.RecalculatePackageByLineNbr(e.Row.PackageLineNbr);
+			}
+		}
+
+		// Token: 0x060000F0 RID: 240 RVA: 0x00004E90 File Offset: 0x00003090
+		protected void _(Events.RowUpdated<SOShipLineSplitPackage> e)
+		{
+			bool flag = e.Row == null;
+			if (!flag)
+			{
+				this.RecalculatePackageByLineNbr(e.Row.PackageLineNbr);
+				bool flag2;
+				if (e.OldRow != null)
+				{
+					int? packageLineNbr = e.OldRow.PackageLineNbr;
+					int? packageLineNbr2 = e.Row.PackageLineNbr;
+					flag2 = !(packageLineNbr.GetValueOrDefault() == packageLineNbr2.GetValueOrDefault() & packageLineNbr != null == (packageLineNbr2 != null));
+				}
+				else
+				{
+					flag2 = false;
+				}
+				bool flag3 = flag2;
+				if (flag3)
+				{
+					this.RecalculatePackageByLineNbr(e.OldRow.PackageLineNbr);
+				}
+			}
+		}
+
+		// Token: 0x060000F1 RID: 241 RVA: 0x00004F20 File Offset: 0x00003120
+		protected void _(Events.RowDeleted<SOShipLineSplitPackage> e)
+		{
+			bool flag = e.Row == null;
+			if (!flag)
+			{
+				this.RecalculatePackageByLineNbr(e.Row.PackageLineNbr);
+			}
+		}
+
+		// Token: 0x060000F2 RID: 242 RVA: 0x00004F50 File Offset: 0x00003150
+		private void RecalculatePackageByLineNbr(int? packageLineNbr)
+		{
+			bool flag = packageLineNbr == null;
+			if (!flag)
+			{
+				SOPackageDetailEx package = base.Base.Packages.Select(Array.Empty<object>()).FirstTableItems.FirstOrDefault(delegate(SOPackageDetailEx p)
+				{
+					int? lineNbr = p.LineNbr;
+					int? packageLineNbr2 = packageLineNbr;
+					return lineNbr.GetValueOrDefault() == packageLineNbr2.GetValueOrDefault() & lineNbr != null == (packageLineNbr2 != null);
+				});
+				bool flag2 = package != null;
+				if (flag2)
+				{
+					this.UpdateOrderAndStoreInfo(package);
+					this.UpdatePackageQuantities(package);
+					base.Base.Packages.Update(package);
+				}
+			}
+		}
+
+		// Token: 0x060000F3 RID: 243 RVA: 0x00004FD8 File Offset: 0x000031D8
 		protected void _(Events.RowUpdated<SOPackageDetailEx> e)
 		{
 			bool flag = e == null;
 			if (!flag)
 			{
+				SOPackageDetailExt extension = PXCacheEx.GetExtension<SOPackageDetailExt>(e.OldRow);
+				string oldOrderNbr = (extension != null) ? extension.UsrOrderNbr : null;
+				SOPackageDetailExt extension2 = PXCacheEx.GetExtension<SOPackageDetailExt>(e.Row);
+				string currentOrderNbr = (extension2 != null) ? extension2.UsrOrderNbr : null;
+				bool flag2 = oldOrderNbr != currentOrderNbr;
+				if (flag2)
+				{
+					List<SOPackageDetailEx> freshPackages = base.Base.Packages.Select(Array.Empty<object>()).FirstTableItems.ToList<SOPackageDetailEx>();
+					this.SetBoxNbrStr(freshPackages);
+				}
 				string oldParentBoxID = PXCacheEx.GetExtension<SOPackageDetailExt>(e.OldRow).UsrSelectedParentBox;
 				string currentParentBox = PXCacheEx.GetExtension<SOPackageDetailExt>(e.Row).UsrSelectedParentBox;
 				string parentPackageID = currentParentBox;
-				bool flag2 = parentPackageID == null && oldParentBoxID == null;
-				if (!flag2)
+				bool flag3 = parentPackageID == null && oldParentBoxID == null;
+				if (!flag3)
 				{
-					bool flag3 = parentPackageID != null;
-					if (flag3)
+					bool flag4 = parentPackageID != null;
+					if (flag4)
 					{
 						IEnumerable<SOPackageDetailEx> view = base.Base.Packages.Select(Array.Empty<object>()).FirstTableItems;
 						SOPackageDetailEx parentPackage = view.FirstOrDefault((SOPackageDetailEx x) => PXCache<SOPackageDetail>.GetExtension<SOPackageDetailExt>(x).UsrCartonNbr == parentPackageID);
-						IEnumerable<SOPackageDetailEx> childrenBoxes = from x in view
-						where PXCacheEx.GetExtension<SOPackageDetailExt>(x).UsrSelectedParentBox == parentPackageID
-						select x;
-						parentPackage.Weight = new decimal?(0m);
-						parentPackage.COD = new decimal?(0m);
-						parentPackage.DeclaredValue = new decimal?(0m);
-						foreach (SOPackageDetailEx child in childrenBoxes)
+						bool flag5 = parentPackage != null;
+						if (flag5)
 						{
-							parentPackage.Weight += child.Weight;
-							parentPackage.COD += child.COD;
-							parentPackage.DeclaredValue += child.DeclaredValue;
+							List<SOPackageDetailEx> childrenBoxes = (from x in view
+							where PXCacheEx.GetExtension<SOPackageDetailExt>(x).UsrSelectedParentBox == parentPackageID
+							select x).ToList<SOPackageDetailEx>();
+							decimal? calculatedWeight = new decimal?(0m);
+							decimal? calculatedCOD = new decimal?(0m);
+							decimal? calculatedDeclaredValue = new decimal?(0m);
+							foreach (SOPackageDetailEx child in childrenBoxes)
+							{
+								calculatedWeight += child.Weight.GetValueOrDefault();
+								calculatedCOD += child.COD.GetValueOrDefault();
+								calculatedDeclaredValue += child.DeclaredValue.GetValueOrDefault();
+							}
+							decimal? num = parentPackage.Weight;
+							decimal? num2 = calculatedWeight;
+							bool flag6;
+							if (num.GetValueOrDefault() == num2.GetValueOrDefault() & num != null == (num2 != null))
+							{
+								num2 = parentPackage.COD;
+								num = calculatedCOD;
+								if (num2.GetValueOrDefault() == num.GetValueOrDefault() & num2 != null == (num != null))
+								{
+									num = parentPackage.DeclaredValue;
+									num2 = calculatedDeclaredValue;
+									flag6 = !(num.GetValueOrDefault() == num2.GetValueOrDefault() & num != null == (num2 != null));
+									goto IL_302;
+								}
+							}
+							flag6 = true;
+							IL_302:
+							bool flag7 = flag6;
+							if (flag7)
+							{
+								e.Cache.SetValueExt<SOPackageDetail.weight>(parentPackage, calculatedWeight);
+								e.Cache.SetValueExt<SOPackageDetail.cOD>(parentPackage, calculatedCOD);
+								e.Cache.SetValueExt<SOPackageDetail.declaredValue>(parentPackage, calculatedDeclaredValue);
+								base.Base.Packages.Update(parentPackage);
+								base.Base.Packages.View.RequestRefresh();
+							}
 						}
-						e.Cache.SetValueExt<SOPackageDetail.weight>(parentPackage, parentPackage.Weight);
-						e.Cache.SetValueExt<SOPackageDetail.cOD>(parentPackage, parentPackage.COD);
-						e.Cache.SetValueExt<SOPackageDetail.declaredValue>(parentPackage, parentPackage.DeclaredValue);
-						base.Base.Packages.Update(parentPackage);
-						base.Base.Packages.View.RequestRefresh();
 					}
-					bool flag4 = oldParentBoxID != null;
-					if (flag4)
+					bool flag8 = oldParentBoxID != null;
+					if (flag8)
 					{
 						IEnumerable<SOPackageDetailEx> view2 = base.Base.Packages.Select(Array.Empty<object>()).FirstTableItems;
-						SOPackageDetailEx parentPackage2 = view2.First((SOPackageDetailEx x) => PXCache<SOPackageDetail>.GetExtension<SOPackageDetailExt>(x).UsrCartonNbr == oldParentBoxID);
-						parentPackage2.Weight -= e.Row.Weight;
-						parentPackage2.COD -= e.Row.COD;
-						parentPackage2.DeclaredValue -= e.Row.DeclaredValue;
-						e.Cache.SetValueExt<SOPackageDetail.weight>(parentPackage2, parentPackage2.Weight);
-						e.Cache.SetValueExt<SOPackageDetail.cOD>(parentPackage2, parentPackage2.COD);
-						e.Cache.SetValueExt<SOPackageDetail.declaredValue>(parentPackage2, parentPackage2.DeclaredValue);
-						base.Base.Packages.Update(parentPackage2);
-						base.Base.Packages.View.RequestRefresh();
+						SOPackageDetailEx parentPackage2 = view2.FirstOrDefault((SOPackageDetailEx x) => PXCache<SOPackageDetail>.GetExtension<SOPackageDetailExt>(x).UsrCartonNbr == oldParentBoxID);
+						bool flag9 = parentPackage2 != null;
+						if (flag9)
+						{
+							List<SOPackageDetailEx> childrenBoxes2 = (from x in view2
+							where PXCacheEx.GetExtension<SOPackageDetailExt>(x).UsrSelectedParentBox == oldParentBoxID
+							select x).ToList<SOPackageDetailEx>();
+							decimal? calculatedWeight2 = new decimal?(0m);
+							decimal? calculatedCOD2 = new decimal?(0m);
+							decimal? calculatedDeclaredValue2 = new decimal?(0m);
+							foreach (SOPackageDetailEx child2 in childrenBoxes2)
+							{
+								calculatedWeight2 += child2.Weight.GetValueOrDefault();
+								calculatedCOD2 += child2.COD.GetValueOrDefault();
+								calculatedDeclaredValue2 += child2.DeclaredValue.GetValueOrDefault();
+							}
+							decimal? num2 = parentPackage2.Weight;
+							decimal? num = calculatedWeight2;
+							bool flag10;
+							if (num2.GetValueOrDefault() == num.GetValueOrDefault() & num2 != null == (num != null))
+							{
+								num = parentPackage2.COD;
+								num2 = calculatedCOD2;
+								if (num.GetValueOrDefault() == num2.GetValueOrDefault() & num != null == (num2 != null))
+								{
+									num2 = parentPackage2.DeclaredValue;
+									num = calculatedDeclaredValue2;
+									flag10 = !(num2.GetValueOrDefault() == num.GetValueOrDefault() & num2 != null == (num != null));
+									goto IL_5A8;
+								}
+							}
+							flag10 = true;
+							IL_5A8:
+							bool flag11 = flag10;
+							if (flag11)
+							{
+								e.Cache.SetValueExt<SOPackageDetail.weight>(parentPackage2, calculatedWeight2);
+								e.Cache.SetValueExt<SOPackageDetail.cOD>(parentPackage2, calculatedCOD2);
+								e.Cache.SetValueExt<SOPackageDetail.declaredValue>(parentPackage2, calculatedDeclaredValue2);
+								base.Base.Packages.Update(parentPackage2);
+								base.Base.Packages.View.RequestRefresh();
+							}
+						}
 					}
 				}
 			}
 		}
 
-		// Token: 0x060000DF RID: 223 RVA: 0x00004E94 File Offset: 0x00003094
+		// Token: 0x060000F4 RID: 244 RVA: 0x0000561C File Offset: 0x0000381C
 		[PXOverride]
 		public void CreateShipment(CreateShipmentArgs args, SOShipmentEntryExt.CreateShipmentDelegate baseMethod)
 		{
@@ -292,7 +515,14 @@ namespace WMS
 						string a = packageOption;
 						if (!(a == "W"))
 						{
-							if (a == "V")
+							if (!(a == "V"))
+							{
+								if (a == "Q")
+								{
+									this.CreatePackagesByQtySeparately(base.Base, shipLine, order.OrderNbr, orderPackages);
+								}
+							}
+							else
 							{
 								this.CreatePackagesByVolumeAndWeightSeparately(base.Base, shipLine, order.OrderNbr, orderPackages);
 							}
@@ -311,7 +541,14 @@ namespace WMS
 						string a2 = packageOption2;
 						if (!(a2 == "W"))
 						{
-							if (a2 == "V")
+							if (!(a2 == "V"))
+							{
+								if (a2 == "Q")
+								{
+									this.CreatePackagesByQty(base.Base, shipLine, customerBoxes);
+								}
+							}
+							else
 							{
 								this.CreatePackagesByVolumeAndWeight(base.Base, shipLine, customerBoxes);
 							}
@@ -323,10 +560,11 @@ namespace WMS
 					}
 				}
 				this.DeleteEmptyPackages(base.Base.Packages.Select(Array.Empty<object>()).FirstTableItems);
+				this.SetBoxNbrStr(base.Base.Packages.Select(Array.Empty<object>()).FirstTableItems.ToList<SOPackageDetailEx>());
 			}
 		}
 
-		// Token: 0x060000E0 RID: 224 RVA: 0x0000533C File Offset: 0x0000353C
+		// Token: 0x060000F5 RID: 245 RVA: 0x00005B34 File Offset: 0x00003D34
 		protected List<SOPackageDetailEx> CreateOrderPackages(SOOrder order, List<CustomerBoxesDAC> customerBoxes)
 		{
 			List<SOLine> orderLines = PXSelectBase<SOLine, PXViewOf<SOLine>.BasedOn<SelectFromBase<SOLine, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<SOLine.orderNbr, IBqlString>.IsEqual<P.AsString>>>.Config>.Select(base.Base, new object[]
@@ -382,7 +620,40 @@ namespace WMS
 				string a = packageOption;
 				if (!(a == "W"))
 				{
-					if (a == "V")
+					if (!(a == "V"))
+					{
+						if (a == "Q")
+						{
+							var boxesWithQty = (from x in boxes.Select(delegate(CSBox box)
+							{
+								CSBox box9 = box;
+								INItemBoxEx initemBoxEx = InItemBoxs.FirstOrDefault((INItemBoxEx ib) => ib.BoxID == box.BoxID);
+								return new
+								{
+									Box = box9,
+									Qty = ((initemBoxEx != null) ? initemBoxEx.Qty : null).GetValueOrDefault()
+								};
+							})
+							where x.Qty > 0m
+							select x).ToList();
+							var <>f__AnonymousType = (from x in boxesWithQty
+							orderby x.Qty descending
+							select x).FirstOrDefault();
+							selectedBox = ((<>f__AnonymousType != null) ? <>f__AnonymousType.Box : null);
+							foreach (var b in from x in boxesWithQty
+							orderby x.Qty
+							select x)
+							{
+								bool flag4 = b.Qty >= orderQty;
+								if (flag4)
+								{
+									selectedBox = b.Box;
+									break;
+								}
+							}
+						}
+					}
+					else
 					{
 						selectedBox = (from box in boxes
 						orderby box.MaxWeight descending, box.MaxVolume descending
@@ -394,8 +665,8 @@ namespace WMS
 							int maxQtyByWeight = (int)(box3.MaxWeight / itemWeight).Value;
 							int maxQtyByVolume = (int)(box3.MaxVolume / itemVolume).Value;
 							int maxQtyFit = Math.Min(maxQtyByWeight, maxQtyByVolume);
-							bool flag4 = maxQtyFit >= orderQty;
-							if (flag4)
+							bool flag5 = maxQtyFit >= orderQty;
+							if (flag5)
 							{
 								selectedBox = box3;
 								break;
@@ -414,8 +685,8 @@ namespace WMS
 					{
 						decimal? num = box4.MaxWeight / itemWeight;
 						decimal d = orderQty;
-						bool flag5 = num.GetValueOrDefault() >= d & num != null;
-						if (flag5)
+						bool flag6 = num.GetValueOrDefault() >= d & num != null;
+						if (flag6)
 						{
 							selectedBox = box4;
 							break;
@@ -428,8 +699,8 @@ namespace WMS
 				INItemBoxEx optimalBoxVolumeAndWeight = (from box in InItemBoxs
 				orderby box.MaxWeight descending, box.MaxVolume descending
 				select box).FirstOrDefault<INItemBoxEx>();
-				bool flag6 = optimalBoxWeight == null || optimalBoxVolumeAndWeight == null;
-				if (!flag6)
+				bool flag7 = optimalBoxWeight == null || optimalBoxVolumeAndWeight == null;
+				if (!flag7)
 				{
 					for (;;)
 					{
@@ -441,8 +712,8 @@ namespace WMS
 						}
 						SOPackageDetailEx currentPackage = orderPackages.LastOrDefault<SOPackageDetailEx>();
 						int itemsToPack = 0;
-						bool flag7 = currentPackage == null;
-						if (flag7)
+						bool flag8 = currentPackage == null;
+						if (flag8)
 						{
 							currentPackage = new SOPackageDetailEx
 							{
@@ -455,15 +726,15 @@ namespace WMS
 							orderPackages.Add(currentPackage);
 							volume = 0m;
 						}
-						bool flag8 = item.PackageOption == "W";
+						bool flag9 = item.PackageOption == "W";
 						decimal? num;
-						if (flag8)
+						if (flag9)
 						{
 							int maxQtyByWeight2 = (int)((currentPackage.MaxWeight.Value - currentPackage.Weight) / itemWeight).Value;
 							decimal remainingCapacity = 0m;
 							remainingCapacity = (currentPackage.MaxWeight - currentPackage.Weight).Value;
-							bool flag9 = remainingCapacity < itemWeight;
-							if (flag9)
+							bool flag10 = remainingCapacity < itemWeight;
+							if (flag10)
 							{
 								selectedBox = (from box in boxes
 								orderby box.MaxWeight descending
@@ -474,8 +745,8 @@ namespace WMS
 								{
 									num = box5.MaxWeight / itemWeight;
 									d = orderQty;
-									bool flag10 = num.GetValueOrDefault() >= d & num != null;
-									if (flag10)
+									bool flag11 = num.GetValueOrDefault() >= d & num != null;
+									if (flag11)
 									{
 										selectedBox = box5;
 										break;
@@ -497,8 +768,8 @@ namespace WMS
 							currentPackage.Weight += itemsToPack * itemWeight;
 							volume += itemsToPack * itemVolume;
 						}
-						bool flag11 = item.PackageOption == "V";
-						if (flag11)
+						bool flag12 = item.PackageOption == "V";
+						if (flag12)
 						{
 							CSBox itemBox = PXSelectBase<CSBox, PXViewOf<CSBox>.BasedOn<SelectFromBase<CSBox, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<CSBox.boxID, IBqlString>.IsEqual<P.AsString>>>.Config>.Select(base.Base, new object[]
 							{
@@ -509,16 +780,16 @@ namespace WMS
 							int maxQtyByVolume2 = (int)(remainingVolume / itemVolume);
 							int maxQtyByWeight3 = (int)(remainingWeight / itemWeight).Value;
 							decimal remainingCapacity2 = 0m;
-							bool flag12 = maxQtyByVolume2 < maxQtyByWeight3 && maxQtyByVolume2 > 0;
-							if (flag12)
+							bool flag13 = maxQtyByVolume2 < maxQtyByWeight3 && maxQtyByVolume2 > 0;
+							if (flag13)
 							{
 								itemBox = PXSelectBase<CSBox, PXViewOf<CSBox>.BasedOn<SelectFromBase<CSBox, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<CSBox.boxID, IBqlString>.IsEqual<P.AsString>>>.Config>.Select(base.Base, new object[]
 								{
 									currentPackage.BoxID
 								}).TopFirst;
 								remainingCapacity2 = itemBox.MaxVolume.Value - volume;
-								bool flag13 = remainingCapacity2 < itemVolume;
-								if (flag13)
+								bool flag14 = remainingCapacity2 < itemVolume;
+								if (flag14)
 								{
 									selectedBox = (from box in boxes
 									orderby box.MaxWeight descending, box.MaxVolume descending
@@ -530,8 +801,8 @@ namespace WMS
 										int maxQtyByWeightNew = (int)(box6.MaxWeight / itemWeight).Value;
 										int maxQtyByVolumeNew = (int)(box6.MaxVolume / itemVolume).Value;
 										int maxQtyFit2 = Math.Min(maxQtyByWeightNew, maxQtyByVolumeNew);
-										bool flag14 = maxQtyFit2 >= orderQty;
-										if (flag14)
+										bool flag15 = maxQtyFit2 >= orderQty;
+										if (flag15)
 										{
 											selectedBox = box6;
 											break;
@@ -555,12 +826,12 @@ namespace WMS
 								}
 								itemsToPack = Math.Min((int)orderLine.Qty.Value, (int)(remainingCapacity2 / itemVolume));
 							}
-							bool flag15 = maxQtyByVolume2 >= maxQtyByWeight3 && maxQtyByWeight3 > 0;
-							if (flag15)
+							bool flag16 = maxQtyByVolume2 >= maxQtyByWeight3 && maxQtyByWeight3 > 0;
+							if (flag16)
 							{
 								remainingCapacity2 = (currentPackage.MaxWeight - currentPackage.Weight).Value;
-								bool flag16 = remainingCapacity2 < itemWeight;
-								if (flag16)
+								bool flag17 = remainingCapacity2 < itemWeight;
+								if (flag17)
 								{
 									selectedBox = (from box in boxes
 									orderby box.MaxWeight descending
@@ -571,8 +842,8 @@ namespace WMS
 									{
 										num = box7.MaxWeight / itemWeight;
 										d = orderQty;
-										bool flag17 = num.GetValueOrDefault() >= d & num != null;
-										if (flag17)
+										bool flag18 = num.GetValueOrDefault() >= d & num != null;
+										if (flag18)
 										{
 											selectedBox = box7;
 											break;
@@ -592,8 +863,8 @@ namespace WMS
 								}
 								itemsToPack = (int)Math.Floor(Math.Min(orderLine.Qty.Value, ((currentPackage.MaxWeight - currentPackage.Weight) / itemWeight).Value));
 							}
-							bool flag18 = maxQtyByVolume2 <= 0 || maxQtyByWeight3 <= 0;
-							if (flag18)
+							bool flag19 = maxQtyByVolume2 <= 0 || maxQtyByWeight3 <= 0;
+							if (flag19)
 							{
 								currentPackage = new SOPackageDetailEx
 								{
@@ -609,24 +880,56 @@ namespace WMS
 							currentPackage.Weight += itemsToPack * itemWeight;
 							volume += itemsToPack * itemVolume;
 						}
+						bool flag20 = item.PackageOption == "Q";
+						if (flag20)
+						{
+							INItemBoxEx itemBoxDef = InItemBoxs.FirstOrDefault((INItemBoxEx ib) => ib.BoxID == currentPackage.BoxID);
+							decimal maxQtyForBox = (itemBoxDef != null) ? itemBoxDef.Qty.GetValueOrDefault() : 0m;
+							int currentQtyInBox = (itemWeight > 0m) ? ((int)(currentPackage.Weight / itemWeight).Value) : 0;
+							int remainingQtyCapacity = (int)maxQtyForBox - currentQtyInBox;
+							bool flag21 = remainingQtyCapacity <= 0;
+							if (flag21)
+							{
+								currentPackage = new SOPackageDetailEx
+								{
+									Confirmed = new bool?(false),
+									BoxID = selectedBox.BoxID,
+									Weight = new decimal?(0m)
+								};
+								currentPackage = base.Base.Packages.Insert(currentPackage);
+								base.Base.Actions.PressSave();
+								orderPackages.Add(currentPackage);
+								volume = 0m;
+								remainingQtyCapacity = (int)maxQtyForBox;
+								bool flag22 = remainingQtyCapacity <= 0;
+								if (flag22)
+								{
+									remainingQtyCapacity = (int)orderLine.Qty.Value;
+								}
+							}
+							itemsToPack = (int)Math.Min(orderLine.Qty.Value, remainingQtyCapacity);
+							currentPackage.Weight += itemsToPack * itemWeight;
+							volume += itemsToPack * itemVolume;
+						}
 						orderLine.Qty -= itemsToPack;
 						orderQty -= itemsToPack;
 						num = currentPackage.Weight;
 						num2 = optimalBoxWeight.MaxWeight;
-						bool flag19;
+						bool flag23;
 						if (!(num.GetValueOrDefault() >= num2.GetValueOrDefault() & (num != null & num2 != null)))
 						{
 							decimal d2 = volume;
 							num2 = optimalBoxVolumeAndWeight.MaxVolume;
-							flag19 = (d2 >= num2.GetValueOrDefault() & num2 != null);
+							flag23 = (d2 >= num2.GetValueOrDefault() & num2 != null);
 						}
 						else
 						{
-							flag19 = true;
+							flag23 = true;
 						}
-						bool flag20 = flag19;
-						if (flag20)
+						bool flag24 = flag23;
+						if (flag24)
 						{
+							currentPackage = null;
 						}
 					}
 				}
@@ -634,25 +937,25 @@ namespace WMS
 			return orderPackages;
 		}
 
-		// Token: 0x060000E1 RID: 225 RVA: 0x0000652C File Offset: 0x0000472C
+		// Token: 0x060000F6 RID: 246 RVA: 0x0000714C File Offset: 0x0000534C
 		protected decimal GetOrderWeight(List<SOLine> orderLines)
 		{
 			return orderLines.Sum((SOLine orderLine) => this.GetItemWeight(orderLine.InventoryID) * orderLine.Qty).Value;
 		}
 
-		// Token: 0x060000E2 RID: 226 RVA: 0x00006558 File Offset: 0x00004758
+		// Token: 0x060000F7 RID: 247 RVA: 0x00007178 File Offset: 0x00005378
 		protected decimal GetOrderVolume(List<SOLine> orderLines)
 		{
 			return orderLines.Sum((SOLine orderLine) => this.GetItemVolume(orderLine.InventoryID) * orderLine.Qty).Value;
 		}
 
-		// Token: 0x060000E3 RID: 227 RVA: 0x00006584 File Offset: 0x00004784
+		// Token: 0x060000F8 RID: 248 RVA: 0x000071A4 File Offset: 0x000053A4
 		protected int GetOrderQty(List<SOLine> orderLines)
 		{
 			return (int)orderLines.Sum((SOLine orderLine) => orderLine.Qty).Value;
 		}
 
-		// Token: 0x060000E4 RID: 228 RVA: 0x000065C8 File Offset: 0x000047C8
+		// Token: 0x060000F9 RID: 249 RVA: 0x000071E8 File Offset: 0x000053E8
 		protected decimal GetItemWeight(int? inventoryID)
 		{
 			InventoryItem item = PXSelectBase<InventoryItem, PXViewOf<InventoryItem>.BasedOn<SelectFromBase<InventoryItem, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<InventoryItem.inventoryID, IBqlInt>.IsEqual<P.AsInt>>>.Config>.Select(base.Base, new object[]
@@ -662,7 +965,7 @@ namespace WMS
 			return ((item != null) ? item.BaseItemWeight : null).GetValueOrDefault();
 		}
 
-		// Token: 0x060000E5 RID: 229 RVA: 0x00006618 File Offset: 0x00004818
+		// Token: 0x060000FA RID: 250 RVA: 0x00007238 File Offset: 0x00005438
 		protected decimal GetItemVolume(int? inventoryID)
 		{
 			InventoryItem item = PXSelectBase<InventoryItem, PXViewOf<InventoryItem>.BasedOn<SelectFromBase<InventoryItem, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<InventoryItem.inventoryID, IBqlInt>.IsEqual<P.AsInt>>>.Config>.Select(base.Base, new object[]
@@ -672,7 +975,7 @@ namespace WMS
 			return ((item != null) ? item.BaseItemVolume : null).GetValueOrDefault();
 		}
 
-		// Token: 0x060000E6 RID: 230 RVA: 0x00006668 File Offset: 0x00004868
+		// Token: 0x060000FB RID: 251 RVA: 0x00007288 File Offset: 0x00005488
 		protected decimal GetTotalPackageWeight(SOPackageDetailEx package)
 		{
 			decimal totalWeight = 0m;
@@ -688,7 +991,7 @@ namespace WMS
 			return totalWeight;
 		}
 
-		// Token: 0x060000E7 RID: 231 RVA: 0x00006720 File Offset: 0x00004920
+		// Token: 0x060000FC RID: 252 RVA: 0x00007340 File Offset: 0x00005540
 		protected decimal GetTotalPackageVolume(SOPackageDetailEx package)
 		{
 			decimal totalVolume = 0m;
@@ -704,7 +1007,7 @@ namespace WMS
 			return totalVolume;
 		}
 
-		// Token: 0x060000E8 RID: 232 RVA: 0x000067D8 File Offset: 0x000049D8
+		// Token: 0x060000FD RID: 253 RVA: 0x000073F8 File Offset: 0x000055F8
 		protected bool HasSelectedPackageContents(SOPackageDetailEx package)
 		{
 			bool flag = package == null || package.ShipmentNbr == null || package.LineNbr == null;
@@ -715,7 +1018,7 @@ namespace WMS
 			}).TopFirst != null;
 		}
 
-		// Token: 0x060000E9 RID: 233 RVA: 0x00006844 File Offset: 0x00004A44
+		// Token: 0x060000FE RID: 254 RVA: 0x00007464 File Offset: 0x00005664
 		protected void DeleteEmptyPackages(IEnumerable<SOPackageDetailEx> packages)
 		{
 			bool deletedAny = false;
@@ -741,7 +1044,7 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x060000EA RID: 234 RVA: 0x00006918 File Offset: 0x00004B18
+		// Token: 0x060000FF RID: 255 RVA: 0x00007538 File Offset: 0x00005738
 		protected void CreatePackagesByWeightSeparately(SOShipmentEntry sOShipmentEntry, SOShipLineSplit soShipLine, string orderNbr, List<SOPackageDetailEx> packages)
 		{
 			decimal itemWeight = this.GetItemWeight(soShipLine.InventoryID);
@@ -794,7 +1097,70 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x060000EB RID: 235 RVA: 0x00006B74 File Offset: 0x00004D74
+		// Token: 0x06000100 RID: 256 RVA: 0x00007794 File Offset: 0x00005994
+		protected void CreatePackagesByQtySeparately(SOShipmentEntry sOShipmentEntry, SOShipLineSplit soShipLine, string orderNbr, List<SOPackageDetailEx> packages)
+		{
+			decimal itemWeight = this.GetItemWeight(soShipLine.InventoryID);
+			decimal qty = soShipLine.Qty.GetValueOrDefault();
+			SOShipLine shipLine = PXSelectBase<SOShipLine, PXViewOf<SOShipLine>.BasedOn<SelectFromBase<SOShipLine, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlChainableConditionBase<TypeArrayOf<IBqlBinary>.FilledWith<And<Compare<SOShipLine.origOrderNbr, Equal<P.AsString>>>>>.And<BqlOperand<SOShipLine.inventoryID, IBqlInt>.IsEqual<P.AsInt>>>>.Config>.Select(sOShipmentEntry, new object[]
+			{
+				orderNbr,
+				soShipLine.InventoryID
+			}).TopFirst;
+			SOOrder order = PXSelectBase<SOOrder, PXViewOf<SOOrder>.BasedOn<SelectFromBase<SOOrder, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<SOOrder.orderNbr, IBqlString>.IsEqual<P.AsString>>>.Config>.Select(sOShipmentEntry, new object[]
+			{
+				orderNbr
+			}).TopFirst;
+			SOOrderExt extension = PXCacheEx.GetExtension<SOOrderExt>(order);
+			string storeNbr = (extension != null) ? extension.UsrTCStoreNumber : null;
+			InventoryItem itemWarehouseDetails = PXSelectBase<InventoryItem, PXViewOf<InventoryItem>.BasedOn<SelectFromBase<InventoryItem, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<InventoryItem.inventoryID, IBqlInt>.IsEqual<P.AsInt>>>.Config>.Select(sOShipmentEntry, new object[]
+			{
+				shipLine.InventoryID
+			}).TopFirst;
+			foreach (SOPackageDetailEx package in packages)
+			{
+				PXCacheEx.GetExtension<SOPackageDetailExt>(package).UsrSepareteOrderNbr = orderNbr;
+				INItemBoxEx itemBox = PXSelectBase<INItemBoxEx, PXViewOf<INItemBoxEx>.BasedOn<SelectFromBase<INItemBoxEx, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlChainableConditionBase<TypeArrayOf<IBqlBinary>.FilledWith<And<Compare<INItemBoxEx.inventoryID, Equal<P.AsInt>>>>>.And<BqlOperand<INItemBoxEx.boxID, IBqlString>.IsEqual<P.AsString>>>>.Config>.Select(sOShipmentEntry, new object[]
+				{
+					soShipLine.InventoryID,
+					package.BoxID
+				}).TopFirst;
+				decimal maxQtyForBox = ((itemBox != null) ? itemBox.Qty : null).GetValueOrDefault();
+				bool flag = maxQtyForBox <= 0m;
+				if (!flag)
+				{
+					int currentQtyInBox = (itemWeight > 0m) ? ((int)(this.GetTotalPackageWeight(package) / itemWeight)) : 0;
+					int remainingCapacity = (int)maxQtyForBox - currentQtyInBox;
+					bool flag2 = remainingCapacity <= 0;
+					if (!flag2)
+					{
+						int itemsToPack = (int)Math.Min(qty, remainingCapacity);
+						package.Weight += itemsToPack * itemWeight;
+						SelectedPackageContents newPackageContent = new SelectedPackageContents
+						{
+							ShipmentNbr = package.ShipmentNbr,
+							PackageLineNbr = package.LineNbr,
+							OrderNbr = shipLine.OrigOrderNbr,
+							StoreNbr = storeNbr,
+							InventoryID = soShipLine.InventoryID,
+							PackedQty = new decimal?(itemsToPack),
+							ShipmentSplitLineNbr = soShipLine.SplitLineNbr,
+							DefaultIssueFrom = itemWarehouseDetails.DfltShipLocationID
+						};
+						this.SelectedPackageContentsView.Insert(newPackageContent);
+						sOShipmentEntry.Actions.PressSave();
+						qty -= itemsToPack;
+						bool flag3 = qty <= 0m;
+						if (flag3)
+						{
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		// Token: 0x06000101 RID: 257 RVA: 0x00007A44 File Offset: 0x00005C44
 		protected void CreatePackagesByVolumeAndWeightSeparately(SOShipmentEntry sOShipmentEntry, SOShipLineSplit soShipLine, string orderNbr, List<SOPackageDetailEx> packages)
 		{
 			decimal itemWeight = this.GetItemWeight(soShipLine.InventoryID);
@@ -860,7 +1226,172 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x060000EC RID: 236 RVA: 0x00006E94 File Offset: 0x00005094
+		// Token: 0x06000102 RID: 258 RVA: 0x00007D64 File Offset: 0x00005F64
+		protected void CreatePackagesByQty(SOShipmentEntry sOShipmentEntry, SOShipLineSplit order, List<CustomerBoxesDAC> customerBoxes)
+		{
+			List<CSBox> boxes = new List<CSBox>();
+			SOShipLine shipLine = PXSelectBase<SOShipLine, PXViewOf<SOShipLine>.BasedOn<SelectFromBase<SOShipLine, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlChainableConditionBase<TypeArrayOf<IBqlBinary>.FilledWith<And<Compare<SOShipLine.origOrderNbr, Equal<P.AsString>>>>>.And<BqlOperand<SOShipLine.inventoryID, IBqlInt>.IsEqual<P.AsInt>>>>.Config>.Select(sOShipmentEntry, new object[]
+			{
+				order.OrigOrderNbr,
+				order.InventoryID
+			}).TopFirst;
+			foreach (CustomerBoxesDAC customerBox in customerBoxes)
+			{
+				CSBox box3 = PXSelectBase<CSBox, PXViewOf<CSBox>.BasedOn<SelectFromBase<CSBox, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<CSBox.boxID, IBqlString>.IsEqual<P.AsString>>>.Config>.Select(base.Base, new object[]
+				{
+					customerBox.BoxID
+				}).TopFirst;
+				bool flag = box3 != null;
+				if (flag)
+				{
+					boxes.Add(box3);
+				}
+			}
+			IEnumerable<SOPackageDetailEx> firstTableItems = base.Base.Packages.Select(Array.Empty<object>()).FirstTableItems;
+			SOPackageDetailEx lastPackage = (firstTableItems != null) ? firstTableItems.LastOrDefault<SOPackageDetailEx>() : null;
+			List<INItemBoxEx> InItemBoxs = GraphHelper.RowCast<INItemBoxEx>(PXSelectBase<INItemBoxEx, PXViewOf<INItemBoxEx>.BasedOn<SelectFromBase<INItemBoxEx, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<INItemBoxEx.inventoryID, IBqlInt>.IsEqual<P.AsInt>>>.Config>.Select(base.Base, new object[]
+			{
+				order.InventoryID
+			})).ToList<INItemBoxEx>();
+			decimal itemWeight = this.GetItemWeight(order.InventoryID);
+			decimal qty = order.Qty.GetValueOrDefault();
+			bool flag2 = customerBoxes == null || customerBoxes.Count <= 0;
+			if (flag2)
+			{
+				foreach (INItemBoxEx inItemBox in InItemBoxs)
+				{
+					CSBox box2 = PXSelectBase<CSBox, PXViewOf<CSBox>.BasedOn<SelectFromBase<CSBox, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<CSBox.boxID, IBqlString>.IsEqual<P.AsString>>>.Config>.Select(base.Base, new object[]
+					{
+						inItemBox.BoxID
+					}).TopFirst;
+					bool flag3 = box2 != null;
+					if (flag3)
+					{
+						boxes.Add(box2);
+					}
+				}
+			}
+			var boxesWithQty = (from x in boxes.Select(delegate(CSBox box)
+			{
+				CSBox box4 = box;
+				INItemBoxEx initemBoxEx2 = InItemBoxs.FirstOrDefault((INItemBoxEx ib) => ib.BoxID == box.BoxID);
+				return new
+				{
+					Box = box4,
+					MaxQty = ((initemBoxEx2 != null) ? initemBoxEx2.Qty : null).GetValueOrDefault()
+				};
+			})
+			where x.MaxQty > 0m
+			select x).ToList();
+			SOOrder currentOrder = PXSelectBase<SOOrder, PXViewOf<SOOrder>.BasedOn<SelectFromBase<SOOrder, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<SOOrder.orderNbr, IBqlString>.IsEqual<P.AsString>>>.Config>.Select(sOShipmentEntry, new object[]
+			{
+				order.OrigOrderNbr
+			}).TopFirst;
+			InventoryItem itemWarehouseDetails = PXSelectBase<InventoryItem, PXViewOf<InventoryItem>.BasedOn<SelectFromBase<InventoryItem, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<InventoryItem.inventoryID, IBqlInt>.IsEqual<P.AsInt>>>.Config>.Select(base.Base, new object[]
+			{
+				shipLine.InventoryID
+			}).TopFirst;
+			SOOrderExt extension = PXCacheEx.GetExtension<SOOrderExt>(currentOrder);
+			string storeNbr = (extension != null) ? extension.UsrTCStoreNumber : null;
+			bool flag4 = boxesWithQty.Count == 0;
+			if (flag4)
+			{
+				throw new PXException("No box quantity configuration found for item {0}. Please define boxes in Item Warehouse Details.", new object[]
+				{
+					itemWarehouseDetails.InventoryCD
+				});
+			}
+			var currentBoxObj = (from b in boxesWithQty
+			orderby b.MaxQty descending
+			select b).FirstOrDefault();
+			while (qty > 0m)
+			{
+				foreach (var b2 in from x in boxesWithQty
+				orderby x.MaxQty
+				select x)
+				{
+					bool flag5 = b2.MaxQty >= qty;
+					if (flag5)
+					{
+						currentBoxObj = b2;
+						break;
+					}
+				}
+				SOPackageDetailEx package = null;
+				bool flag6 = lastPackage != null && PXCacheEx.GetExtension<SOPackageDetailExt>(lastPackage).UsrSepareteOrderNbr == null;
+				if (flag6)
+				{
+					package = lastPackage;
+				}
+				else
+				{
+					package = new SOPackageDetailEx
+					{
+						Confirmed = new bool?(false),
+						BoxID = currentBoxObj.Box.BoxID
+					};
+					package = base.Base.Packages.Insert(package);
+				}
+				INItemBoxEx initemBoxEx = InItemBoxs.FirstOrDefault((INItemBoxEx ib) => ib.BoxID == package.BoxID);
+				decimal maxQtyForPackageBox = ((initemBoxEx != null) ? initemBoxEx.Qty : null).GetValueOrDefault();
+				bool flag7 = maxQtyForPackageBox <= 0m;
+				if (flag7)
+				{
+					maxQtyForPackageBox = currentBoxObj.MaxQty;
+				}
+				int currentQtyInBox = (itemWeight > 0m) ? ((int)Math.Floor(this.GetTotalPackageWeight(package) / itemWeight)) : 0;
+				int remainingQtyCapacity = (int)maxQtyForPackageBox - currentQtyInBox;
+				bool flag8 = remainingQtyCapacity <= 0;
+				if (flag8)
+				{
+					package = new SOPackageDetailEx
+					{
+						Confirmed = new bool?(false),
+						BoxID = currentBoxObj.Box.BoxID
+					};
+					package = base.Base.Packages.Insert(package);
+					remainingQtyCapacity = (int)currentBoxObj.MaxQty;
+				}
+				base.Base.Actions.PressSave();
+				int itemsToPack = (int)Math.Min(qty, remainingQtyCapacity);
+				bool flag9 = itemsToPack <= 0;
+				if (flag9)
+				{
+					bool flag10 = !this.HasSelectedPackageContents(package);
+					if (flag10)
+					{
+						base.Base.Packages.Delete(package);
+						base.Base.Actions.PressSave();
+					}
+					throw new PXException("Package generation could not assign any quantity for item {0}. Please verify the available box capacity for this shipment line.", new object[]
+					{
+						itemWarehouseDetails.InventoryCD
+					});
+				}
+				SelectedPackageContents newPackageContent = new SelectedPackageContents
+				{
+					ShipmentNbr = package.ShipmentNbr,
+					PackageLineNbr = package.LineNbr,
+					OrderNbr = shipLine.OrigOrderNbr,
+					StoreNbr = storeNbr,
+					InventoryID = order.InventoryID,
+					PackedQty = new decimal?(itemsToPack),
+					ShipmentSplitLineNbr = order.SplitLineNbr,
+					DefaultIssueFrom = itemWarehouseDetails.DfltShipLocationID
+				};
+				this.SelectedPackageContentsView.Insert(newPackageContent);
+				base.Base.Actions.PressSave();
+				qty -= itemsToPack;
+				lastPackage = package;
+				bool flag11 = qty <= 0m;
+				if (flag11)
+				{
+					break;
+				}
+			}
+		}
+
+		// Token: 0x06000103 RID: 259 RVA: 0x00008380 File Offset: 0x00006580
 		protected void CreatePackagesByWeight(SOShipmentEntry sOShipmentEntry, SOShipLineSplit order, List<CustomerBoxesDAC> customerBoxes)
 		{
 			List<CSBox> boxes = new List<CSBox>();
@@ -1005,7 +1536,7 @@ namespace WMS
 			});
 		}
 
-		// Token: 0x060000ED RID: 237 RVA: 0x00007494 File Offset: 0x00005694
+		// Token: 0x06000104 RID: 260 RVA: 0x00008980 File Offset: 0x00006B80
 		protected void CreatePackagesByVolumeAndWeight(SOShipmentEntry sOShipmentEntry, SOShipLineSplit order, List<CustomerBoxesDAC> customerBoxes)
 		{
 			SOShipLine shipLine = PXSelectBase<SOShipLine, PXViewOf<SOShipLine>.BasedOn<SelectFromBase<SOShipLine, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlChainableConditionBase<TypeArrayOf<IBqlBinary>.FilledWith<And<Compare<SOShipLine.origOrderNbr, Equal<P.AsString>>>>>.And<BqlOperand<SOShipLine.inventoryID, IBqlInt>.IsEqual<P.AsInt>>>>.Config>.Select(sOShipmentEntry, new object[]
@@ -1152,7 +1683,7 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x060000EE RID: 238 RVA: 0x00007AFC File Offset: 0x00005CFC
+		// Token: 0x06000105 RID: 261 RVA: 0x00008FE8 File Offset: 0x000071E8
 		protected void SetBoxNbrStr(List<SOPackageDetailEx> freshPackages)
 		{
 			IEnumerable<IGrouping<string, SOPackageDetailEx>> orderGroups = from p in freshPackages
@@ -1166,14 +1697,19 @@ namespace WMS
 				{
 					SOPackageDetail packageRec = (SOPackageDetail)base.Base.Packages.Cache.Locate(currentPackage);
 					string formattedValue = string.Format("{0} of {1}", boxNumber, totalBoxes);
-					base.Base.Packages.Cache.SetValue<SOPackageDetailExt.usrSOBoxNbrstr>(packageRec, formattedValue);
-					GraphHelper.MarkUpdated(base.Base.Packages.Cache, packageRec);
+					SOPackageDetailExt ext = PXCacheEx.GetExtension<SOPackageDetailExt>(packageRec);
+					bool flag = ext.UsrSOBoxNbrStr != formattedValue;
+					if (flag)
+					{
+						base.Base.Packages.Cache.SetValue<SOPackageDetailExt.usrSOBoxNbrstr>(packageRec, formattedValue);
+						GraphHelper.MarkUpdated(base.Base.Packages.Cache, packageRec);
+					}
 					boxNumber++;
 				}
 			}
 		}
 
-		// Token: 0x060000EF RID: 239 RVA: 0x00007C48 File Offset: 0x00005E48
+		// Token: 0x06000106 RID: 262 RVA: 0x00009158 File Offset: 0x00007358
 		private void UpdateOrderAndStoreInfo(SOPackageDetailEx row)
 		{
 			SOPackageDetailExt packageExt = PXCacheEx.GetExtension<SOPackageDetailExt>(row);
@@ -1189,7 +1725,7 @@ namespace WMS
 			packageExt.UsrStoreNbr = (splitStores ? "<SPLIT>" : firstStoreNbr);
 		}
 
-		// Token: 0x060000F0 RID: 240 RVA: 0x00007D1C File Offset: 0x00005F1C
+		// Token: 0x06000107 RID: 263 RVA: 0x0000922C File Offset: 0x0000742C
 		private void UpdatePackageQuantities(SOPackageDetailEx row)
 		{
 			SOPackageDetailExExt packageExExt = PXCacheEx.GetExtension<SOPackageDetailExExt>(row);
@@ -1210,7 +1746,7 @@ namespace WMS
 			packageExExt.UsrContentPackageQuantity = new decimal?(contentQty);
 		}
 
-		// Token: 0x060000F1 RID: 241 RVA: 0x00007E28 File Offset: 0x00006028
+		// Token: 0x06000108 RID: 264 RVA: 0x00009338 File Offset: 0x00007538
 		private void UpdatePackageWeight(PXCache cache, SOPackageDetailEx row)
 		{
 			SOPackageDetailExt packageExt = PXCacheEx.GetExtension<SOPackageDetailExt>(row);
@@ -1218,7 +1754,7 @@ namespace WMS
 			cache.SetValue<SOPackageDetail.weight>(row, weight);
 		}
 
-		// Token: 0x060000F2 RID: 242 RVA: 0x00007E70 File Offset: 0x00006070
+		// Token: 0x06000109 RID: 265 RVA: 0x00009380 File Offset: 0x00007580
 		private decimal CalculatePackageWeight(SOPackageDetailEx package)
 		{
 			decimal weight = 0m;
@@ -1233,7 +1769,7 @@ namespace WMS
 			return weight;
 		}
 
-		// Token: 0x060000F3 RID: 243 RVA: 0x00007F18 File Offset: 0x00006118
+		// Token: 0x0600010A RID: 266 RVA: 0x00009428 File Offset: 0x00007628
 		private decimal CalculateMasterPackageWeight(SOPackageDetailEx masterPackage)
 		{
 			decimal weight = 0m;
@@ -1250,7 +1786,7 @@ namespace WMS
 			return weight;
 		}
 
-		// Token: 0x060000F4 RID: 244 RVA: 0x00007FCC File Offset: 0x000061CC
+		// Token: 0x0600010B RID: 267 RVA: 0x000094DC File Offset: 0x000076DC
 		private IEnumerable<SelectedPackageContents> GetPackageContents(SOPackageDetailEx package)
 		{
 			return PXSelectBase<SelectedPackageContents, PXViewOf<SelectedPackageContents>.BasedOn<SelectFromBase<SelectedPackageContents, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlChainableConditionBase<TypeArrayOf<IBqlBinary>.FilledWith<And<Compare<SelectedPackageContents.shipmentNbr, Equal<P.AsString>>>>>.And<BqlOperand<SelectedPackageContents.packageLineNbr, IBqlInt>.IsEqual<P.AsInt>>>>.Config>.Select(base.Base, new object[]
@@ -1260,7 +1796,7 @@ namespace WMS
 			}).FirstTableItems;
 		}
 
-		// Token: 0x060000F5 RID: 245 RVA: 0x0000800C File Offset: 0x0000620C
+		// Token: 0x0600010C RID: 268 RVA: 0x0000951C File Offset: 0x0000771C
 		private IEnumerable GetPackageInventoryContents(SOPackageDetailEx package)
 		{
 			return PXSelectBase<SOShipLineSplitPackage, PXViewOf<SOShipLineSplitPackage>.BasedOn<SelectFromBase<SOShipLineSplitPackage, TypeArrayOf<IFbqlJoin>.Append<TypeArrayOf<IFbqlJoin>.Empty, FbqlJoins.Inner<InventoryItem>.On<BqlOperand<SOShipLineSplitPackage.inventoryID, IBqlInt>.IsEqual<InventoryItem.inventoryID>>>>.Where<BqlChainableConditionBase<TypeArrayOf<IBqlBinary>.FilledWith<And<Compare<SOShipLineSplitPackage.shipmentNbr, Equal<P.AsString>>>>>.And<BqlOperand<SOShipLineSplitPackage.packageLineNbr, IBqlInt>.IsEqual<P.AsInt>>>>.Config>.Select(base.Base, new object[]
@@ -1270,7 +1806,7 @@ namespace WMS
 			});
 		}
 
-		// Token: 0x04000046 RID: 70
+		// Token: 0x0400004A RID: 74
 		[Nullable(new byte[]
 		{
 			0,
@@ -1302,8 +1838,12 @@ namespace WMS
 		})]
 		public FbqlSelect<SelectFromBase<SelectedPackageContents, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlChainableConditionBase<TypeArrayOf<IBqlBinary>.FilledWith<And<Compare<SelectedPackageContents.shipmentNbr, Equal<BqlField<SOPackageDetailEx.shipmentNbr, IBqlString>.FromCurrent>>>>>.And<BqlOperand<SelectedPackageContents.packageLineNbr, IBqlInt>.IsEqual<BqlField<SOPackageDetailEx.lineNbr, IBqlInt>.FromCurrent>>>.Order<By<BqlField<SelectedPackageContents.defaultIssueFrom, IBqlInt>.Asc>>, SelectedPackageContents>.View SelectedPackageContentsView;
 
-		// Token: 0x0200006E RID: 110
-		// (Invoke) Token: 0x060001B8 RID: 440
+		// Token: 0x02000070 RID: 112
+		// (Invoke) Token: 0x060001CF RID: 463
+		public delegate void PersistDelegate();
+
+		// Token: 0x02000071 RID: 113
+		// (Invoke) Token: 0x060001D3 RID: 467
 		public delegate void CreateShipmentDelegate(CreateShipmentArgs args);
 	}
 }

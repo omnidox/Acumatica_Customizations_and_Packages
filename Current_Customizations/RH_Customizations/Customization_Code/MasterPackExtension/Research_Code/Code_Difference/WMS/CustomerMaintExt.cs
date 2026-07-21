@@ -11,16 +11,16 @@ using WMS.AR.GraphExt;
 
 namespace WMS
 {
-	// Token: 0x02000005 RID: 5
+	// Token: 0x02000007 RID: 7
 	public class CustomerMaintExt : PXGraphExtension<CustomerMaint>
 	{
-		// Token: 0x06000008 RID: 8 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x06000014 RID: 20 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x06000009 RID: 9 RVA: 0x000020A0 File Offset: 0x000002A0
+		// Token: 0x06000015 RID: 21 RVA: 0x000022D4 File Offset: 0x000004D4
 		protected void _(Events.RowSelected<Customer> args)
 		{
 			bool flag = args == null;
@@ -42,7 +42,7 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x0600000A RID: 10 RVA: 0x0000212C File Offset: 0x0000032C
+		// Token: 0x06000016 RID: 22 RVA: 0x00002360 File Offset: 0x00000560
 		protected void _(Events.RowSelected<CustomerPackaging> e)
 		{
 			bool flag = e == null || e.Row == null;
@@ -79,7 +79,7 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x0600000B RID: 11 RVA: 0x00002287 File Offset: 0x00000487
+		// Token: 0x06000017 RID: 23 RVA: 0x000024BB File Offset: 0x000006BB
 		[PXDBDefault(typeof(BAccount.bAccountID))]
 		[PXParent(typeof(Select<Customer, Where<Customer.bAccountID, Equal<Current<CustomerPackaging.customer>>>>))]
 		[PXMergeAttributes(Method = 0)]
@@ -87,7 +87,7 @@ namespace WMS
 		{
 		}
 
-		// Token: 0x0600000C RID: 12 RVA: 0x0000228C File Offset: 0x0000048C
+		// Token: 0x06000018 RID: 24 RVA: 0x000024C0 File Offset: 0x000006C0
 		protected void _(Events.FieldUpdated<CustomerBoxesDAC, CustomerBoxesDAC.boxID> e)
 		{
 			bool flag = e.Row == null || e.Row.BoxID == null;
@@ -118,7 +118,7 @@ namespace WMS
 			}
 		}
 
-		// Token: 0x04000003 RID: 3
+		// Token: 0x04000007 RID: 7
 		[Nullable(new byte[]
 		{
 			0,
@@ -136,7 +136,7 @@ namespace WMS
 		})]
 		public FbqlSelect<SelectFromBase<CustomerBoxesDAC, TypeArrayOf<IFbqlJoin>.Empty>.Where<BqlOperand<CustomerBoxesDAC.customerID, IBqlInt>.IsEqual<BqlField<Customer.bAccountID, IBqlInt>.FromCurrent>>, CustomerBoxesDAC>.View CustomerBoxesDAC;
 
-		// Token: 0x04000004 RID: 4
+		// Token: 0x04000008 RID: 8
 		[Nullable(new byte[]
 		{
 			0,

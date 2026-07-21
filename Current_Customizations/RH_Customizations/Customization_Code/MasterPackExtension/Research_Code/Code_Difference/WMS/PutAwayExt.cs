@@ -6,16 +6,16 @@ using PX.Objects.PO.WMS;
 
 namespace WMS
 {
-	// Token: 0x02000010 RID: 16
+	// Token: 0x02000012 RID: 18
 	public class PutAwayExt : PXGraphExtension<ReceivePutAway.Host>
 	{
-		// Token: 0x06000073 RID: 115 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x0600007F RID: 127 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x06000074 RID: 116 RVA: 0x00004184 File Offset: 0x00002384
+		// Token: 0x06000080 RID: 128 RVA: 0x000043B8 File Offset: 0x000025B8
 		public virtual void _(Events.RowSelecting<POReceiptLineSplit> args)
 		{
 			bool flag = args.Row == null || args.Row.ReceiptNbr == null;

@@ -6,24 +6,24 @@ using PX.Objects.SO.GraphExtensions.SOShipmentEntryExt;
 
 namespace WMS
 {
-	// Token: 0x02000017 RID: 23
+	// Token: 0x02000019 RID: 25
 	[PXProtectedAccess(null)]
 	public abstract class CarrierRatesExt : PXGraphExtension<CreateShipmentExtension, SOShipmentEntry.CarrierRates, SOShipmentEntry>
 	{
-		// Token: 0x060000D5 RID: 213 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x060000E1 RID: 225 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x060000D6 RID: 214 RVA: 0x00004547 File Offset: 0x00002747
+		// Token: 0x060000E2 RID: 226 RVA: 0x0000477B File Offset: 0x0000297B
 		[PXOverride]
 		public void RecalculatePackagesForOrder(Document doc, CarrierRatesExt.RecalculatePackagesForOrderDelegate baseMethod)
 		{
 		}
 
-		// Token: 0x0200006D RID: 109
-		// (Invoke) Token: 0x060001B4 RID: 436
+		// Token: 0x0200006F RID: 111
+		// (Invoke) Token: 0x060001CB RID: 459
 		public delegate void RecalculatePackagesForOrderDelegate(Document doc);
 	}
 }

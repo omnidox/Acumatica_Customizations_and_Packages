@@ -6,23 +6,23 @@ using PX.Objects.PO;
 
 namespace WMS
 {
-	// Token: 0x0200000F RID: 15
+	// Token: 0x02000011 RID: 17
 	public class POReceiptLineSplitExt : PXCacheExtension<POReceiptLineSplit>
 	{
-		// Token: 0x0600006F RID: 111 RVA: 0x00002082 File Offset: 0x00000282
+		// Token: 0x0600007B RID: 123 RVA: 0x000022B4 File Offset: 0x000004B4
 		public static bool IsActive()
 		{
 			return true;
 		}
 
-		// Token: 0x17000015 RID: 21
-		// (get) Token: 0x06000070 RID: 112 RVA: 0x0000416A File Offset: 0x0000236A
-		// (set) Token: 0x06000071 RID: 113 RVA: 0x00004172 File Offset: 0x00002372
+		// Token: 0x17000019 RID: 25
+		// (get) Token: 0x0600007C RID: 124 RVA: 0x0000439E File Offset: 0x0000259E
+		// (set) Token: 0x0600007D RID: 125 RVA: 0x000043A6 File Offset: 0x000025A6
 		[PXDBString(30, IsUnicode = true, InputMask = "")]
 		[PXUIField(DisplayName = "Default Put Away To Location", IsReadOnly = true)]
 		public virtual string UsrDefaultPutAwayLocation { get; set; }
 
-		// Token: 0x02000041 RID: 65
+		// Token: 0x02000043 RID: 67
 		[Nullable(new byte[]
 		{
 			0,

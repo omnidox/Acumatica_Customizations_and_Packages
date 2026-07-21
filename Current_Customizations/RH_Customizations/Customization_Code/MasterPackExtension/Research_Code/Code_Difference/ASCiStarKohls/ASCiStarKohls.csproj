@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F63E0E44-C84E-43A0-B8FA-E9543CF52D32}</ProjectGuid>
+    <ProjectGuid>{37D0A19A-9A0B-4A9F-81BC-20A297586A74}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ASCiStarKohls</RootNamespace>
