@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{40A9A48E-2C31-46D4-9FCA-D6796AC7D303}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>WMS</RootNamespace>
+    <AssemblyName>WMS</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="PX.BarcodeProcessing" />
+    <Reference Include="PX.Common.Std" />
+    <Reference Include="PX.Data" />
+    <Reference Include="PX.Data.BQL.Fluent" />
+    <Reference Include="PX.Objects" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppDesigner Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AR\Descriptor\Attributes\BoxIdUniqueAttribute.cs" />
+    <Compile Include="AR\GraphExt\CustomerBoxesDAC.cs" />
+    <Compile Include="CarrierRatesExt.cs" />
+    <Compile Include="ConfirmStateLogicExt.cs" />
+    <Compile Include="CSBoxExt.cs" />
+    <Compile Include="CustomerMaintExt.cs" />
+    <Compile Include="CustomerPackaging.cs" />
+    <Compile Include="HostExt.cs" />
+    <Compile Include="INItemSiteExt.cs" />
+    <Compile Include="INSiteStatusFilterExt.cs" />
+    <Compile Include="INTranExt.cs" />
+    <Compile Include="INTransferEntryExt.cs" />
+    <Compile Include="Microsoft\CodeAnalysis\EmbeddedAttribute.cs" />
+    <Compile Include="PackModeLogicExt.cs" />
+    <Compile Include="POReceiptLineExt.cs" />
+    <Compile Include="POReceiptLineSplitExt.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PutAwayExt.cs" />
+    <Compile Include="ScanHeaderExt.cs" />
+    <Compile Include="SelectedPackageContents.cs" />
+    <Compile Include="SOOrderExt.cs" />
+    <Compile Include="SOPackageDetailExExt.cs" />
+    <Compile Include="SOPackageDetailExt.cs" />
+    <Compile Include="SOSetupExt.cs" />
+    <Compile Include="SOShipmentEntryExt.cs" />
+    <Compile Include="SOShipmentExt.cs" />
+    <Compile Include="SO\DACExt\SOOrderTypeExt.cs" />
+    <Compile Include="SO\GraphExt\SOOrderEntryExt.cs" />
+    <Compile Include="System\Runtime\CompilerServices\NullableAttribute.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
