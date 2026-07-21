@@ -196,17 +196,15 @@ namespace CustomWMS
     }
 
     /*
-     * Important:
+     * This is a standard SOShipmentEntry graph extension.
      *
-     * This is now a normal SOShipmentEntry extension.
+     * It deliberately does not inherit from:
      *
-     * It no longer explicitly extends:
+     *     PXGraphExtension<WMS.SOShipmentEntryExt, SOShipmentEntry>
      *
-     *     WMS.SOShipmentEntryExt
-     *
-     * That avoids creating a second-level extension dependency that
-     * can change the Persist override order between Vadym's WMS
-     * customization and TrueCommerce.
+     * Avoiding that second-level extension dependency preserves the
+     * working Persist override order between Vadym's WMS package and
+     * TrueCommerce.
      *
      * This extension does not override Persist.
      */
@@ -217,7 +215,7 @@ namespace CustomWMS
             "[SelectedPackageSort]";
 
         private const string Version =
-            "2026-07-21-STANDARD-GRAPH-EXTENSION-01";
+            "2026-07-21-STANDARD-EXT-POST-COMMIT-REFRESH-01";
 
         public static bool IsActive()
         {
@@ -225,20 +223,21 @@ namespace CustomWMS
         }
 
         /*
-         * The existing view name is retained to preserve the current
-         * ASPX/grid binding.
-         *
-         * The extension itself is no longer chained to Vadym's
-         * WMS.SOShipmentEntryExt.
+         * The existing view name is retained so the existing grid and
+         * ASPX DataMember do not need to be changed.
          */
         public PXSelect<
             WmsPlan,
             Where<
                 WmsPlan.shipmentNbr,
-                Equal<Current<SOPackageDetailEx.shipmentNbr>>,
+                Equal<
+                    Current<
+                        SOPackageDetailEx.shipmentNbr>>,
                 And<
                     WmsPlan.packageLineNbr,
-                    Equal<Current<SOPackageDetailEx.lineNbr>>>>,
+                    Equal<
+                        Current<
+                            SOPackageDetailEx.lineNbr>>>>,
             OrderBy<
                 Asc<
                     SelectedPackageContentsExt.usrCompletedSortOrder,
@@ -358,10 +357,10 @@ namespace CustomWMS
         }
 
         /*
-         * Creates a detached display copy.
+         * Creates a detached copy for display.
          *
-         * The original WmsPlan row is not modified.
-         * No SetValueExt calls are performed against the graph cache.
+         * The original WmsPlan record in the graph cache is not
+         * modified. No SetValueExt calls are used.
          */
         private WmsPlan CreateDisplayRow(
             RowCalc item)
@@ -423,8 +422,8 @@ namespace CustomWMS
             SOPackageDetailEx package)
         {
             /*
-             * Read the expected rows assigned to the currently
-             * selected carton.
+             * Load the expected rows assigned to the currently selected
+             * package.
              */
             List<WmsPlan> plannedRows =
                 PXSelectReadonly<
@@ -447,7 +446,11 @@ namespace CustomWMS
                 .ToList();
 
             /*
-             * Read the actual packed rows for the shipment once.
+             * Load actual packed records across the entire shipment.
+             *
+             * This prevents a split that was packed into another carton
+             * from continuing to appear as remaining in its originally
+             * expected carton.
              */
             List<SOShipLineSplitPackage>
                 shipmentActualRows =
@@ -477,6 +480,11 @@ namespace CustomWMS
                                 row =>
                                     row.PackedQty ?? 0m));
 
+            /*
+             * Package-only quantities are retained for diagnostics.
+             * Completion and RemainingQty are based on shipment-wide
+             * packed quantities.
+             */
             Dictionary<int?, decimal>
                 packageActualQtyBySplit =
                     shipmentActualRows
@@ -587,9 +595,8 @@ namespace CustomWMS
         }
 
         /*
-         * Inventory values are loaded once for the view execution
-         * instead of performing one InventoryItem query per row
-         * during sorting.
+         * Loads inventory codes once per view execution instead of
+         * querying InventoryItem separately for each row while sorting.
          */
         private Dictionary<int?, string>
             GetInventoryCodes(
@@ -608,14 +615,6 @@ namespace CustomWMS
                 return new Dictionary<int?, string>();
             }
 
-            /*
-             * This still loads InventoryItem through one managed query.
-             * The required IDs are then filtered in memory.
-             *
-             * This is intentionally retained from the previous
-             * isolation version. It can be replaced later with a
-             * parameterized "IN" query if performance requires it.
-             */
             List<InventoryItem> inventoryItems =
                 PXSelectReadonly<InventoryItem>
                     .Select(Base)
@@ -658,18 +657,90 @@ namespace CustomWMS
         }
 
         /*
+         * Wait until the database transaction has completed before
+         * requesting the expected-content grid refresh.
+         *
+         * RowInserted, RowUpdated, and RowDeleted are intentionally not
+         * used because they may run while the WMS/TrueCommerce Persist
+         * transaction is still in progress.
+         */
+        protected virtual void _(
+            Events.RowPersisted<SOShipLineSplitPackage> e)
+        {
+            if (e.Row == null)
+            {
+                return;
+            }
+
+            if (e.TranStatus != PXTranStatus.Completed)
+            {
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Packed-row persistence has not " +
+                    $"completed successfully. " +
+                    $"TranStatus={e.TranStatus}, " +
+                    $"Operation={e.Operation}. " +
+                    $"Refresh not requested.");
+
+                return;
+            }
+
+            bool relevantOperation =
+                e.Operation == PXDBOperation.Insert ||
+                e.Operation == PXDBOperation.Update ||
+                e.Operation == PXDBOperation.Delete;
+
+            if (!relevantOperation)
+            {
+                return;
+            }
+
+            RequestEstimatedContentRefresh(
+                $"Packed row persisted successfully. " +
+                $"Operation={e.Operation}");
+        }
+
+        /*
+         * Clears only the stored results for the custom view and marks
+         * the grid for refresh.
+         *
+         * The WmsPlan cache is deliberately not cleared.
+         */
+        private void RequestEstimatedContentRefresh(
+            string reason)
+        {
+            if (SelectedPackageContentsView?.View == null)
+            {
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Refresh could not be requested. " +
+                    $"SelectedPackageContentsView was not available. " +
+                    $"Reason={reason}");
+
+                return;
+            }
+
+            SelectedPackageContentsView
+                .View.Clear();
+
+            SelectedPackageContentsView
+                .View.RequestRefresh();
+
+            WmsDebugTrace.Info(
+                $"{TracePrefix} Expected-content refresh requested " +
+                $"after successful transaction completion. " +
+                $"Reason={reason}");
+        }
+
+        /*
          * Intentionally absent:
          *
          * - Persist override
+         * - Second-level WMS graph-extension inheritance
          * - RowInserted<SOShipLineSplitPackage>
          * - RowUpdated<SOShipLineSplitPackage>
          * - RowDeleted<SOShipLineSplitPackage>
-         * - Cache.Clear()
-         * - View.Clear()
-         * - RequestRefresh()
-         *
-         * The extension is limited to displaying and sorting the
-         * calculated expected-package rows.
+         * - SetValueExt against WmsPlan cache rows
+         * - SelectedPackageContentsView.Cache.Clear()
+         * - WMS extension cache clearing
          */
 
         private sealed class RowCalc
