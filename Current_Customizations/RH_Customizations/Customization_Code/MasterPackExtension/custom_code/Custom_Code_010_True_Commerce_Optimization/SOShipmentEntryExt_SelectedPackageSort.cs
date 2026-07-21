@@ -215,7 +215,20 @@ namespace CustomWMS
             "[SelectedPackageSort]";
 
         private const string Version =
-            "2026-07-21-STANDARD-EXT-POST-COMMIT-REFRESH-01";
+            "2026-07-21-FIELD-SELECTING-POST-COMMIT-REFRESH-01";
+
+        /*
+         * Stores calculated unbound display values for the rows returned
+         * by the current view execution.
+         *
+         * FieldSelecting reads from this dictionary when Acumatica renders
+         * Remaining Qty, Skipped Status, and the hidden sorting fields.
+         *
+         * The original WmsPlan cache records are not modified.
+         */
+        private readonly Dictionary<string, RowDisplayValues>
+            _displayValuesByRow =
+                new Dictionary<string, RowDisplayValues>();
 
         public static bool IsActive()
         {
@@ -268,6 +281,12 @@ namespace CustomWMS
         {
             WmsDebugTrace.Info(
                 $"{TracePrefix} VERSION {Version}");
+
+            /*
+             * Remove display values left over from the previous package
+             * or previous execution of the view.
+             */
+            _displayValuesByRow.Clear();
 
             SOPackageDetailEx package =
                 Base.Packages.Current;
@@ -346,58 +365,157 @@ namespace CustomWMS
 
             foreach (RowCalc item in sortedRows)
             {
-                WmsPlan displayRow =
-                    CreateDisplayRow(item);
-
-                if (displayRow != null)
+                if (item?.Row == null)
                 {
-                    yield return displayRow;
+                    continue;
                 }
+
+                /*
+                 * Store the calculated values for FieldSelecting and
+                 * return the original WmsPlan row.
+                 *
+                 * Returning the original row prevents Acumatica from
+                 * replacing a detached copy with the cached record and
+                 * losing the unbound extension values.
+                 */
+                StoreDisplayValues(item);
+
+                yield return item.Row;
             }
         }
 
-        /*
-         * Creates a detached copy for display.
-         *
-         * The original WmsPlan record in the graph cache is not
-         * modified. No SetValueExt calls are used.
-         */
-        private WmsPlan CreateDisplayRow(
+        #region Unbound field display
+
+        private void StoreDisplayValues(
             RowCalc item)
         {
             if (item?.Row == null)
             {
-                return null;
+                return;
             }
 
-            WmsPlan displayRow =
-                PXCache<WmsPlan>.CreateCopy(
-                    item.Row);
+            string key =
+                BuildDisplayKey(item.Row);
 
-            SelectedPackageContentsExt extension =
-                displayRow.GetExtension<
-                    SelectedPackageContentsExt>();
+            _displayValuesByRow[key] =
+                new RowDisplayValues
+                {
+                    RemainingQty =
+                        item.RemainingQty,
 
-            extension.RemainingQty =
-                item.RemainingQty;
+                    SkippedStatus =
+                        item.SkipSortOrder == 1,
 
-            extension.SkippedStatus =
-                item.SkipSortOrder == 1;
+                    CompletedSortOrder =
+                        item.CompletedSortOrder,
 
-            extension.UsrCompletedSortOrder =
-                item.CompletedSortOrder;
-
-            extension.UsrSkipSortOrder =
-                item.SkipSortOrder;
+                    SkipSortOrder =
+                        item.SkipSortOrder
+                };
 
             WmsDebugTrace.Info(
-                $"{TracePrefix} Created display copy. " +
-                $"RecordID={displayRow.RecordID}, " +
+                $"{TracePrefix} Stored display values. " +
+                $"Key={key}, " +
                 $"RemainingQty={item.RemainingQty}, " +
-                $"SkippedStatus={item.SkipSortOrder == 1}");
-
-            return displayRow;
+                $"SkippedStatus={item.SkipSortOrder == 1}, " +
+                $"CompletedSortOrder={item.CompletedSortOrder}, " +
+                $"SkipSortOrder={item.SkipSortOrder}");
         }
+
+        private bool TryGetDisplayValues(
+            WmsPlan row,
+            out RowDisplayValues values)
+        {
+            values = null;
+
+            if (row == null)
+            {
+                return false;
+            }
+
+            string key =
+                BuildDisplayKey(row);
+
+            return _displayValuesByRow.TryGetValue(
+                key,
+                out values);
+        }
+
+        private string BuildDisplayKey(
+            WmsPlan row)
+        {
+            return
+                $"Shipment={row?.ShipmentNbr ?? string.Empty}" +
+                $"|Package={row?.PackageLineNbr}" +
+                $"|Split={row?.ShipmentSplitLineNbr}" +
+                $"|Record={row?.RecordID}";
+        }
+
+        protected virtual void _(
+            Events.FieldSelecting<
+                WmsPlan,
+                SelectedPackageContentsExt.remainingQty> e)
+        {
+            RowDisplayValues values;
+
+            if (TryGetDisplayValues(
+                e.Row,
+                out values))
+            {
+                e.ReturnValue =
+                    values.RemainingQty;
+            }
+        }
+
+        protected virtual void _(
+            Events.FieldSelecting<
+                WmsPlan,
+                SelectedPackageContentsExt.skippedStatus> e)
+        {
+            RowDisplayValues values;
+
+            if (TryGetDisplayValues(
+                e.Row,
+                out values))
+            {
+                e.ReturnValue =
+                    values.SkippedStatus;
+            }
+        }
+
+        protected virtual void _(
+            Events.FieldSelecting<
+                WmsPlan,
+                SelectedPackageContentsExt.usrCompletedSortOrder> e)
+        {
+            RowDisplayValues values;
+
+            if (TryGetDisplayValues(
+                e.Row,
+                out values))
+            {
+                e.ReturnValue =
+                    values.CompletedSortOrder;
+            }
+        }
+
+        protected virtual void _(
+            Events.FieldSelecting<
+                WmsPlan,
+                SelectedPackageContentsExt.usrSkipSortOrder> e)
+        {
+            RowDisplayValues values;
+
+            if (TryGetDisplayValues(
+                e.Row,
+                out values))
+            {
+                e.ReturnValue =
+                    values.SkipSortOrder;
+            }
+        }
+
+        #endregion
 
         private bool ShouldBypassTopRowWorkflow()
         {
@@ -708,6 +826,12 @@ namespace CustomWMS
         private void RequestEstimatedContentRefresh(
             string reason)
         {
+            /*
+             * Clear calculated values now so an old value cannot be
+             * displayed while the view is waiting to execute again.
+             */
+            _displayValuesByRow.Clear();
+
             if (SelectedPackageContentsView?.View == null)
             {
                 WmsDebugTrace.Info(
@@ -741,6 +865,7 @@ namespace CustomWMS
          * - SetValueExt against WmsPlan cache rows
          * - SelectedPackageContentsView.Cache.Clear()
          * - WMS extension cache clearing
+         * - Detached display copies
          */
 
         private sealed class RowCalc
@@ -750,6 +875,17 @@ namespace CustomWMS
             public int? RealShipmentSplitLineNbr { get; set; }
 
             public decimal RemainingQty { get; set; }
+
+            public int CompletedSortOrder { get; set; }
+
+            public int SkipSortOrder { get; set; }
+        }
+
+        private sealed class RowDisplayValues
+        {
+            public decimal RemainingQty { get; set; }
+
+            public bool SkippedStatus { get; set; }
 
             public int CompletedSortOrder { get; set; }
 
