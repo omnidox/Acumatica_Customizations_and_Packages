@@ -197,15 +197,18 @@ namespace CustomWMS
     }
 
     /*
-     * This remains a standard SOShipmentEntry extension.
+     * This remains a standard first-level SOShipmentEntry extension.
      *
      * It does not inherit from:
      *
      *     PXGraphExtension<WMS.SOShipmentEntryExt, SOShipmentEntry>
      *
-     * Instead, it retrieves the existing WMS extension as a sibling
-     * graph extension and installs a delegate on the existing
-     * SelectedPackageContentsView.
+     * Instead, it retrieves the existing WMS extension as a sibling,
+     * reads the BQL command from the WMS-owned view, creates a replacement
+     * PXView with the custom delegate, and registers that replacement
+     * under the existing Base.Views key:
+     *
+     *     SelectedPackageContentsView
      *
      * This preserves the existing ASPX DataMember while avoiding the
      * second-level extension dependency that changed Persist ordering.
@@ -216,12 +219,15 @@ namespace CustomWMS
         private const string TracePrefix =
             "[SelectedPackageSort]";
 
+        private const string ViewName =
+            "SelectedPackageContentsView";
+
         private const string Version =
-            "2026-07-21-WMS-VIEW-DELEGATE-POST-COMMIT-REFRESH-01";
+            "2026-07-21-BASE-VIEWS-REPLACEMENT-POST-COMMIT-REFRESH-01";
 
         /*
          * Stores calculated unbound display values for the rows returned
-         * by the current execution of the WMS-owned view.
+         * by the current execution of the replacement view.
          *
          * FieldSelecting supplies these values when the grid renders the
          * unbound fields.
@@ -249,8 +255,12 @@ namespace CustomWMS
         }
 
         /*
-         * Install the custom delegate on the view that the existing ASPX
-         * grid already uses:
+         * Replace the graph's registered SelectedPackageContentsView.
+         *
+         * The replacement reuses the BQL command from the WMS-owned view,
+         * but supplies this extension's delegate.
+         *
+         * The existing ASPX binding remains:
          *
          *     DataMember="SelectedPackageContentsView"
          *
@@ -263,29 +273,54 @@ namespace CustomWMS
             WmsShipmentExt wmsExt =
                 GetWmsExtension();
 
-            if (wmsExt?.SelectedPackageContentsView?.View == null)
+            PXView wmsView =
+                wmsExt?.SelectedPackageContentsView?.View;
+
+            if (wmsView == null)
             {
                 WmsDebugTrace.Info(
-                    $"{TracePrefix} Could not install custom delegate. " +
-                    $"WMS SelectedPackageContentsView was unavailable. " +
+                    $"{TracePrefix} Could not replace registered view. " +
+                    $"WMS {ViewName} was unavailable. " +
                     $"Version={Version}");
 
                 return;
             }
 
-            wmsExt.SelectedPackageContentsView
-                .View.SetDelegate(
-                    selectedPackageContentsView);
+            BqlCommand originalCommand =
+                wmsView.BqlSelect;
+
+            if (originalCommand == null)
+            {
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Could not replace registered view. " +
+                    $"WMS {ViewName} did not expose a BQL command. " +
+                    $"Version={Version}");
+
+                return;
+            }
+
+            Base.Views[ViewName] =
+                new PXView(
+                    Base,
+                    false,
+                    originalCommand,
+                    new PXSelectDelegate(
+                        selectedPackageContentsView));
+
+            PXView registeredView =
+                Base.Views[ViewName];
 
             WmsDebugTrace.Info(
-                $"{TracePrefix} Installed custom delegate on existing " +
-                $"WMS SelectedPackageContentsView. " +
+                $"{TracePrefix} Replaced Base.Views registration. " +
+                $"ViewName={ViewName}, " +
+                $"Registered={registeredView != null}, " +
+                $"BqlCommand={registeredView?.BqlSelect?.GetType().FullName}, " +
                 $"Version={Version}");
         }
 
         /*
-         * This delegate now supplies the data for the WMS-owned
-         * SelectedPackageContentsView.
+         * This delegate supplies the data for the replacement view
+         * registered under SelectedPackageContentsView.
          */
         protected virtual IEnumerable
             selectedPackageContentsView()
@@ -798,7 +833,7 @@ namespace CustomWMS
 
         /*
          * Wait for successful transaction completion before requesting
-         * that the WMS-owned expected-content view execute again.
+         * that the registered expected-content view execute again.
          */
         protected virtual void _(
             Events.RowPersisted<SOShipLineSplitPackage> e)
@@ -836,7 +871,8 @@ namespace CustomWMS
         }
 
         /*
-         * Refresh the actual WMS-owned view used by the grid.
+         * Refresh the active view registered in Base.Views under the same
+         * name used by the ASPX grid.
          *
          * No cache clearing is performed.
          */
@@ -845,28 +881,26 @@ namespace CustomWMS
         {
             _displayValuesByRow.Clear();
 
-            WmsShipmentExt wmsExt =
-                GetWmsExtension();
+            PXView view =
+                Base.Views[ViewName];
 
-            if (wmsExt?.SelectedPackageContentsView?.View == null)
+            if (view == null)
             {
                 WmsDebugTrace.Info(
                     $"{TracePrefix} Refresh could not be requested. " +
-                    $"WMS SelectedPackageContentsView was unavailable. " +
+                    $"Base.Views did not contain {ViewName}. " +
                     $"Reason={reason}");
 
                 return;
             }
 
-            wmsExt.SelectedPackageContentsView
-                .View.Clear();
-
-            wmsExt.SelectedPackageContentsView
-                .View.RequestRefresh();
+            view.Clear();
+            view.RequestRefresh();
 
             WmsDebugTrace.Info(
-                $"{TracePrefix} WMS expected-content view refresh " +
+                $"{TracePrefix} Expected-content view refresh " +
                 $"requested after successful transaction completion. " +
+                $"ViewName={ViewName}, " +
                 $"Reason={reason}");
         }
 
@@ -877,6 +911,8 @@ namespace CustomWMS
          * - Second-level WMS graph-extension inheritance
          * - Duplicate SelectedPackageContentsView declaration
          * - ASPX DataMember change
+         * - PXView.SetDelegate
+         * - PXView.Delegate assignment
          * - RowInserted<SOShipLineSplitPackage>
          * - RowUpdated<SOShipLineSplitPackage>
          * - RowDeleted<SOShipLineSplitPackage>
