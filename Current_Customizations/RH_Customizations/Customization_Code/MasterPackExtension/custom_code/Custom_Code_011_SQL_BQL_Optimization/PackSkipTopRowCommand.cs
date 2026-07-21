@@ -7,36 +7,73 @@ using PX.Objects.IN;
 using PX.Objects.SO;
 using PX.Objects.SO.WMS;
 
-using WmsShipmentExt = WMS.SOShipmentEntryExt;
 using WmsPlan = WMS.SelectedPackageContents;
 
 namespace CustomWMS
 {
-    public class PackSkipTopRowCommand : PickPackShip.ScanExtension
+    public class PackSkipTopRowCommand
+        : PickPackShip.ScanExtension
     {
-        private const string TracePrefix = "[PackSkipTopRowCommand]";
-        private const string Version = "2026-06-17-SKIP-TOP-ROW-COMMAND-CUSTOMER-BYPASS-01";
+        private const string TracePrefix =
+            "[PackSkipTopRowCommand]";
+
+        private const string ViewName =
+            "SelectedPackageContentsView";
+
+        private const string Version =
+            "2026-07-21-SHIPMENT-WIDE-PK-CACHE-01";
 
         public static bool IsActive()
         {
-            WmsDebugTrace.Info($"{TracePrefix} IsActive TRUE. Version={Version}");
+            WmsDebugTrace.Info(
+                $"{TracePrefix} IsActive TRUE. " +
+                $"Version={Version}");
+
             return true;
         }
 
-        public sealed class SkipTopRowCommand : PickPackShip.ScanCommand
+        public sealed class SkipTopRowCommand
+            : PickPackShip.ScanCommand
         {
-            public override string Code => "SKIPCONTENT";
-            public override string ButtonName => "SkipTopRow";
-            public override string DisplayName => "Skip Top Row";
+            /*
+             * Cache stable InventoryID-to-InventoryCD lookup data for the
+             * lifetime of this command instance.
+             *
+             * Calculated packed quantities and top-row results are not
+             * cached because they can change after every scan.
+             */
+            private readonly Dictionary<int?, string>
+                _inventoryCodeCache =
+                    new Dictionary<int?, string>();
+
+            public override string Code =>
+                "SKIPCONTENT";
+
+            public override string ButtonName =>
+                "SkipTopRow";
+
+            public override string DisplayName =>
+                "Skip Top Row";
 
             protected override bool IsEnabled
             {
                 get
                 {
-                    SOShipment shipment = Basis?.Graph?.Document?.Current;
+                    SOShipment shipment =
+                        Basis?.Graph?.Document?.Current;
 
-                    if (CustomerWorkflowBypass.ShouldBypassTopRowWorkflow(Basis.Graph, shipment))
+                    if (Basis?.Graph == null)
+                    {
                         return false;
+                    }
+
+                    if (CustomerWorkflowBypass
+                        .ShouldBypassTopRowWorkflow(
+                            Basis.Graph,
+                            shipment))
+                    {
+                        return false;
+                    }
 
                     return true;
                 }
@@ -44,35 +81,60 @@ namespace CustomWMS
 
             protected override bool Process()
             {
-                WmsDebugTrace.Info($"{TracePrefix} SkipTopRow Process ENTER.");
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} SkipTopRow Process ENTER. " +
+                    $"Version={Version}");
 
-                SOShipment shipment = Basis.Graph.Document.Current;
+                SOShipment shipment =
+                    Basis.Graph.Document.Current;
 
-                if (CustomerWorkflowBypass.ShouldBypassTopRowWorkflow(Basis.Graph, shipment))
+                if (CustomerWorkflowBypass
+                    .ShouldBypassTopRowWorkflow(
+                        Basis.Graph,
+                        shipment))
                 {
-                    WmsDebugTrace.Info($"{TracePrefix} SkipTopRow blocked because customer bypasses top-row workflow.");
-                    Basis.ReportWarning("Skip Top Row is not required for this customer.");
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} SkipTopRow blocked because " +
+                        $"customer bypasses top-row workflow.");
+
+                    Basis.ReportWarning(
+                        "Skip Top Row is not required for this customer.");
+
                     return true;
                 }
 
                 PickPackShip.PackMode.Logic packLogic =
                     Basis.Get<PickPackShip.PackMode.Logic>();
 
-                SOPackageDetailEx package = packLogic?.SelectedPackage;
+                SOPackageDetailEx package =
+                    packLogic?.SelectedPackage;
 
-                if (package == null || package.ShipmentNbr == null || package.LineNbr == null)
+                if (package == null ||
+                    string.IsNullOrEmpty(package.ShipmentNbr) ||
+                    package.LineNbr == null)
                 {
-                    WmsDebugTrace.Warning($"{TracePrefix} No valid selected package found.");
-                    Basis.ReportError("No selected package was found.");
+                    WmsDebugTrace.Warning(
+                        $"{TracePrefix} No valid selected package found.");
+
+                    Basis.ReportError(
+                        "No selected package was found.");
+
                     return true;
                 }
 
-                WmsPlan topRow = GetTopIncompleteUnskippedRow(package);
+                WmsPlan topRow =
+                    GetTopIncompleteUnskippedRow(
+                        package);
 
                 if (topRow == null)
                 {
-                    WmsDebugTrace.Warning($"{TracePrefix} No unskipped incomplete row found.");
-                    Basis.ReportWarning("No unskipped incomplete row was found.");
+                    WmsDebugTrace.Warning(
+                        $"{TracePrefix} No unskipped incomplete " +
+                        $"row found.");
+
+                    Basis.ReportWarning(
+                        "No unskipped incomplete row was found.");
+
                     return true;
                 }
 
@@ -83,125 +145,290 @@ namespace CustomWMS
                     topRow.ShipmentSplitLineNbr);
 
                 WmsDebugTrace.Info(
-                    $"{TracePrefix} Row skipped. ShipmentNbr={topRow.ShipmentNbr}, PackageLineNbr={topRow.PackageLineNbr}, SplitLineNbr={topRow.ShipmentSplitLineNbr}, InventoryID={topRow.InventoryID}, LotSerialNbr={topRow.LotSerialNbr}");
+                    $"{TracePrefix} Row skipped. " +
+                    $"ShipmentNbr={topRow.ShipmentNbr}, " +
+                    $"PackageLineNbr={topRow.PackageLineNbr}, " +
+                    $"SplitLineNbr=" +
+                    $"{topRow.ShipmentSplitLineNbr}, " +
+                    $"InventoryID={topRow.InventoryID}, " +
+                    $"LotSerialNbr={topRow.LotSerialNbr}");
 
-                RequestEstimatedContentRefresh("SkipTopRowCommand");
+                RequestEstimatedContentRefresh(
+                    "SkipTopRowCommand");
 
-                packLogic.PackageLineNbrUI = package.LineNbr;
-                Basis.Graph.Packages.Current = package;
+                /*
+                 * Preserve the selected package after the command.
+                 */
+                packLogic.PackageLineNbrUI =
+                    package.LineNbr;
 
-                Basis.ReportInfo("Top row skipped.");
+                Basis.Graph.Packages.Current =
+                    package;
 
-                WmsDebugTrace.Info($"{TracePrefix} SkipTopRow Process EXIT.");
+                Basis.ReportInfo(
+                    "Top row skipped.");
+
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} SkipTopRow Process EXIT.");
+
                 return true;
             }
 
-            private WmsPlan GetTopIncompleteUnskippedRow(SOPackageDetailEx package)
+            private WmsPlan GetTopIncompleteUnskippedRow(
+                SOPackageDetailEx package)
             {
+                /*
+                 * Load the expected rows assigned to the selected package.
+                 */
                 List<WmsPlan> plannedRows =
                     PXSelectReadonly<
                         WmsPlan,
                         Where<
-                            WmsPlan.shipmentNbr, Equal<Required<WmsPlan.shipmentNbr>>,
-                            And<WmsPlan.packageLineNbr, Equal<Required<WmsPlan.packageLineNbr>>>>>
-                    .Select(Basis, package.ShipmentNbr, package.LineNbr)
+                            WmsPlan.shipmentNbr,
+                            Equal<
+                                Required<
+                                    WmsPlan.shipmentNbr>>,
+                            And<
+                                WmsPlan.packageLineNbr,
+                                Equal<
+                                    Required<
+                                        WmsPlan.packageLineNbr>>>>>
+                    .Select(
+                        Basis,
+                        package.ShipmentNbr,
+                        package.LineNbr)
                     .RowCast<WmsPlan>()
                     .ToList();
 
+                /*
+                 * Load actual packed rows across the complete shipment.
+                 *
+                 * This intentionally matches the Remaining Qty calculation
+                 * used by the replacement Estimated Content view.
+                 *
+                 * If a shipment split was already packed in a different
+                 * carton, that quantity must still count toward completion.
+                 */
                 List<SOShipLineSplitPackage> actualRows =
                     PXSelectReadonly<
                         SOShipLineSplitPackage,
                         Where<
-                            SOShipLineSplitPackage.shipmentNbr, Equal<Required<SOShipLineSplitPackage.shipmentNbr>>,
-                            And<SOShipLineSplitPackage.packageLineNbr, Equal<Required<SOShipLineSplitPackage.packageLineNbr>>>>>
-                    .Select(Basis, package.ShipmentNbr, package.LineNbr)
+                            SOShipLineSplitPackage.shipmentNbr,
+                            Equal<
+                                Required<
+                                    SOShipLineSplitPackage
+                                        .shipmentNbr>>>>
+                    .Select(
+                        Basis,
+                        package.ShipmentNbr)
                     .RowCast<SOShipLineSplitPackage>()
                     .ToList();
 
-                Dictionary<int?, decimal> actualQtyBySplit =
-                    actualRows
-                        .GroupBy(x => x.ShipmentSplitLineNbr)
-                        .ToDictionary(
-                            g => g.Key,
-                            g => g.Sum(x => x.PackedQty ?? 0m));
+                Dictionary<int?, decimal>
+                    actualQtyBySplit =
+                        actualRows
+                            .Where(row =>
+                                row.ShipmentSplitLineNbr != null)
+                            .GroupBy(row =>
+                                row.ShipmentSplitLineNbr)
+                            .ToDictionary(
+                                group =>
+                                    group.Key,
+                                group =>
+                                    group.Sum(
+                                        row =>
+                                            row.PackedQty ?? 0m));
 
-                return plannedRows
-                    .Where(row =>
+                List<WmsPlan> candidateRows =
+                    new List<WmsPlan>();
+
+                foreach (WmsPlan row in plannedRows)
+                {
+                    if (row == null)
                     {
-                        decimal expectedQty = row.PackedQty ?? 0m;
-                        decimal actualQty = 0m;
+                        continue;
+                    }
 
-                        actualQtyBySplit.TryGetValue(row.ShipmentSplitLineNbr, out actualQty);
+                    decimal expectedQty =
+                        row.PackedQty ?? 0m;
 
-                        bool incomplete = expectedQty <= 0m || actualQty < expectedQty;
+                    decimal actualQty =
+                        0m;
 
-                        bool skipped = SelectedPackageSkipState.IsSkipped(
+                    if (row.ShipmentSplitLineNbr != null)
+                    {
+                        actualQtyBySplit.TryGetValue(
+                            row.ShipmentSplitLineNbr,
+                            out actualQty);
+                    }
+
+                    bool incomplete =
+                        expectedQty <= 0m ||
+                        actualQty < expectedQty;
+
+                    bool skipped =
+                        SelectedPackageSkipState.IsSkipped(
                             Basis.Graph,
                             row.ShipmentNbr,
                             row.PackageLineNbr,
                             row.ShipmentSplitLineNbr);
 
-                        WmsDebugTrace.Info(
-                            $"{TracePrefix} Candidate row. RecordID={row.RecordID}, InventoryID={row.InventoryID}, InventoryCD={GetInventoryCD(row.InventoryID)}, LotSerialNbr={row.LotSerialNbr}, SplitLineNbr={row.ShipmentSplitLineNbr}, Expected={expectedQty}, Actual={actualQty}, Incomplete={incomplete}, Skipped={skipped}");
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} Candidate row. " +
+                        $"RecordID={row.RecordID}, " +
+                        $"InventoryID={row.InventoryID}, " +
+                        $"InventoryCD=" +
+                        $"{GetInventoryCD(row.InventoryID)}, " +
+                        $"LotSerialNbr={row.LotSerialNbr}, " +
+                        $"SplitLineNbr=" +
+                        $"{row.ShipmentSplitLineNbr}, " +
+                        $"Expected={expectedQty}, " +
+                        $"ActualAcrossShipment={actualQty}, " +
+                        $"Incomplete={incomplete}, " +
+                        $"Skipped={skipped}");
 
-                        return incomplete && !skipped;
-                    })
-                    .OrderBy(row => row.DefaultIssueFrom)
-                    .ThenBy(row => row.OrderNbr)
-                    .ThenBy(row => row.StoreNbr)
-                    .ThenBy(row => GetInventoryCD(row.InventoryID))
-                    .ThenBy(row => row.LotSerialNbr)
-                    .FirstOrDefault();
+                    if (incomplete && !skipped)
+                    {
+                        candidateRows.Add(row);
+                    }
+                }
+
+                WmsPlan topRow =
+                    candidateRows
+                        .OrderBy(row =>
+                            row.DefaultIssueFrom)
+                        .ThenBy(row =>
+                            row.OrderNbr)
+                        .ThenBy(row =>
+                            row.StoreNbr)
+                        .ThenBy(row =>
+                            GetInventoryCD(
+                                row.InventoryID))
+                        .ThenBy(row =>
+                            row.LotSerialNbr)
+                        .FirstOrDefault();
+
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Top incomplete unskipped " +
+                    $"row selected. " +
+                    $"HasTopRow={topRow != null}, " +
+                    $"RecordID={topRow?.RecordID}, " +
+                    $"InventoryID={topRow?.InventoryID}, " +
+                    $"InventoryCD=" +
+                    $"{GetInventoryCD(topRow?.InventoryID)}, " +
+                    $"ShipmentSplitLineNbr=" +
+                    $"{topRow?.ShipmentSplitLineNbr}");
+
+                return topRow;
             }
 
-            private string GetInventoryCD(int? inventoryID)
+            /*
+             * Resolve InventoryCD through the InventoryItem primary key.
+             *
+             * This avoids repeated PXSelect calls while sorting and
+             * diagnostic logging.
+             */
+            private string GetInventoryCD(
+                int? inventoryID)
             {
                 if (inventoryID == null)
+                {
                     return string.Empty;
+                }
+
+                string inventoryCD;
+
+                if (_inventoryCodeCache.TryGetValue(
+                    inventoryID,
+                    out inventoryCD))
+                {
+                    return inventoryCD ??
+                        string.Empty;
+                }
 
                 InventoryItem item =
-                    PXSelectReadonly<
-                        InventoryItem,
-                        Where<InventoryItem.inventoryID, Equal<Required<InventoryItem.inventoryID>>>>
-                    .Select(Basis, inventoryID)
-                    .RowCast<InventoryItem>()
-                    .FirstOrDefault();
+                    InventoryItem.PK.Find(
+                        Basis.Graph,
+                        inventoryID);
 
-                return item?.InventoryCD?.Trim() ?? string.Empty;
+                inventoryCD =
+                    item?.InventoryCD?.Trim()
+                    ?? string.Empty;
+
+                _inventoryCodeCache[inventoryID] =
+                    inventoryCD;
+
+                return inventoryCD;
             }
 
-            private void RequestEstimatedContentRefresh(string reason)
+            /*
+             * Refresh the active PXView registered under the ASPX
+             * DataMember.
+             *
+             * The replacement Estimated Content extension registers its
+             * custom view in:
+             *
+             *     Basis.Graph.Views["SelectedPackageContentsView"]
+             *
+             * Do not clear the WmsPlan cache here.
+             */
+            private void RequestEstimatedContentRefresh(
+                string reason)
             {
-                WmsShipmentExt wmsExt = Basis.Graph.GetExtension<WmsShipmentExt>();
+                PXView view =
+                    Basis.Graph.Views[ViewName];
 
-                if (wmsExt?.SelectedPackageContentsView == null)
+                if (view == null)
                 {
-                    WmsDebugTrace.Info($"{TracePrefix} Could not refresh: WMS extension/view not found. Reason={reason}");
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} Could not refresh. " +
+                        $"Basis.Graph.Views did not contain " +
+                        $"{ViewName}. Reason={reason}");
+
                     return;
                 }
 
-                wmsExt.SelectedPackageContentsView.Cache.Clear();
-                wmsExt.SelectedPackageContentsView.View.Clear();
-                wmsExt.SelectedPackageContentsView.View.RequestRefresh();
+                view.Clear();
+                view.RequestRefresh();
 
-                WmsDebugTrace.Info($"{TracePrefix} Refresh requested. Reason={reason}");
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Refresh requested. " +
+                    $"ViewName={ViewName}, " +
+                    $"Reason={reason}");
             }
         }
 
-        public sealed class ClearSkippedRowsCommand : PickPackShip.ScanCommand
+        public sealed class ClearSkippedRowsCommand
+            : PickPackShip.ScanCommand
         {
-            public override string Code => "CLEARSKIPS";
-            public override string ButtonName => "ClearSkippedRows";
-            public override string DisplayName => "Clear Skipped Rows";
+            public override string Code =>
+                "CLEARSKIPS";
+
+            public override string ButtonName =>
+                "ClearSkippedRows";
+
+            public override string DisplayName =>
+                "Clear Skipped Rows";
 
             protected override bool IsEnabled
             {
                 get
                 {
-                    SOShipment shipment = Basis?.Graph?.Document?.Current;
+                    SOShipment shipment =
+                        Basis?.Graph?.Document?.Current;
 
-                    if (CustomerWorkflowBypass.ShouldBypassTopRowWorkflow(Basis.Graph, shipment))
+                    if (Basis?.Graph == null)
+                    {
                         return false;
+                    }
+
+                    if (CustomerWorkflowBypass
+                        .ShouldBypassTopRowWorkflow(
+                            Basis.Graph,
+                            shipment))
+                    {
+                        return false;
+                    }
 
                     return true;
                 }
@@ -209,26 +436,46 @@ namespace CustomWMS
 
             protected override bool Process()
             {
-                WmsDebugTrace.Info($"{TracePrefix} ClearSkippedRows Process ENTER.");
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} ClearSkippedRows " +
+                    $"Process ENTER. Version={Version}");
 
-                SOShipment shipment = Basis.Graph.Document.Current;
+                SOShipment shipment =
+                    Basis.Graph.Document.Current;
 
-                if (CustomerWorkflowBypass.ShouldBypassTopRowWorkflow(Basis.Graph, shipment))
+                if (CustomerWorkflowBypass
+                    .ShouldBypassTopRowWorkflow(
+                        Basis.Graph,
+                        shipment))
                 {
-                    WmsDebugTrace.Info($"{TracePrefix} ClearSkippedRows blocked because customer bypasses top-row workflow.");
-                    Basis.ReportWarning("Clear Skipped Rows is not required for this customer.");
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} ClearSkippedRows blocked " +
+                        $"because customer bypasses top-row workflow.");
+
+                    Basis.ReportWarning(
+                        "Clear Skipped Rows is not required " +
+                        "for this customer.");
+
                     return true;
                 }
 
                 PickPackShip.PackMode.Logic packLogic =
                     Basis.Get<PickPackShip.PackMode.Logic>();
 
-                SOPackageDetailEx package = packLogic?.SelectedPackage;
+                SOPackageDetailEx package =
+                    packLogic?.SelectedPackage;
 
-                if (package == null || package.ShipmentNbr == null || package.LineNbr == null)
+                if (package == null ||
+                    string.IsNullOrEmpty(package.ShipmentNbr) ||
+                    package.LineNbr == null)
                 {
-                    WmsDebugTrace.Warning($"{TracePrefix} Clear skipped rows clicked but no valid selected package was found.");
-                    Basis.ReportError("No selected package was found.");
+                    WmsDebugTrace.Warning(
+                        $"{TracePrefix} Clear skipped rows clicked " +
+                        $"but no valid selected package was found.");
+
+                    Basis.ReportError(
+                        "No selected package was found.");
+
                     return true;
                 }
 
@@ -237,53 +484,85 @@ namespace CustomWMS
                     package.ShipmentNbr,
                     package.LineNbr);
 
-                RequestEstimatedContentRefresh("ClearSkippedRowsCommand");
+                RequestEstimatedContentRefresh(
+                    "ClearSkippedRowsCommand");
 
-                packLogic.PackageLineNbrUI = package.LineNbr;
-                Basis.Graph.Packages.Current = package;
+                /*
+                 * Preserve the selected package after the command.
+                 */
+                packLogic.PackageLineNbrUI =
+                    package.LineNbr;
 
-                Basis.ReportInfo("Skipped rows cleared.");
+                Basis.Graph.Packages.Current =
+                    package;
 
-                WmsDebugTrace.Info($"{TracePrefix} ClearSkippedRows Process EXIT.");
+                Basis.ReportInfo(
+                    "Skipped rows cleared.");
+
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} ClearSkippedRows Process EXIT.");
+
                 return true;
             }
 
-            private void RequestEstimatedContentRefresh(string reason)
+            private void RequestEstimatedContentRefresh(
+                string reason)
             {
-                WmsShipmentExt wmsExt = Basis.Graph.GetExtension<WmsShipmentExt>();
+                PXView view =
+                    Basis.Graph.Views[ViewName];
 
-                if (wmsExt?.SelectedPackageContentsView == null)
+                if (view == null)
                 {
-                    WmsDebugTrace.Info($"{TracePrefix} Could not refresh: WMS extension/view not found. Reason={reason}");
+                    WmsDebugTrace.Info(
+                        $"{TracePrefix} Could not refresh. " +
+                        $"Basis.Graph.Views did not contain " +
+                        $"{ViewName}. Reason={reason}");
+
                     return;
                 }
 
-                wmsExt.SelectedPackageContentsView.Cache.Clear();
-                wmsExt.SelectedPackageContentsView.View.Clear();
-                wmsExt.SelectedPackageContentsView.View.RequestRefresh();
+                view.Clear();
+                view.RequestRefresh();
 
-                WmsDebugTrace.Info($"{TracePrefix} Refresh requested. Reason={reason}");
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Refresh requested. " +
+                    $"ViewName={ViewName}, " +
+                    $"Reason={reason}");
             }
         }
 
         [PXOverride]
-        public virtual ScanMode<PickPackShip> DecorateScanMode(
-            ScanMode<PickPackShip> original,
-            Func<ScanMode<PickPackShip>, ScanMode<PickPackShip>> base_DecorateScanMode)
+        public virtual ScanMode<PickPackShip>
+            DecorateScanMode(
+                ScanMode<PickPackShip> original,
+                Func<
+                    ScanMode<PickPackShip>,
+                    ScanMode<PickPackShip>>
+                    base_DecorateScanMode)
         {
-            ScanMode<PickPackShip> mode = base_DecorateScanMode(original);
+            ScanMode<PickPackShip> mode =
+                base_DecorateScanMode(
+                    original);
 
-            PickPackShip.PackMode packMode = mode as PickPackShip.PackMode;
+            PickPackShip.PackMode packMode =
+                mode as PickPackShip.PackMode;
 
             if (packMode != null)
             {
-                WmsDebugTrace.Info($"{TracePrefix} Appending SkipTopRowCommand and ClearSkippedRowsCommand to PackMode.");
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Appending " +
+                    $"SkipTopRowCommand and " +
+                    $"ClearSkippedRowsCommand to PackMode. " +
+                    $"Version={Version}");
 
-                packMode.Intercept.CreateCommands.ByAppend(basis => new PickPackShip.ScanCommand[]
-                {
-                    new SkipTopRowCommand(),
-                    new ClearSkippedRowsCommand()
-                });
+                packMode.Intercept.CreateCommands
+                    .ByAppend(
+                        basis =>
+                            new PickPackShip.ScanCommand[]
+                            {
+                                new SkipTopRowCommand(),
+                                new ClearSkippedRowsCommand()
+                            });
             }
 
             return mode;
