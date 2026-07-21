@@ -6,6 +6,7 @@ using PX.Data;
 using PX.Objects.IN;
 using PX.Objects.SO;
 
+using WmsShipmentExt = WMS.SOShipmentEntryExt;
 using WmsPlan = WMS.SelectedPackageContents;
 
 namespace CustomWMS
@@ -196,17 +197,18 @@ namespace CustomWMS
     }
 
     /*
-     * This is a standard SOShipmentEntry graph extension.
+     * This remains a standard SOShipmentEntry extension.
      *
-     * It deliberately does not inherit from:
+     * It does not inherit from:
      *
      *     PXGraphExtension<WMS.SOShipmentEntryExt, SOShipmentEntry>
      *
-     * Avoiding that second-level extension dependency preserves the
-     * working Persist override order between Vadym's WMS package and
-     * TrueCommerce.
+     * Instead, it retrieves the existing WMS extension as a sibling
+     * graph extension and installs a delegate on the existing
+     * SelectedPackageContentsView.
      *
-     * This extension does not override Persist.
+     * This preserves the existing ASPX DataMember while avoiding the
+     * second-level extension dependency that changed Persist ordering.
      */
     public class SOShipmentEntryExt_SelectedPackageSort
         : PXGraphExtension<SOShipmentEntry>
@@ -215,16 +217,16 @@ namespace CustomWMS
             "[SelectedPackageSort]";
 
         private const string Version =
-            "2026-07-21-FIELD-SELECTING-POST-COMMIT-REFRESH-01";
+            "2026-07-21-WMS-VIEW-DELEGATE-POST-COMMIT-REFRESH-01";
 
         /*
          * Stores calculated unbound display values for the rows returned
-         * by the current view execution.
+         * by the current execution of the WMS-owned view.
          *
-         * FieldSelecting reads from this dictionary when Acumatica renders
-         * Remaining Qty, Skipped Status, and the hidden sorting fields.
+         * FieldSelecting supplies these values when the grid renders the
+         * unbound fields.
          *
-         * The original WmsPlan cache records are not modified.
+         * The original WmsPlan records are not modified.
          */
         private readonly Dictionary<string, RowDisplayValues>
             _displayValuesByRow =
@@ -236,55 +238,65 @@ namespace CustomWMS
         }
 
         /*
-         * The existing view name is retained so the existing grid and
-         * ASPX DataMember do not need to be changed.
+         * Obtain the existing WMS extension as a sibling extension.
+         *
+         * This does not make this customization a second-level graph
+         * extension and does not change the class inheritance hierarchy.
          */
-        public PXSelect<
-            WmsPlan,
-            Where<
-                WmsPlan.shipmentNbr,
-                Equal<
-                    Current<
-                        SOPackageDetailEx.shipmentNbr>>,
-                And<
-                    WmsPlan.packageLineNbr,
-                    Equal<
-                        Current<
-                            SOPackageDetailEx.lineNbr>>>>,
-            OrderBy<
-                Asc<
-                    SelectedPackageContentsExt.usrCompletedSortOrder,
-                    Asc<
-                        SelectedPackageContentsExt.usrSkipSortOrder,
-                        Asc<
-                            WmsPlan.defaultIssueFrom,
-                            Asc<
-                                WmsPlan.orderNbr,
-                                Asc<
-                                    WmsPlan.storeNbr,
-                                    Asc<
-                                        WmsPlan.inventoryID,
-                                        Asc<
-                                            WmsPlan.lotSerialNbr
-                                        >
-                                    >
-                                >
-                            >
-                        >
-                    >
-                >
-            >
-        > SelectedPackageContentsView;
+        private WmsShipmentExt GetWmsExtension()
+        {
+            return Base.GetExtension<WmsShipmentExt>();
+        }
 
+        /*
+         * Install the custom delegate on the view that the existing ASPX
+         * grid already uses:
+         *
+         *     DataMember="SelectedPackageContentsView"
+         *
+         * No duplicate PXSelect view is declared in this extension.
+         */
+        public override void Initialize()
+        {
+            base.Initialize();
+
+            WmsShipmentExt wmsExt =
+                GetWmsExtension();
+
+            if (wmsExt?.SelectedPackageContentsView?.View == null)
+            {
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} Could not install custom delegate. " +
+                    $"WMS SelectedPackageContentsView was unavailable. " +
+                    $"Version={Version}");
+
+                return;
+            }
+
+            wmsExt.SelectedPackageContentsView
+                .View.SetDelegate(
+                    selectedPackageContentsView);
+
+            WmsDebugTrace.Info(
+                $"{TracePrefix} Installed custom delegate on existing " +
+                $"WMS SelectedPackageContentsView. " +
+                $"Version={Version}");
+        }
+
+        /*
+         * This delegate now supplies the data for the WMS-owned
+         * SelectedPackageContentsView.
+         */
         protected virtual IEnumerable
             selectedPackageContentsView()
         {
             WmsDebugTrace.Info(
-                $"{TracePrefix} VERSION {Version}");
+                $"{TracePrefix} Delegate ENTER. " +
+                $"Version={Version}");
 
             /*
-             * Remove display values left over from the previous package
-             * or previous execution of the view.
+             * Remove values from a previous package or previous execution
+             * before calculating the current rows.
              */
             _displayValuesByRow.Clear();
 
@@ -360,7 +372,9 @@ namespace CustomWMS
                 result.ToList();
 
             WmsDebugTrace.Info(
-                $"{TracePrefix} Returning calculated display rows. " +
+                $"{TracePrefix} Returning calculated rows. " +
+                $"ShipmentNbr={package.ShipmentNbr}, " +
+                $"PackageLineNbr={package.LineNbr}, " +
                 $"Count={sortedRows.Count}");
 
             foreach (RowCalc item in sortedRows)
@@ -370,18 +384,20 @@ namespace CustomWMS
                     continue;
                 }
 
-                /*
-                 * Store the calculated values for FieldSelecting and
-                 * return the original WmsPlan row.
-                 *
-                 * Returning the original row prevents Acumatica from
-                 * replacing a detached copy with the cached record and
-                 * losing the unbound extension values.
-                 */
                 StoreDisplayValues(item);
 
+                /*
+                 * Return the original row.
+                 *
+                 * FieldSelecting supplies the unbound calculated values
+                 * without using SetValueExt.
+                 */
                 yield return item.Row;
             }
+
+            WmsDebugTrace.Info(
+                $"{TracePrefix} Delegate EXIT. " +
+                $"Returned={sortedRows.Count}");
         }
 
         #region Unbound field display
@@ -436,9 +452,19 @@ namespace CustomWMS
             string key =
                 BuildDisplayKey(row);
 
-            return _displayValuesByRow.TryGetValue(
-                key,
-                out values);
+            bool found =
+                _displayValuesByRow.TryGetValue(
+                    key,
+                    out values);
+
+            if (!found)
+            {
+                WmsDebugTrace.Info(
+                    $"{TracePrefix} No display values found. " +
+                    $"Key={key}");
+            }
+
+            return found;
         }
 
         private string BuildDisplayKey(
@@ -540,8 +566,7 @@ namespace CustomWMS
             SOPackageDetailEx package)
         {
             /*
-             * Load the expected rows assigned to the currently selected
-             * package.
+             * Load expected rows assigned to the selected package.
              */
             List<WmsPlan> plannedRows =
                 PXSelectReadonly<
@@ -566,9 +591,8 @@ namespace CustomWMS
             /*
              * Load actual packed records across the entire shipment.
              *
-             * This prevents a split that was packed into another carton
-             * from continuing to appear as remaining in its originally
-             * expected carton.
+             * Remaining quantity and completion are based on quantities
+             * packed in any carton belonging to the shipment.
              */
             List<SOShipLineSplitPackage>
                 shipmentActualRows =
@@ -600,8 +624,6 @@ namespace CustomWMS
 
             /*
              * Package-only quantities are retained for diagnostics.
-             * Completion and RemainingQty are based on shipment-wide
-             * packed quantities.
              */
             Dictionary<int?, decimal>
                 packageActualQtyBySplit =
@@ -713,8 +735,8 @@ namespace CustomWMS
         }
 
         /*
-         * Loads inventory codes once per view execution instead of
-         * querying InventoryItem separately for each row while sorting.
+         * Load the inventory records once per view execution rather than
+         * issuing one InventoryItem query for every row during sorting.
          */
         private Dictionary<int?, string>
             GetInventoryCodes(
@@ -775,12 +797,8 @@ namespace CustomWMS
         }
 
         /*
-         * Wait until the database transaction has completed before
-         * requesting the expected-content grid refresh.
-         *
-         * RowInserted, RowUpdated, and RowDeleted are intentionally not
-         * used because they may run while the WMS/TrueCommerce Persist
-         * transaction is still in progress.
+         * Wait for successful transaction completion before requesting
+         * that the WMS-owned expected-content view execute again.
          */
         protected virtual void _(
             Events.RowPersisted<SOShipLineSplitPackage> e)
@@ -818,39 +836,37 @@ namespace CustomWMS
         }
 
         /*
-         * Clears only the stored results for the custom view and marks
-         * the grid for refresh.
+         * Refresh the actual WMS-owned view used by the grid.
          *
-         * The WmsPlan cache is deliberately not cleared.
+         * No cache clearing is performed.
          */
         private void RequestEstimatedContentRefresh(
             string reason)
         {
-            /*
-             * Clear calculated values now so an old value cannot be
-             * displayed while the view is waiting to execute again.
-             */
             _displayValuesByRow.Clear();
 
-            if (SelectedPackageContentsView?.View == null)
+            WmsShipmentExt wmsExt =
+                GetWmsExtension();
+
+            if (wmsExt?.SelectedPackageContentsView?.View == null)
             {
                 WmsDebugTrace.Info(
                     $"{TracePrefix} Refresh could not be requested. " +
-                    $"SelectedPackageContentsView was not available. " +
+                    $"WMS SelectedPackageContentsView was unavailable. " +
                     $"Reason={reason}");
 
                 return;
             }
 
-            SelectedPackageContentsView
+            wmsExt.SelectedPackageContentsView
                 .View.Clear();
 
-            SelectedPackageContentsView
+            wmsExt.SelectedPackageContentsView
                 .View.RequestRefresh();
 
             WmsDebugTrace.Info(
-                $"{TracePrefix} Expected-content refresh requested " +
-                $"after successful transaction completion. " +
+                $"{TracePrefix} WMS expected-content view refresh " +
+                $"requested after successful transaction completion. " +
                 $"Reason={reason}");
         }
 
@@ -859,12 +875,14 @@ namespace CustomWMS
          *
          * - Persist override
          * - Second-level WMS graph-extension inheritance
+         * - Duplicate SelectedPackageContentsView declaration
+         * - ASPX DataMember change
          * - RowInserted<SOShipLineSplitPackage>
          * - RowUpdated<SOShipLineSplitPackage>
          * - RowDeleted<SOShipLineSplitPackage>
-         * - SetValueExt against WmsPlan cache rows
+         * - SetValueExt against WmsPlan records
          * - SelectedPackageContentsView.Cache.Clear()
-         * - WMS extension cache clearing
+         * - WMS cache clearing
          * - Detached display copies
          */
 
