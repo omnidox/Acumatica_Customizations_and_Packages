@@ -6,15 +6,15 @@ using PX.Data;
 using PX.Objects.IN;
 using PX.Objects.SO;
 
-using WmsShipmentExt = WMS.SOShipmentEntryExt;
 using WmsPlan = WMS.SelectedPackageContents;
 
 namespace CustomWMS
 {
     public static class SelectedPackageSkipState
     {
-        private static readonly ConcurrentDictionary<string, bool> SkippedRows =
-            new ConcurrentDictionary<string, bool>();
+        private static readonly ConcurrentDictionary<string, bool>
+            SkippedRows =
+                new ConcurrentDictionary<string, bool>();
 
         public static bool IsSkipped(
             PXGraph graph,
@@ -50,12 +50,14 @@ namespace CustomWMS
                 return;
             }
 
-            SkippedRows[
+            string key =
                 BuildKey(
                     graph,
                     shipmentNbr,
                     packageLineNbr,
-                    shipmentSplitLineNbr)] = true;
+                    shipmentSplitLineNbr);
+
+            SkippedRows[key] = true;
         }
 
         public static void ClearPackage(
@@ -77,14 +79,16 @@ namespace CustomWMS
 
             foreach (string key in SkippedRows.Keys)
             {
-                if (key.StartsWith(prefix))
+                if (!key.StartsWith(prefix))
                 {
-                    bool removed;
-
-                    SkippedRows.TryRemove(
-                        key,
-                        out removed);
+                    continue;
                 }
+
+                bool removed;
+
+                SkippedRows.TryRemove(
+                    key,
+                    out removed);
             }
         }
 
@@ -191,20 +195,42 @@ namespace CustomWMS
         #endregion
     }
 
+    /*
+     * Important:
+     *
+     * This is now a normal SOShipmentEntry extension.
+     *
+     * It no longer explicitly extends:
+     *
+     *     WMS.SOShipmentEntryExt
+     *
+     * That avoids creating a second-level extension dependency that
+     * can change the Persist override order between Vadym's WMS
+     * customization and TrueCommerce.
+     *
+     * This extension does not override Persist.
+     */
     public class SOShipmentEntryExt_SelectedPackageSort
-        : PXGraphExtension<WmsShipmentExt, SOShipmentEntry>
+        : PXGraphExtension<SOShipmentEntry>
     {
         private const string TracePrefix =
             "[SelectedPackageSort]";
 
         private const string Version =
-            "2026-07-21-COPY-DISPLAY-ROWS-TEST-01";
+            "2026-07-21-STANDARD-GRAPH-EXTENSION-01";
 
         public static bool IsActive()
         {
             return true;
         }
 
+        /*
+         * The existing view name is retained to preserve the current
+         * ASPX/grid binding.
+         *
+         * The extension itself is no longer chained to Vadym's
+         * WMS.SOShipmentEntryExt.
+         */
         public PXSelect<
             WmsPlan,
             Where<
@@ -227,10 +253,19 @@ namespace CustomWMS
                                     Asc<
                                         WmsPlan.inventoryID,
                                         Asc<
-                                            WmsPlan.lotSerialNbr>>>>>>>>
+                                            WmsPlan.lotSerialNbr
+                                        >
+                                    >
+                                >
+                            >
+                        >
+                    >
+                >
+            >
         > SelectedPackageContentsView;
 
-        protected virtual IEnumerable selectedPackageContentsView()
+        protected virtual IEnumerable
+            selectedPackageContentsView()
         {
             WmsDebugTrace.Info(
                 $"{TracePrefix} VERSION {Version}");
@@ -239,7 +274,8 @@ namespace CustomWMS
                 Base.Packages.Current;
 
             if (package == null ||
-                package.ShipmentNbr == null ||
+                string.IsNullOrEmpty(
+                    package.ShipmentNbr) ||
                 package.LineNbr == null)
             {
                 WmsDebugTrace.Info(
@@ -249,15 +285,22 @@ namespace CustomWMS
                 yield break;
             }
 
+            List<RowCalc> calculatedRows =
+                GetCalculatedRows(package);
+
+            Dictionary<int?, string> inventoryCodes =
+                GetInventoryCodes(calculatedRows);
+
+            IEnumerable<RowCalc> result;
+
             if (ShouldBypassTopRowWorkflow())
             {
                 WmsDebugTrace.Info(
                     $"{TracePrefix} Top-row workflow bypassed. " +
-                    $"Returning shipment-wide incomplete rows with " +
-                    $"RemainingQty and SkippedStatus.");
+                    $"Returning incomplete rows.");
 
-                List<RowCalc> allRows =
-                    GetCalculatedRows(package)
+                result =
+                    calculatedRows
                         .Where(item =>
                             item.RemainingQty > 0m)
                         .OrderBy(item =>
@@ -268,48 +311,39 @@ namespace CustomWMS
                             item.Row.StoreNbr)
                         .ThenBy(item =>
                             GetInventoryCD(
+                                inventoryCodes,
                                 item.Row.InventoryID))
                         .ThenBy(item =>
-                            item.Row.LotSerialNbr)
-                        .ToList();
-
-                foreach (RowCalc item in allRows)
-                {
-                    WmsPlan displayRow =
-                        CreateDisplayRow(item);
-
-                    if (displayRow != null)
-                    {
-                        yield return displayRow;
-                    }
-                }
-
-                yield break;
+                            item.Row.LotSerialNbr);
+            }
+            else
+            {
+                result =
+                    calculatedRows
+                        .Where(item =>
+                            item.CompletedSortOrder == 0)
+                        .OrderBy(item =>
+                            item.SkipSortOrder)
+                        .ThenBy(item =>
+                            item.Row.DefaultIssueFrom)
+                        .ThenBy(item =>
+                            item.Row.OrderNbr)
+                        .ThenBy(item =>
+                            item.Row.StoreNbr)
+                        .ThenBy(item =>
+                            GetInventoryCD(
+                                inventoryCodes,
+                                item.Row.InventoryID))
+                        .ThenBy(item =>
+                            item.Row.LotSerialNbr);
             }
 
             List<RowCalc> sortedRows =
-                GetCalculatedRows(package)
-                    .Where(item =>
-                        item.CompletedSortOrder == 0)
-                    .OrderBy(item =>
-                        item.SkipSortOrder)
-                    .ThenBy(item =>
-                        item.Row.DefaultIssueFrom)
-                    .ThenBy(item =>
-                        item.Row.OrderNbr)
-                    .ThenBy(item =>
-                        item.Row.StoreNbr)
-                    .ThenBy(item =>
-                        GetInventoryCD(
-                            item.Row.InventoryID))
-                    .ThenBy(item =>
-                        item.Row.LotSerialNbr)
-                    .ToList();
+                result.ToList();
 
             WmsDebugTrace.Info(
-                $"{TracePrefix} Live incomplete-only shipment-wide " +
-                $"RemainingQty and SkippedStatus complete. " +
-                $"Returned={sortedRows.Count}");
+                $"{TracePrefix} Returning calculated display rows. " +
+                $"Count={sortedRows.Count}");
 
             foreach (RowCalc item in sortedRows)
             {
@@ -324,15 +358,10 @@ namespace CustomWMS
         }
 
         /*
-         * TEST 1:
+         * Creates a detached display copy.
          *
-         * Create a copy of the selected WmsPlan row and populate the
-         * unbound display fields directly on the copy.
-         *
-         * This avoids calling SetValueExt against the original row in
-         * the graph cache. The goal is to prevent a display calculation
-         * from changing the cache status or invoking unnecessary field
-         * events during shipment persistence.
+         * The original WmsPlan row is not modified.
+         * No SetValueExt calls are performed against the graph cache.
          */
         private WmsPlan CreateDisplayRow(
             RowCalc item)
@@ -363,12 +392,10 @@ namespace CustomWMS
                 item.SkipSortOrder;
 
             WmsDebugTrace.Info(
-                $"{TracePrefix} Created display copy: " +
+                $"{TracePrefix} Created display copy. " +
                 $"RecordID={displayRow.RecordID}, " +
                 $"RemainingQty={item.RemainingQty}, " +
-                $"SkippedStatus={item.SkipSortOrder == 1}, " +
-                $"CompletedSortOrder={item.CompletedSortOrder}, " +
-                $"SkipSortOrder={item.SkipSortOrder}");
+                $"SkippedStatus={item.SkipSortOrder == 1}");
 
             return displayRow;
         }
@@ -396,7 +423,7 @@ namespace CustomWMS
             SOPackageDetailEx package)
         {
             /*
-             * Load only the expected rows assigned to the currently
+             * Read the expected rows assigned to the currently
              * selected carton.
              */
             List<WmsPlan> plannedRows =
@@ -420,27 +447,23 @@ namespace CustomWMS
                 .ToList();
 
             /*
-             * Load actual packed rows from the entire shipment instead
-             * of only the currently selected carton.
+             * Read the actual packed rows for the shipment once.
              */
-            List<SOShipLineSplitPackage> shipmentActualRows =
-                PXSelectReadonly<
-                    SOShipLineSplitPackage,
-                    Where<
-                        SOShipLineSplitPackage.shipmentNbr,
-                        Equal<
-                            Required<
-                                SOShipLineSplitPackage.shipmentNbr>>>>
-                .Select(
-                    Base,
-                    package.ShipmentNbr)
-                .RowCast<SOShipLineSplitPackage>()
-                .ToList();
+            List<SOShipLineSplitPackage>
+                shipmentActualRows =
+                    PXSelectReadonly<
+                        SOShipLineSplitPackage,
+                        Where<
+                            SOShipLineSplitPackage.shipmentNbr,
+                            Equal<
+                                Required<
+                                    SOShipLineSplitPackage.shipmentNbr>>>>
+                    .Select(
+                        Base,
+                        package.ShipmentNbr)
+                    .RowCast<SOShipLineSplitPackage>()
+                    .ToList();
 
-            /*
-             * Sum the packed quantity for each shipment split across
-             * every carton belonging to the shipment.
-             */
             Dictionary<int?, decimal>
                 shipmentActualQtyBySplit =
                     shipmentActualRows
@@ -451,11 +474,9 @@ namespace CustomWMS
                         .ToDictionary(
                             group => group.Key,
                             group => group.Sum(
-                                row => row.PackedQty ?? 0m));
+                                row =>
+                                    row.PackedQty ?? 0m));
 
-            /*
-             * Package-only values are retained for diagnostic tracing.
-             */
             Dictionary<int?, decimal>
                 packageActualQtyBySplit =
                     shipmentActualRows
@@ -468,14 +489,15 @@ namespace CustomWMS
                         .ToDictionary(
                             group => group.Key,
                             group => group.Sum(
-                                row => row.PackedQty ?? 0m));
+                                row =>
+                                    row.PackedQty ?? 0m));
 
             List<RowCalc> result =
                 new List<RowCalc>();
 
             foreach (WmsPlan row in plannedRows)
             {
-                int? realShipmentSplitLineNbr =
+                int? shipmentSplitLineNbr =
                     row.ShipmentSplitLineNbr;
 
                 decimal expectedQty =
@@ -488,17 +510,13 @@ namespace CustomWMS
                     0m;
 
                 packageActualQtyBySplit.TryGetValue(
-                    realShipmentSplitLineNbr,
+                    shipmentSplitLineNbr,
                     out packedInExpectedPackage);
 
                 shipmentActualQtyBySplit.TryGetValue(
-                    realShipmentSplitLineNbr,
+                    shipmentSplitLineNbr,
                     out packedAcrossShipment);
 
-                /*
-                 * Remaining quantity is based on the total quantity
-                 * already packed for the split across all cartons.
-                 */
                 decimal remainingQty =
                     expectedQty -
                     packedAcrossShipment;
@@ -510,7 +528,8 @@ namespace CustomWMS
 
                 bool completed =
                     expectedQty > 0m &&
-                    packedAcrossShipment >= expectedQty;
+                    packedAcrossShipment >=
+                        expectedQty;
 
                 bool packedInDifferentPackage =
                     packedAcrossShipment >
@@ -521,14 +540,14 @@ namespace CustomWMS
                         Base,
                         row.ShipmentNbr,
                         row.PackageLineNbr,
-                        realShipmentSplitLineNbr);
+                        shipmentSplitLineNbr);
 
                 WmsDebugTrace.Info(
-                    $"{TracePrefix} Row calculated: " +
+                    $"{TracePrefix} Row calculated. " +
                     $"RecordID={row.RecordID}, " +
                     $"InventoryID={row.InventoryID}, " +
                     $"ExpectedPackageLineNbr={row.PackageLineNbr}, " +
-                    $"RealSplitLineNbr={realShipmentSplitLineNbr}, " +
+                    $"ShipmentSplitLineNbr={shipmentSplitLineNbr}, " +
                     $"Expected={expectedQty}, " +
                     $"PackedInExpectedPackage={packedInExpectedPackage}, " +
                     $"PackedAcrossShipment={packedAcrossShipment}, " +
@@ -545,7 +564,7 @@ namespace CustomWMS
                             row,
 
                         RealShipmentSplitLineNbr =
-                            realShipmentSplitLineNbr,
+                            shipmentSplitLineNbr,
 
                         RemainingQty =
                             remainingQty,
@@ -567,89 +586,91 @@ namespace CustomWMS
             return result;
         }
 
+        /*
+         * Inventory values are loaded once for the view execution
+         * instead of performing one InventoryItem query per row
+         * during sorting.
+         */
+        private Dictionary<int?, string>
+            GetInventoryCodes(
+                IEnumerable<RowCalc> rows)
+        {
+            HashSet<int?> inventoryIDs =
+                new HashSet<int?>(
+                    rows
+                        .Where(item =>
+                            item?.Row?.InventoryID != null)
+                        .Select(item =>
+                            item.Row.InventoryID));
+
+            if (inventoryIDs.Count == 0)
+            {
+                return new Dictionary<int?, string>();
+            }
+
+            /*
+             * This still loads InventoryItem through one managed query.
+             * The required IDs are then filtered in memory.
+             *
+             * This is intentionally retained from the previous
+             * isolation version. It can be replaced later with a
+             * parameterized "IN" query if performance requires it.
+             */
+            List<InventoryItem> inventoryItems =
+                PXSelectReadonly<InventoryItem>
+                    .Select(Base)
+                    .RowCast<InventoryItem>()
+                    .Where(item =>
+                        inventoryIDs.Contains(
+                            item.InventoryID))
+                    .ToList();
+
+            return inventoryItems
+                .GroupBy(item =>
+                    item.InventoryID)
+                .ToDictionary(
+                    group => group.Key,
+                    group =>
+                        group
+                            .Select(item =>
+                                item.InventoryCD?.Trim())
+                            .FirstOrDefault()
+                        ?? string.Empty);
+        }
+
         private string GetInventoryCD(
+            Dictionary<int?, string> inventoryCodes,
             int? inventoryID)
         {
-            if (inventoryID == null)
+            if (inventoryID == null ||
+                inventoryCodes == null)
             {
                 return string.Empty;
             }
 
-            InventoryItem item =
-                PXSelectReadonly<
-                    InventoryItem,
-                    Where<
-                        InventoryItem.inventoryID,
-                        Equal<
-                            Required<
-                                InventoryItem.inventoryID>>>>
-                .Select(
-                    Base,
-                    inventoryID)
-                .RowCast<InventoryItem>()
-                .FirstOrDefault();
+            string inventoryCD;
 
-            return item?.InventoryCD?.Trim()
-                ?? string.Empty;
-        }
-
-        protected virtual void _(
-            Events.RowInserted<SOShipLineSplitPackage> e)
-        {
-            RequestEstimatedContentRefresh(
-                "Packed row inserted");
-        }
-
-        protected virtual void _(
-            Events.RowUpdated<SOShipLineSplitPackage> e)
-        {
-            RequestEstimatedContentRefresh(
-                "Packed row updated");
-        }
-
-        protected virtual void _(
-            Events.RowDeleted<SOShipLineSplitPackage> e)
-        {
-            RequestEstimatedContentRefresh(
-                "Packed row deleted");
+            return inventoryCodes.TryGetValue(
+                inventoryID,
+                out inventoryCD)
+                    ? inventoryCD ?? string.Empty
+                    : string.Empty;
         }
 
         /*
-         * This refresh logic is intentionally unchanged for Test 1.
+         * Intentionally absent:
          *
-         * If concurrency continues to fail after removing SetValueExt,
-         * the next isolated test should evaluate these cache-clearing
-         * operations.
+         * - Persist override
+         * - RowInserted<SOShipLineSplitPackage>
+         * - RowUpdated<SOShipLineSplitPackage>
+         * - RowDeleted<SOShipLineSplitPackage>
+         * - Cache.Clear()
+         * - View.Clear()
+         * - RequestRefresh()
+         *
+         * The extension is limited to displaying and sorting the
+         * calculated expected-package rows.
          */
-        private void RequestEstimatedContentRefresh(
-            string reason)
-        {
-            WmsShipmentExt wmsExt =
-                Base.GetExtension<WmsShipmentExt>();
-
-            if (wmsExt?.SelectedPackageContentsView == null)
-            {
-                WmsDebugTrace.Info(
-                    $"{TracePrefix} Could not refresh: " +
-                    $"WMS extension/view not found. " +
-                    $"Reason={reason}");
-
-                return;
-            }
-
-            wmsExt.SelectedPackageContentsView
-                .Cache.Clear();
-
-            wmsExt.SelectedPackageContentsView
-                .View.Clear();
-
-            wmsExt.SelectedPackageContentsView
-                .View.RequestRefresh();
-
-            WmsDebugTrace.Info(
-                $"{TracePrefix} Refresh requested. " +
-                $"Reason={reason}");
-        }
 
         private sealed class RowCalc
         {
