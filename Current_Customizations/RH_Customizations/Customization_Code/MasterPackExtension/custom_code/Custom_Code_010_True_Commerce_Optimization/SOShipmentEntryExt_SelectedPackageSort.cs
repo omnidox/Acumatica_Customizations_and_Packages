@@ -203,15 +203,13 @@ namespace CustomWMS
      *
      *     PXGraphExtension<WMS.SOShipmentEntryExt, SOShipmentEntry>
      *
-     * Instead, it retrieves the existing WMS extension as a sibling,
-     * reads the BQL command from the WMS-owned view, creates a replacement
-     * PXView with the custom delegate, and registers that replacement
-     * under the existing Base.Views key:
+     * Instead, it retrieves the WMS extension as a sibling and replaces
+     * the graph-level Base.Views registration for:
      *
      *     SelectedPackageContentsView
      *
-     * This preserves the existing ASPX DataMember while avoiding the
-     * second-level extension dependency that changed Persist ordering.
+     * The replacement PXView uses an explicit BQL command containing the
+     * intended default OrderBy and this extension's custom delegate.
      */
     public class SOShipmentEntryExt_SelectedPackageSort
         : PXGraphExtension<SOShipmentEntry>
@@ -223,20 +221,7 @@ namespace CustomWMS
             "SelectedPackageContentsView";
 
         private const string Version =
-            "2026-07-21-BASE-VIEWS-REPLACEMENT-POST-COMMIT-REFRESH-01";
-
-        /*
-         * Stores calculated unbound display values for the rows returned
-         * by the current execution of the replacement view.
-         *
-         * FieldSelecting supplies these values when the grid renders the
-         * unbound fields.
-         *
-         * The original WmsPlan records are not modified.
-         */
-        private readonly Dictionary<string, RowDisplayValues>
-            _displayValuesByRow =
-                new Dictionary<string, RowDisplayValues>();
+            "2026-07-21-ORDERED-BASE-VIEW-SETVALUEEXT-01";
 
         public static bool IsActive()
         {
@@ -244,10 +229,9 @@ namespace CustomWMS
         }
 
         /*
-         * Obtain the existing WMS extension as a sibling extension.
+         * Obtain the WMS extension as a sibling.
          *
-         * This does not make this customization a second-level graph
-         * extension and does not change the class inheritance hierarchy.
+         * This does not make the customization a second-level extension.
          */
         private WmsShipmentExt GetWmsExtension()
         {
@@ -255,16 +239,12 @@ namespace CustomWMS
         }
 
         /*
-         * Replace the graph's registered SelectedPackageContentsView.
+         * Replace the registered view with an explicitly ordered BQL
+         * command and the custom delegate.
          *
-         * The replacement reuses the BQL command from the WMS-owned view,
-         * but supplies this extension's delegate.
+         * The ASPX DataMember remains:
          *
-         * The existing ASPX binding remains:
-         *
-         *     DataMember="SelectedPackageContentsView"
-         *
-         * No duplicate PXSelect view is declared in this extension.
+         *     SelectedPackageContentsView
          */
         public override void Initialize()
         {
@@ -286,24 +266,68 @@ namespace CustomWMS
                 return;
             }
 
-            BqlCommand originalCommand =
-                wmsView.BqlSelect;
-
-            if (originalCommand == null)
-            {
-                WmsDebugTrace.Info(
-                    $"{TracePrefix} Could not replace registered view. " +
-                    $"WMS {ViewName} did not expose a BQL command. " +
-                    $"Version={Version}");
-
-                return;
-            }
+            /*
+             * This command reproduces the intended default view:
+             *
+             * 1. Completed rows
+             * 2. Skipped rows
+             * 3. Default issue location
+             * 4. Order number
+             * 5. Store number
+             * 6. Inventory ID
+             * 7. Lot/serial number
+             *
+             * The delegate normally filters completed rows out, but the
+             * completed sort field is retained to preserve the previous
+             * view definition and support any future alternate workflow.
+             */
+            BqlCommand orderedCommand =
+                BqlCommand.CreateInstance(
+                    typeof(Select<
+                        WmsPlan,
+                        Where<
+                            WmsPlan.shipmentNbr,
+                            Equal<
+                                Current<
+                                    SOPackageDetailEx.shipmentNbr>>,
+                            And<
+                                WmsPlan.packageLineNbr,
+                                Equal<
+                                    Current<
+                                        SOPackageDetailEx.lineNbr>>>>,
+                        OrderBy<
+                            Asc<
+                                SelectedPackageContentsExt
+                                    .usrCompletedSortOrder,
+                                Asc<
+                                    SelectedPackageContentsExt
+                                        .usrSkipSortOrder,
+                                    Asc<
+                                        WmsPlan.defaultIssueFrom,
+                                        Asc<
+                                            WmsPlan.orderNbr,
+                                            Asc<
+                                                WmsPlan.storeNbr,
+                                                Asc<
+                                                    WmsPlan.inventoryID,
+                                                    Asc<
+                                                        WmsPlan
+                                                            .lotSerialNbr
+                                                    >
+                                                >
+                                            >
+                                        >
+                                    >
+                                >
+                            >
+                        >
+                    >));
 
             Base.Views[ViewName] =
                 new PXView(
                     Base,
                     false,
-                    originalCommand,
+                    orderedCommand,
                     new PXSelectDelegate(
                         selectedPackageContentsView));
 
@@ -314,13 +338,21 @@ namespace CustomWMS
                 $"{TracePrefix} Replaced Base.Views registration. " +
                 $"ViewName={ViewName}, " +
                 $"Registered={registeredView != null}, " +
-                $"BqlCommand={registeredView?.BqlSelect?.GetType().FullName}, " +
+                $"BqlCommand=" +
+                $"{registeredView?.BqlSelect?.GetType().FullName}, " +
                 $"Version={Version}");
         }
 
         /*
-         * This delegate supplies the data for the replacement view
-         * registered under SelectedPackageContentsView.
+         * Supplies rows for the replacement view.
+         *
+         * The rows are:
+         *
+         * - calculated;
+         * - filtered;
+         * - sorted;
+         * - populated through SetValueExt;
+         * - returned as a PXDelegateResult marked as sorted.
          */
         protected virtual IEnumerable
             selectedPackageContentsView()
@@ -328,12 +360,6 @@ namespace CustomWMS
             WmsDebugTrace.Info(
                 $"{TracePrefix} Delegate ENTER. " +
                 $"Version={Version}");
-
-            /*
-             * Remove values from a previous package or previous execution
-             * before calculating the current rows.
-             */
-            _displayValuesByRow.Clear();
 
             SOPackageDetailEx package =
                 Base.Packages.Current;
@@ -347,7 +373,12 @@ namespace CustomWMS
                     $"{TracePrefix} No valid current package. " +
                     $"Returning no rows.");
 
-                yield break;
+                return new PXDelegateResult
+                {
+                    IsResultFiltered = true,
+                    IsResultSorted = true,
+                    IsResultTruncated = false
+                };
             }
 
             List<RowCalc> calculatedRows =
@@ -356,7 +387,7 @@ namespace CustomWMS
             Dictionary<int?, string> inventoryCodes =
                 GetInventoryCodes(calculatedRows);
 
-            IEnumerable<RowCalc> result;
+            List<RowCalc> sortedRows;
 
             if (ShouldBypassTopRowWorkflow())
             {
@@ -364,7 +395,7 @@ namespace CustomWMS
                     $"{TracePrefix} Top-row workflow bypassed. " +
                     $"Returning incomplete rows.");
 
-                result =
+                sortedRows =
                     calculatedRows
                         .Where(item =>
                             item.RemainingQty > 0m)
@@ -379,11 +410,12 @@ namespace CustomWMS
                                 inventoryCodes,
                                 item.Row.InventoryID))
                         .ThenBy(item =>
-                            item.Row.LotSerialNbr);
+                            item.Row.LotSerialNbr)
+                        .ToList();
             }
             else
             {
-                result =
+                sortedRows =
                     calculatedRows
                         .Where(item =>
                             item.CompletedSortOrder == 0)
@@ -400,17 +432,12 @@ namespace CustomWMS
                                 inventoryCodes,
                                 item.Row.InventoryID))
                         .ThenBy(item =>
-                            item.Row.LotSerialNbr);
+                            item.Row.LotSerialNbr)
+                        .ToList();
             }
 
-            List<RowCalc> sortedRows =
-                result.ToList();
-
-            WmsDebugTrace.Info(
-                $"{TracePrefix} Returning calculated rows. " +
-                $"ShipmentNbr={package.ShipmentNbr}, " +
-                $"PackageLineNbr={package.LineNbr}, " +
-                $"Count={sortedRows.Count}");
+            List<WmsPlan> rowsToReturn =
+                new List<WmsPlan>();
 
             foreach (RowCalc item in sortedRows)
             {
@@ -419,25 +446,54 @@ namespace CustomWMS
                     continue;
                 }
 
-                StoreDisplayValues(item);
-
                 /*
-                 * Return the original row.
+                 * Populate the four unbound extension fields directly on
+                 * the cached WmsPlan row.
                  *
-                 * FieldSelecting supplies the unbound calculated values
-                 * without using SetValueExt.
+                 * These fields are not database-bound, so this does not
+                 * persist the values to the database.
                  */
-                yield return item.Row;
+                ApplyCalculatedValues(item);
+
+                rowsToReturn.Add(item.Row);
             }
+
+            PXDelegateResult delegateResult =
+                new PXDelegateResult
+                {
+                    /*
+                     * The delegate has already filtered and sorted the
+                     * records. This prevents the PXView from unnecessarily
+                     * reapplying its normal sorting to the delegate output.
+                     */
+                    IsResultFiltered = true,
+                    IsResultSorted = true,
+                    IsResultTruncated = false
+                };
+
+            delegateResult.AddRange(
+                rowsToReturn);
 
             WmsDebugTrace.Info(
                 $"{TracePrefix} Delegate EXIT. " +
-                $"Returned={sortedRows.Count}");
+                $"ShipmentNbr={package.ShipmentNbr}, " +
+                $"PackageLineNbr={package.LineNbr}, " +
+                $"Returned={rowsToReturn.Count}, " +
+                $"MarkedFiltered=" +
+                $"{delegateResult.IsResultFiltered}, " +
+                $"MarkedSorted=" +
+                $"{delegateResult.IsResultSorted}");
+
+            return delegateResult;
         }
 
-        #region Unbound field display
-
-        private void StoreDisplayValues(
+        /*
+         * Apply calculated values to the unbound DAC extension fields.
+         *
+         * This uses the same cache that owns the WmsPlan row returned by
+         * the replacement view.
+         */
+        private void ApplyCalculatedValues(
             RowCalc item)
         {
             if (item?.Row == null)
@@ -445,138 +501,40 @@ namespace CustomWMS
                 return;
             }
 
-            string key =
-                BuildDisplayKey(item.Row);
+            PXCache cache =
+                Base.Caches<WmsPlan>();
 
-            _displayValuesByRow[key] =
-                new RowDisplayValues
-                {
-                    RemainingQty =
-                        item.RemainingQty,
+            cache.SetValueExt<
+                SelectedPackageContentsExt.remainingQty>(
+                    item.Row,
+                    item.RemainingQty);
 
-                    SkippedStatus =
-                        item.SkipSortOrder == 1,
+            cache.SetValueExt<
+                SelectedPackageContentsExt.skippedStatus>(
+                    item.Row,
+                    item.SkipSortOrder == 1);
 
-                    CompletedSortOrder =
-                        item.CompletedSortOrder,
+            cache.SetValueExt<
+                SelectedPackageContentsExt
+                    .usrCompletedSortOrder>(
+                    item.Row,
+                    item.CompletedSortOrder);
 
-                    SkipSortOrder =
-                        item.SkipSortOrder
-                };
+            cache.SetValueExt<
+                SelectedPackageContentsExt
+                    .usrSkipSortOrder>(
+                    item.Row,
+                    item.SkipSortOrder);
 
             WmsDebugTrace.Info(
-                $"{TracePrefix} Stored display values. " +
-                $"Key={key}, " +
+                $"{TracePrefix} Applied unbound values. " +
+                $"RecordID={item.Row.RecordID}, " +
                 $"RemainingQty={item.RemainingQty}, " +
                 $"SkippedStatus={item.SkipSortOrder == 1}, " +
-                $"CompletedSortOrder={item.CompletedSortOrder}, " +
+                $"CompletedSortOrder=" +
+                $"{item.CompletedSortOrder}, " +
                 $"SkipSortOrder={item.SkipSortOrder}");
         }
-
-        private bool TryGetDisplayValues(
-            WmsPlan row,
-            out RowDisplayValues values)
-        {
-            values = null;
-
-            if (row == null)
-            {
-                return false;
-            }
-
-            string key =
-                BuildDisplayKey(row);
-
-            bool found =
-                _displayValuesByRow.TryGetValue(
-                    key,
-                    out values);
-
-            if (!found)
-            {
-                WmsDebugTrace.Info(
-                    $"{TracePrefix} No display values found. " +
-                    $"Key={key}");
-            }
-
-            return found;
-        }
-
-        private string BuildDisplayKey(
-            WmsPlan row)
-        {
-            return
-                $"Shipment={row?.ShipmentNbr ?? string.Empty}" +
-                $"|Package={row?.PackageLineNbr}" +
-                $"|Split={row?.ShipmentSplitLineNbr}" +
-                $"|Record={row?.RecordID}";
-        }
-
-        protected virtual void _(
-            Events.FieldSelecting<
-                WmsPlan,
-                SelectedPackageContentsExt.remainingQty> e)
-        {
-            RowDisplayValues values;
-
-            if (TryGetDisplayValues(
-                e.Row,
-                out values))
-            {
-                e.ReturnValue =
-                    values.RemainingQty;
-            }
-        }
-
-        protected virtual void _(
-            Events.FieldSelecting<
-                WmsPlan,
-                SelectedPackageContentsExt.skippedStatus> e)
-        {
-            RowDisplayValues values;
-
-            if (TryGetDisplayValues(
-                e.Row,
-                out values))
-            {
-                e.ReturnValue =
-                    values.SkippedStatus;
-            }
-        }
-
-        protected virtual void _(
-            Events.FieldSelecting<
-                WmsPlan,
-                SelectedPackageContentsExt.usrCompletedSortOrder> e)
-        {
-            RowDisplayValues values;
-
-            if (TryGetDisplayValues(
-                e.Row,
-                out values))
-            {
-                e.ReturnValue =
-                    values.CompletedSortOrder;
-            }
-        }
-
-        protected virtual void _(
-            Events.FieldSelecting<
-                WmsPlan,
-                SelectedPackageContentsExt.usrSkipSortOrder> e)
-        {
-            RowDisplayValues values;
-
-            if (TryGetDisplayValues(
-                e.Row,
-                out values))
-            {
-                e.ReturnValue =
-                    values.SkipSortOrder;
-            }
-        }
-
-        #endregion
 
         private bool ShouldBypassTopRowWorkflow()
         {
@@ -624,10 +582,10 @@ namespace CustomWMS
                 .ToList();
 
             /*
-             * Load actual packed records across the entire shipment.
+             * Load actual packed rows from the entire shipment.
              *
-             * Remaining quantity and completion are based on quantities
-             * packed in any carton belonging to the shipment.
+             * Remaining quantity and completion are calculated against
+             * quantities packed in all cartons for the shipment.
              */
             List<SOShipLineSplitPackage>
                 shipmentActualRows =
@@ -637,7 +595,8 @@ namespace CustomWMS
                             SOShipLineSplitPackage.shipmentNbr,
                             Equal<
                                 Required<
-                                    SOShipLineSplitPackage.shipmentNbr>>>>
+                                    SOShipLineSplitPackage
+                                        .shipmentNbr>>>>
                     .Select(
                         Base,
                         package.ShipmentNbr)
@@ -729,16 +688,22 @@ namespace CustomWMS
                     $"{TracePrefix} Row calculated. " +
                     $"RecordID={row.RecordID}, " +
                     $"InventoryID={row.InventoryID}, " +
-                    $"ExpectedPackageLineNbr={row.PackageLineNbr}, " +
-                    $"ShipmentSplitLineNbr={shipmentSplitLineNbr}, " +
+                    $"ExpectedPackageLineNbr=" +
+                    $"{row.PackageLineNbr}, " +
+                    $"ShipmentSplitLineNbr=" +
+                    $"{shipmentSplitLineNbr}, " +
                     $"Expected={expectedQty}, " +
-                    $"PackedInExpectedPackage={packedInExpectedPackage}, " +
-                    $"PackedAcrossShipment={packedAcrossShipment}, " +
-                    $"PackedInDifferentPackage={packedInDifferentPackage}, " +
+                    $"PackedInExpectedPackage=" +
+                    $"{packedInExpectedPackage}, " +
+                    $"PackedAcrossShipment=" +
+                    $"{packedAcrossShipment}, " +
+                    $"PackedInDifferentPackage=" +
+                    $"{packedInDifferentPackage}, " +
                     $"Remaining={remainingQty}, " +
                     $"Completed={completed}, " +
                     $"Skipped={skipped}, " +
-                    $"SkipStatus={GetSkipStatusText(skipped ? 1 : 0)}");
+                    $"SkipStatus=" +
+                    $"{GetSkipStatusText(skipped ? 1 : 0)}");
 
                 result.Add(
                     new RowCalc
@@ -762,16 +727,21 @@ namespace CustomWMS
 
             WmsDebugTrace.Info(
                 $"{TracePrefix} Calculated rows complete. " +
-                $"PlannedForSelectedPackage={plannedRows.Count}, " +
-                $"ActualAcrossShipment={shipmentActualRows.Count}, " +
+                $"PlannedForSelectedPackage=" +
+                $"{plannedRows.Count}, " +
+                $"ActualAcrossShipment=" +
+                $"{shipmentActualRows.Count}, " +
                 $"Calculated={result.Count}");
 
             return result;
         }
 
         /*
-         * Load the inventory records once per view execution rather than
-         * issuing one InventoryItem query for every row during sorting.
+         * Load inventory codes once per view execution.
+         *
+         * The delegate sorts by InventoryCD while the BQL command retains
+         * the older InventoryID default sort as a fallback/default view
+         * definition.
          */
         private Dictionary<int?, string>
             GetInventoryCodes(
@@ -832,8 +802,10 @@ namespace CustomWMS
         }
 
         /*
-         * Wait for successful transaction completion before requesting
-         * that the registered expected-content view execute again.
+         * Wait until the database transaction has completed successfully
+         * before refreshing the expected-content view.
+         *
+         * No cache clearing is performed.
          */
         protected virtual void _(
             Events.RowPersisted<SOShipLineSplitPackage> e)
@@ -843,7 +815,8 @@ namespace CustomWMS
                 return;
             }
 
-            if (e.TranStatus != PXTranStatus.Completed)
+            if (e.TranStatus !=
+                PXTranStatus.Completed)
             {
                 WmsDebugTrace.Info(
                     $"{TracePrefix} Packed-row persistence has not " +
@@ -856,9 +829,12 @@ namespace CustomWMS
             }
 
             bool relevantOperation =
-                e.Operation == PXDBOperation.Insert ||
-                e.Operation == PXDBOperation.Update ||
-                e.Operation == PXDBOperation.Delete;
+                e.Operation ==
+                    PXDBOperation.Insert ||
+                e.Operation ==
+                    PXDBOperation.Update ||
+                e.Operation ==
+                    PXDBOperation.Delete;
 
             if (!relevantOperation)
             {
@@ -871,16 +847,19 @@ namespace CustomWMS
         }
 
         /*
-         * Refresh the active view registered in Base.Views under the same
-         * name used by the ASPX grid.
+         * Refresh the active PXView registered under the ASPX DataMember.
          *
-         * No cache clearing is performed.
+         * Intentionally does not call:
+         *
+         *     Base.Caches<WmsPlan>().Clear()
+         *
+         * or:
+         *
+         *     wmsExt.SelectedPackageContentsView.Cache.Clear()
          */
         private void RequestEstimatedContentRefresh(
             string reason)
         {
-            _displayValuesByRow.Clear();
-
             PXView view =
                 Base.Views[ViewName];
 
@@ -909,17 +888,16 @@ namespace CustomWMS
          *
          * - Persist override
          * - Second-level WMS graph-extension inheritance
-         * - Duplicate SelectedPackageContentsView declaration
+         * - Duplicate PXSelect member declaration
          * - ASPX DataMember change
          * - PXView.SetDelegate
          * - PXView.Delegate assignment
          * - RowInserted<SOShipLineSplitPackage>
          * - RowUpdated<SOShipLineSplitPackage>
          * - RowDeleted<SOShipLineSplitPackage>
-         * - SetValueExt against WmsPlan records
+         * - WmsPlan cache clearing
          * - SelectedPackageContentsView.Cache.Clear()
-         * - WMS cache clearing
-         * - Detached display copies
+         * - Dictionary-backed FieldSelecting display values
          */
 
         private sealed class RowCalc
@@ -929,17 +907,6 @@ namespace CustomWMS
             public int? RealShipmentSplitLineNbr { get; set; }
 
             public decimal RemainingQty { get; set; }
-
-            public int CompletedSortOrder { get; set; }
-
-            public int SkipSortOrder { get; set; }
-        }
-
-        private sealed class RowDisplayValues
-        {
-            public decimal RemainingQty { get; set; }
-
-            public bool SkippedStatus { get; set; }
 
             public int CompletedSortOrder { get; set; }
 
