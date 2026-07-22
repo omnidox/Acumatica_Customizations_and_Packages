@@ -1,56 +1,80 @@
 using System;
 using PX.Data;
+using PX.Data.BQL;
 
 namespace iStarCostCalculationExtensions
 {
     /// <summary>
-    /// Temporary filter DAC used by the CO_450
-    /// Reverse Cost Calculation popup.
+    /// Unbound filter DAC used by the CO_450
+    /// vendor quote reverse-cost calculation popup.
     ///
     /// This DAC is not persisted to the database.
-    /// It simply holds the user's input while
-    /// the popup is open.
+    /// It only holds values while the Smart Panel is open.
     /// </summary>
     [Serializable]
     public class CostCalculationFilter : PXBqlTable, IBqlTable
     {
-        #region UnitCost
+        #region VendorQuoteCost
 
-        [PXDecimal]
-        [PXUIField(DisplayName = "Unit Cost")]
-        public virtual decimal? UnitCost { get; set; }
+        /// <summary>
+        /// Final cost supplied by the vendor.
+        ///
+        /// Peiyu confirmed the calculation:
+        ///
+        /// Fabrication / Piece =
+        ///     Vendor Quote Cost - Precious Metal Cost
+        /// </summary>
+        [PXDecimal(4)]
+        [PXUIField(
+            DisplayName = "Vendor Quote Cost",
+            Required = true)]
+        public virtual decimal? VendorQuoteCost { get; set; }
 
-        public abstract class unitCost : PX.Data.BQL.BqlDecimal.Field<unitCost> { }
-
-        #endregion
-
-        #region MetalWeight
-
-        [PXDecimal]
-        [PXUIField(DisplayName = "Metal Weight", Enabled = false)]
-        public virtual decimal? MetalWeight { get; set; }
-
-        public abstract class metalWeight : PX.Data.BQL.BqlDecimal.Field<metalWeight> { }
+        public abstract class vendorQuoteCost
+            : BqlDecimal.Field<vendorQuoteCost>
+        {
+        }
 
         #endregion
 
         #region PreciousMetalCost
 
-        [PXDecimal]
-        [PXUIField(DisplayName = "Precious Metal Cost", Enabled = false)]
+        /// <summary>
+        /// Precious-metal cost already calculated by the
+        /// existing licensed jewelry costing customization
+        /// for the selected vendor row.
+        /// </summary>
+        [PXDecimal(6)]
+        [PXUIField(
+            DisplayName = "Precious Metal Cost",
+            Enabled = false)]
         public virtual decimal? PreciousMetalCost { get; set; }
 
-        public abstract class preciousMetalCost : PX.Data.BQL.BqlDecimal.Field<preciousMetalCost> { }
+        public abstract class preciousMetalCost
+            : BqlDecimal.Field<preciousMetalCost>
+        {
+        }
 
         #endregion
 
-        #region FabricationCost
+        #region FabricationPiece
 
-        [PXDecimal]
-        [PXUIField(DisplayName = "Fabrication / Value Add", Enabled = false)]
-        public virtual decimal? FabricationCost { get; set; }
+        /// <summary>
+        /// Result of the reverse calculation.
+        ///
+        /// Fabrication / Piece =
+        ///     Vendor Quote Cost - Precious Metal Cost
+        /// </summary>
+        [PXDecimal(4)]
+        [PXUIField(
+            DisplayName = "Fabrication / Piece",
+            Enabled = false)]
+        public virtual decimal? FabricationPiece { get; set; }
 
-        public abstract class fabricationCost : PX.Data.BQL.BqlDecimal.Field<fabricationCost> { }
+        public abstract class fabricationPiece
+            : BqlDecimal.Field<fabricationPiece>
+        {
+        }
 
         #endregion
     }
