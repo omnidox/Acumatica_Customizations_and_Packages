@@ -53,18 +53,14 @@ namespace iStarCostCalculationExtensions
 
         #region Actions
 
-        public PXAction<InventoryItem> CalculateUnitCost;
+        public PXAction<InventoryItem> CalculateVendorQuote;
 
-        /// <summary>
-        /// Opens the vendor quote popup for the currently
-        /// selected vendor row.
-        /// </summary>
         [PXButton(CommitChanges = true)]
         [PXUIField(
-            DisplayName = "Calculate Unit Cost",
+            DisplayName = "Calculate Vendor Quote",
             MapEnableRights = PXCacheRights.Update,
             MapViewRights = PXCacheRights.Select)]
-        protected virtual IEnumerable calculateUnitCost(
+        protected virtual IEnumerable calculateVendorQuote(
             PXAdapter adapter)
         {
             InventoryItem item = Base.Item.Current;
@@ -137,7 +133,7 @@ namespace iStarCostCalculationExtensions
             bool hasSelectedVendor =
                 vendorRow?.VendorID != null;
 
-            CalculateUnitCost.SetEnabled(
+            CalculateVendorQuote.SetEnabled(
                 hasCurrentItem &&
                 hasSelectedVendor &&
                 Base.Item.Cache.AllowUpdate);
