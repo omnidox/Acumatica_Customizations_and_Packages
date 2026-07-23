@@ -288,8 +288,9 @@ namespace iStarCostCalculationExtensions
                                 Required<
                                     POVendorInventory.vendorID>>>>,
                     OrderBy<
-                        Desc<POVendorInventory.isDefault>,
-                        Asc<POVendorInventory.recordID>>>
+                        Desc<
+                            POVendorInventory.isDefault,
+                            Asc<POVendorInventory.recordID>>>>
                 .SelectWindowed(
                     Base,
                     0,
