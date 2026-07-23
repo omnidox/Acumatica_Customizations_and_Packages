@@ -91,13 +91,14 @@ namespace iStarCostCalculationExtensions
                     "for the selected vendor.");
             }
 
-            InitializeCostCalculationFilter(
-                item,
-                vendorRow,
-                vendorExt);
-
-            WebDialogResult result =
-                CostCalculation.AskExt();
+            WebDialogResult result = CostCalculation.AskExt(
+                (graph, viewName) =>
+                {
+                    InitializeCostCalculationFilter(
+                        item,
+                        vendorRow,
+                        vendorExt);
+                });
 
             if (result == WebDialogResult.OK)
             {
@@ -109,7 +110,6 @@ namespace iStarCostCalculationExtensions
 
             return adapter.Get();
         }
-
         #endregion
 
         #region Event Handlers
