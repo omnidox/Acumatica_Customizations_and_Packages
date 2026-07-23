@@ -182,8 +182,10 @@ namespace iStarCostCalculationExtensions
                 && hasSelectedVendor
                 && Base.Item.Cache.AllowUpdate;
 
-            CalculateVendorQuote.SetEnabled(
-                actionAvailable);
+            // CalculateVendorQuote.SetEnabled(
+            //     actionAvailable);
+
+            CalculateVendorQuote.SetVisible(false);
 
             /*
              * This also hides any standard Acumatica presentation of the
