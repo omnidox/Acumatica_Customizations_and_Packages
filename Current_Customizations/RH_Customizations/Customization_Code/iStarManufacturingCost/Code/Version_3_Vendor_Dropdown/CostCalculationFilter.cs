@@ -70,6 +70,7 @@ namespace iStarCostCalculationExtensions
         ///
         /// VendorID is used as the visible substitute key.
         /// </summary>
+
         [PXInt]
         [PXUIField(
             DisplayName = "Vendor ID",
@@ -88,13 +89,13 @@ namespace iStarCostCalculationExtensions
                         Equal<
                             Current<
                                 CostCalculationFilter.inventoryID>>>>),
-            typeof(POVendorInventory.vendorID),
+            typeof(Vendor.acctCD),
             typeof(Vendor.acctName),
             typeof(POVendorInventory.vendorLocationID),
             typeof(POVendorInventory.subItemID),
             typeof(POVendorInventory.vendorInventoryID),
             typeof(POVendorInventory.purchaseUnit),
-            SubstituteKey = typeof(POVendorInventory.vendorID),
+            SubstituteKey = typeof(Vendor.acctCD),
             DescriptionField = typeof(Vendor.acctName))]
         public virtual int? VendorRecordID { get; set; }
 
@@ -102,7 +103,6 @@ namespace iStarCostCalculationExtensions
             : BqlInt.Field<vendorRecordID>
         {
         }
-
         #endregion
 
         #region VendorName
