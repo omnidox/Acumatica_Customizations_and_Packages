@@ -182,10 +182,8 @@ namespace iStarCostCalculationExtensions
                 && hasSelectedVendor
                 && Base.Item.Cache.AllowUpdate;
 
-            // CalculateVendorQuote.SetEnabled(
-            //     actionAvailable);
-
-            CalculateVendorQuote.SetVisible(false);
+            CalculateVendorQuote.SetEnabled(
+                actionAvailable);
 
             /*
              * This also hides any standard Acumatica presentation of the
@@ -194,8 +192,10 @@ namespace iStarCostCalculationExtensions
              * The runtime button extension separately follows the rendered
              * Silver field visibility.
              */
-            CalculateVendorQuote.SetVisible(
-                isSilverItem);
+            // CalculateVendorQuote.SetVisible(
+            //     isSilverItem);
+
+            CalculateVendorQuote.SetVisible(false);
 
             PXTrace.WriteInformation(
                 $"{TracePrefix} Action state evaluated. " +
