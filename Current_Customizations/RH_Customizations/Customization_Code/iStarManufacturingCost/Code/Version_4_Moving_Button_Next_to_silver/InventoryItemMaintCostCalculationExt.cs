@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using ASCJSMCustom.IN.CacheExt;
 using ASCJSMCustom.PO.CacheExt;
 using PX.Data;
 using PX.Objects.AP;
@@ -12,9 +13,11 @@ namespace iStarCostCalculationExtensions
     /// Adds the CO_450 vendor quote reverse-cost calculation
     /// popup to the Stock Items screen, IN202500.
     ///
+    /// This calculation is available only for Silver items.
+    ///
     /// Workflow:
     ///
-    /// 1. User selects a stock item.
+    /// 1. User selects a Silver stock item.
     /// 2. User selects a row on the Vendors tab.
     /// 3. User opens the Calculate Vendor Quote popup.
     /// 4. The popup defaults to the vendor selected on the
@@ -52,6 +55,19 @@ namespace iStarCostCalculationExtensions
         private const string TracePrefix =
             "[CO_450 Vendor Quote Calculation]";
 
+        /*
+         * The licensed jewelry-costing customization uses:
+         *
+         *     UsrCommodityType == "S"
+         *
+         * to identify Silver items.
+         */
+        private const string SilverCommodityType =
+            "S";
+
+        private const string SilverOnlyMessage =
+            "Vendor quote calculation is available only for Silver items.";
+
         #region Views
 
         /// <summary>
@@ -74,13 +90,32 @@ namespace iStarCostCalculationExtensions
         protected virtual IEnumerable calculateVendorQuote(
             PXAdapter adapter)
         {
-            InventoryItem item = Base.Item.Current;
+            InventoryItem item =
+                Base.Item.Current;
 
             if (item?.InventoryID == null)
             {
                 throw new PXException(
                     "Select a stock item before calculating " +
                     "the vendor quote.");
+            }
+
+            /*
+             * Do not rely only on the browser-side button visibility.
+             *
+             * A callback could still be invoked directly, so the Silver-only
+             * rule must also be enforced on the server.
+             */
+            if (!IsSilverItem(item))
+            {
+                PXTrace.WriteWarning(
+                    $"{TracePrefix} CalculateVendorQuote was rejected because " +
+                    $"the current item is not Silver. " +
+                    $"InventoryID={item.InventoryID}, " +
+                    $"CommodityType={GetCommodityType(item) ?? "<null>"}.");
+
+                throw new PXException(
+                    SilverOnlyMessage);
             }
 
             POVendorInventory initiallySelectedVendorRow =
@@ -105,7 +140,8 @@ namespace iStarCostCalculationExtensions
 
             if (result == WebDialogResult.OK)
             {
-                ApplyCostCalculation(item);
+                ApplyCostCalculation(
+                    item);
             }
 
             return adapter.Get();
@@ -116,9 +152,10 @@ namespace iStarCostCalculationExtensions
         #region Event Handlers
 
         /// <summary>
-        /// Enables the action only when:
+        /// Enables and displays the action only when:
         ///
         /// - an existing stock item is selected,
+        /// - the item is a Silver item,
         /// - a vendor row is selected, and
         /// - the Stock Item record is editable.
         /// </summary>
@@ -128,6 +165,10 @@ namespace iStarCostCalculationExtensions
             bool hasCurrentItem =
                 e.Row?.InventoryID != null;
 
+            bool isSilverItem =
+                IsSilverItem(
+                    e.Row);
+
             POVendorInventory vendorRow =
                 GetSelectedVendorRow();
 
@@ -135,10 +176,33 @@ namespace iStarCostCalculationExtensions
                 vendorRow?.RecordID != null &&
                 vendorRow.VendorID != null;
 
-            CalculateVendorQuote.SetEnabled(
+            bool actionAvailable =
                 hasCurrentItem
+                && isSilverItem
                 && hasSelectedVendor
-                && Base.Item.Cache.AllowUpdate);
+                && Base.Item.Cache.AllowUpdate;
+
+            CalculateVendorQuote.SetEnabled(
+                actionAvailable);
+
+            /*
+             * This also hides any standard Acumatica presentation of the
+             * PXAction for non-Silver items.
+             *
+             * The runtime button extension separately follows the rendered
+             * Silver field visibility.
+             */
+            CalculateVendorQuote.SetVisible(
+                isSilverItem);
+
+            PXTrace.WriteInformation(
+                $"{TracePrefix} Action state evaluated. " +
+                $"InventoryID={e.Row?.InventoryID}, " +
+                $"CommodityType={GetCommodityType(e.Row) ?? "<null>"}, " +
+                $"IsSilver={isSilverItem}, " +
+                $"HasSelectedVendor={hasSelectedVendor}, " +
+                $"AllowUpdate={Base.Item.Cache.AllowUpdate}, " +
+                $"Enabled={actionAvailable}.");
         }
 
         /// <summary>
@@ -171,7 +235,8 @@ namespace iStarCostCalculationExtensions
                     e.Row,
                     null);
 
-            LoadSelectedVendorIntoFilter(e.Row);
+            LoadSelectedVendorIntoFilter(
+                e.Row);
         }
 
         /// <summary>
@@ -192,7 +257,8 @@ namespace iStarCostCalculationExtensions
                 return;
             }
 
-            RecalculateFabricationPiece(e.Row);
+            RecalculateFabricationPiece(
+                e.Row);
         }
 
         /// <summary>
@@ -209,7 +275,47 @@ namespace iStarCostCalculationExtensions
                 return;
             }
 
-            RecalculateFabricationPiece(e.Row);
+            RecalculateFabricationPiece(
+                e.Row);
+        }
+
+        #endregion
+
+        #region Silver Applicability
+
+        /// <summary>
+        /// Returns the commodity type stored by the licensed
+        /// jewelry-costing extension for the supplied stock item.
+        /// </summary>
+        private static string GetCommodityType(
+            InventoryItem item)
+        {
+            if (item == null)
+            {
+                return null;
+            }
+
+            ASCJSMINInventoryItemExt itemExt =
+                item.GetExtension<
+                    ASCJSMINInventoryItemExt>();
+
+            return itemExt?.UsrCommodityType;
+        }
+
+        /// <summary>
+        /// Determines whether the supplied stock item is Silver.
+        ///
+        /// The licensed customization identifies Silver using:
+        ///
+        ///     UsrCommodityType == "S"
+        /// </summary>
+        private static bool IsSilverItem(
+            InventoryItem item)
+        {
+            return string.Equals(
+                GetCommodityType(item),
+                SilverCommodityType,
+                StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion
@@ -350,6 +456,15 @@ namespace iStarCostCalculationExtensions
                     "The current stock item is unavailable.");
             }
 
+            /*
+             * Revalidate before initializing the popup.
+             */
+            if (!IsSilverItem(item))
+            {
+                throw new PXException(
+                    SilverOnlyMessage);
+            }
+
             if (vendorRow?.RecordID == null ||
                 vendorRow.VendorID == null)
             {
@@ -418,11 +533,13 @@ namespace iStarCostCalculationExtensions
                     filter,
                     null);
 
-            CostCalculation.Update(filter);
+            CostCalculation.Update(
+                filter);
 
             PXTrace.WriteInformation(
                 $"{TracePrefix} Popup initialized. " +
                 $"InventoryID={item.InventoryID}, " +
+                $"CommodityType={GetCommodityType(item)}, " +
                 $"VendorID={vendorRow.VendorID}, " +
                 $"VendorRecordID={vendorRow.RecordID}, " +
                 $"VendorLocationID={vendorRow.VendorLocationID}, " +
@@ -455,7 +572,9 @@ namespace iStarCostCalculationExtensions
             if (filter.InventoryID == null ||
                 filter.VendorID == null)
             {
-                ClearVendorInformation(filter);
+                ClearVendorInformation(
+                    filter);
+
                 return;
             }
 
@@ -466,7 +585,8 @@ namespace iStarCostCalculationExtensions
 
             if (vendorRow == null)
             {
-                ClearVendorInformation(filter);
+                ClearVendorInformation(
+                    filter);
 
                 throw new PXException(
                     "A vendor record could not be found for " +
@@ -505,7 +625,8 @@ namespace iStarCostCalculationExtensions
             if (vendorRow?.RecordID == null ||
                 vendorRow.VendorID == null)
             {
-                ClearVendorInformation(filter);
+                ClearVendorInformation(
+                    filter);
 
                 throw new PXException(
                     "The selected vendor record is unavailable.");
@@ -514,7 +635,8 @@ namespace iStarCostCalculationExtensions
             if (vendorRow.InventoryID !=
                 filter.InventoryID)
             {
-                ClearVendorInformation(filter);
+                ClearVendorInformation(
+                    filter);
 
                 throw new PXException(
                     "The selected vendor does not belong to " +
@@ -527,7 +649,8 @@ namespace iStarCostCalculationExtensions
 
             if (vendorExt == null)
             {
-                ClearVendorInformation(filter);
+                ClearVendorInformation(
+                    filter);
 
                 throw new PXException(
                     "The jewelry costing fields could not be loaded " +
@@ -535,7 +658,8 @@ namespace iStarCostCalculationExtensions
             }
 
             Vendor vendor =
-                FindVendor(vendorRow.VendorID);
+                FindVendor(
+                    vendorRow.VendorID);
 
             decimal preciousMetalCost =
                 vendorExt.UsrPreciousMetalCost ?? 0m;
@@ -568,9 +692,11 @@ namespace iStarCostCalculationExtensions
                     filter,
                     preciousMetalCost);
 
-            RecalculateFabricationPiece(filter);
+            RecalculateFabricationPiece(
+                filter);
 
-            CostCalculation.Update(filter);
+            CostCalculation.Update(
+                filter);
         }
 
         /// <summary>
@@ -688,6 +814,24 @@ namespace iStarCostCalculationExtensions
         private void ApplyCostCalculation(
             InventoryItem item)
         {
+            /*
+             * Revalidate immediately before changing the vendor record.
+             *
+             * This protects against stale popup state, direct callbacks, or
+             * the item changing while the popup is open.
+             */
+            if (!IsSilverItem(item))
+            {
+                PXTrace.WriteWarning(
+                    $"{TracePrefix} ApplyCostCalculation was rejected because " +
+                    $"the current item is not Silver. " +
+                    $"InventoryID={item?.InventoryID}, " +
+                    $"CommodityType={GetCommodityType(item) ?? "<null>"}.");
+
+                throw new PXException(
+                    SilverOnlyMessage);
+            }
+
             CostCalculationFilter filter =
                 CostCalculation.Current;
 
@@ -726,14 +870,16 @@ namespace iStarCostCalculationExtensions
                     "The selected vendor record could not be found.");
             }
 
-            if (vendorRow.InventoryID != item.InventoryID)
+            if (vendorRow.InventoryID !=
+                item.InventoryID)
             {
                 throw new PXException(
                     "The selected vendor does not belong to " +
                     "the current stock item.");
             }
 
-            if (vendorRow.VendorID != filter.VendorID)
+            if (vendorRow.VendorID !=
+                filter.VendorID)
             {
                 throw new PXException(
                     "The selected vendor record no longer matches " +
@@ -778,7 +924,8 @@ namespace iStarCostCalculationExtensions
             /*
              * Align the Vendors view with the row being updated.
              */
-            Base.VendorItems.Current = vendorRow;
+            Base.VendorItems.Current =
+                vendorRow;
 
             /*
              * Update only Fabrication / Piece.
@@ -792,7 +939,8 @@ namespace iStarCostCalculationExtensions
                     fabricationPiece);
 
             vendorRow =
-                Base.VendorItems.Update(vendorRow);
+                Base.VendorItems.Update(
+                    vendorRow);
 
             ASCJSMPOVendorInventoryExt updatedVendorExt =
                 vendorRow.GetExtension<
@@ -807,6 +955,7 @@ namespace iStarCostCalculationExtensions
             PXTrace.WriteInformation(
                 $"{TracePrefix} Calculation applied. " +
                 $"InventoryID={item.InventoryID}, " +
+                $"CommodityType={GetCommodityType(item)}, " +
                 $"VendorID={vendorRow.VendorID}, " +
                 $"VendorRecordID={vendorRow.RecordID}, " +
                 $"VendorLocationID={vendorRow.VendorLocationID}, " +
