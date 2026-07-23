@@ -63,7 +63,7 @@
                         <px:PXLayoutRule ID="lrCostCalculation" runat="server" StartColumn="True" LabelsWidth="M"
                             ControlSize="M" />
 
-                        <px:PXSelector ID="edCostCalculationVendorRecordID" runat="server" DataField="VendorRecordID"
+                        <px:PXSelector ID="edCostCalculationVendorID" runat="server" DataField="VendorID"
                             CommitChanges="True" AutoRefresh="True" />
 
                         <px:PXTextEdit ID="edCostCalculationVendorName" runat="server" DataField="VendorName"
