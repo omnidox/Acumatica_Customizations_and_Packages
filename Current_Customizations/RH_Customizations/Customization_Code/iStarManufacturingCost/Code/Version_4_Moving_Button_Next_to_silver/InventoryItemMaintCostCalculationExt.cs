@@ -192,10 +192,9 @@ namespace iStarCostCalculationExtensions
              * The runtime button extension separately follows the rendered
              * Silver field visibility.
              */
-            // CalculateVendorQuote.SetVisible(
-            //     isSilverItem);
+            CalculateVendorQuote.SetVisible(
+                isSilverItem);
 
-            CalculateVendorQuote.SetVisible(false);
 
             PXTrace.WriteInformation(
                 $"{TracePrefix} Action state evaluated. " +

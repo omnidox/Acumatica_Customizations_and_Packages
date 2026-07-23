@@ -18,9 +18,13 @@ namespace iStarCostCalculationExtensions
     /// can configure and process its callback normally. After the page renders,
     /// JavaScript:
     ///
-    /// 1. Determines whether UsrActualGRAMSilver is currently visible.
-    /// 2. Hides the Calc button when the Silver field is hidden.
-    /// 3. Moves the rendered qp-button beside the Silver field when visible.
+    /// 1. Hides only the standard Calculate Vendor Quote toolbar item.
+    /// 2. Determines whether UsrActualGRAMSilver is currently visible.
+    /// 3. Hides the runtime Calc button when the Silver field is hidden.
+    /// 4. Moves the runtime Calc button beside the Silver field when visible.
+    ///
+    /// The PXAction itself remains visible and registered so the runtime button
+    /// can continue invoking CalculateVendorQuote.
     /// </summary>
     public class InventoryItemMaintVendorQuoteButtonExt
         : PXGraphExtension<InventoryItemMaint>
@@ -55,6 +59,18 @@ namespace iStarCostCalculationExtensions
 
         private const string ActionName =
             "CalculateVendorQuote";
+
+        /*
+         * Acumatica renders the standard toolbar action with this lower-camel
+         * data-cmd value:
+         *
+         *     <li data-cmd="calculateVendorQuote">
+         *
+         * The runtime PXButton beside Silver, Grams is not this toolbar <li>,
+         * so the selector can hide the toolbar presentation independently.
+         */
+        private const string ToolbarCommandName =
+            "calculateVendorQuote";
 
         private const string HookRegistrationKey =
             "VendorQuoteButton.PageEventsRegistered";
@@ -267,7 +283,8 @@ namespace iStarCostCalculationExtensions
                 $"Panel={DescribeControl(targetPanel)}; " +
                 $"Silver={DescribeControl(silverControl)}; " +
                 $"Button={DescribeControl(calcButton)}; " +
-                $"Action={ActionName}");
+                $"Action={ActionName}; " +
+                $"ToolbarCommand={ToolbarCommandName}");
         }
 
         private static PXButton CreateCalcButton()
@@ -404,11 +421,16 @@ namespace iStarCostCalculationExtensions
                 HttpUtility.JavaScriptStringEncode(
                     rawButtonClientID);
 
+            string toolbarCommandName =
+                HttpUtility.JavaScriptStringEncode(
+                    ToolbarCommandName);
+
             string script =
                 $@"
 (function () {{
     var silverClientID = '{silverClientID}';
     var buttonClientID = '{buttonClientID}';
+    var toolbarCommandName = '{toolbarCommandName}';
 
     var attemptCount = 0;
     var maximumAttempts = 40;
@@ -440,6 +462,57 @@ namespace iStarCostCalculationExtensions
         }}
 
         return null;
+    }}
+
+    /*
+     * Hides only the standard Acumatica toolbar representation of the
+     * CalculateVendorQuote action.
+     *
+     * Example rendered element:
+     *
+     *     <li class=""qp-tool-bar-item""
+     *         data-cmd=""calculateVendorQuote"">
+     *
+     * This does not hide the PXAction itself and does not target the runtime
+     * qp-button injected beside Silver, Grams.
+     */
+    function hideToolbarVendorQuoteButton() {{
+        var selector =
+            'li.qp-tool-bar-item[data-cmd=""' +
+            toolbarCommandName +
+            '""]';
+
+        var toolbarButtons =
+            document.querySelectorAll(selector);
+
+        if (!toolbarButtons ||
+            toolbarButtons.length === 0) {{
+            return false;
+        }}
+
+        for (var index = 0;
+             index < toolbarButtons.length;
+             index++) {{
+            var toolbarButton =
+                toolbarButtons[index];
+
+            if (!toolbarButton) {{
+                continue;
+            }}
+
+            toolbarButton.style.display =
+                'none';
+
+            toolbarButton.setAttribute(
+                'aria-hidden',
+                'true');
+
+            toolbarButton.setAttribute(
+                'data-istar-hidden-toolbar-action',
+                'true');
+        }}
+
+        return true;
     }}
 
     /*
@@ -497,6 +570,14 @@ namespace iStarCostCalculationExtensions
     function moveButton() {{
         attemptCount++;
 
+        /*
+         * Hide only the standard toolbar item.
+         *
+         * This is deliberately performed on every attempt because Acumatica's
+         * toolbar may finish rendering after the remainder of the page.
+         */
+        hideToolbarVendorQuoteButton();
+
         var silverInput =
             document.getElementById(silverClientID);
 
@@ -551,7 +632,8 @@ namespace iStarCostCalculationExtensions
             elementIsVisible(editorContainer);
 
         if (!silverFieldIsVisible) {{
-            buttonHost.style.display = 'none';
+            buttonHost.style.display =
+                'none';
 
             buttonHost.setAttribute(
                 'aria-hidden',
@@ -568,7 +650,7 @@ namespace iStarCostCalculationExtensions
         }}
 
         /*
-         * The field is visible, so the Calc button is applicable.
+         * The field is visible, so the runtime Calc button is applicable.
          */
         buttonHost.removeAttribute(
             'aria-hidden');
@@ -578,18 +660,32 @@ namespace iStarCostCalculationExtensions
             'true');
 
         /*
-         * Place the Silver editor and Calc button on the same horizontal row.
+         * Place the Silver editor and runtime Calc button on the same
+         * horizontal row.
          */
-        editorContainer.style.display = 'flex';
-        editorContainer.style.alignItems = 'center';
-        editorContainer.style.flexWrap = 'nowrap';
+        editorContainer.style.display =
+            'flex';
 
-        silverEditor.style.flex = '0 1 auto';
+        editorContainer.style.alignItems =
+            'center';
 
-        buttonHost.style.display = 'inline-block';
-        buttonHost.style.flex = '0 0 auto';
-        buttonHost.style.marginLeft = '8px';
-        buttonHost.style.verticalAlign = 'middle';
+        editorContainer.style.flexWrap =
+            'nowrap';
+
+        silverEditor.style.flex =
+            '0 1 auto';
+
+        buttonHost.style.display =
+            'inline-block';
+
+        buttonHost.style.flex =
+            '0 0 auto';
+
+        buttonHost.style.marginLeft =
+            '8px';
+
+        buttonHost.style.verticalAlign =
+            'middle';
 
         /*
          * Acumatica may initially render the tooltip or action caption instead
@@ -600,7 +696,8 @@ namespace iStarCostCalculationExtensions
                 '.btn-inner .text');
 
         if (textElement) {{
-            textElement.textContent = 'Calc';
+            textElement.textContent =
+                'Calc';
         }}
 
         /*
@@ -662,10 +759,11 @@ namespace iStarCostCalculationExtensions
                 true);
 
             PXTrace.WriteInformation(
-                $"{TracePrefix} Registered Calc button relocation and " +
-                $"visibility script. " +
+                $"{TracePrefix} Registered Calc button relocation, field " +
+                $"visibility, and toolbar-hiding script. " +
                 $"SilverClientID={rawSilverClientID}; " +
-                $"ButtonClientID={rawButtonClientID}");
+                $"ButtonClientID={rawButtonClientID}; " +
+                $"ToolbarCommand={ToolbarCommandName}");
         }
 
         private static Control FindImmediateChild(
