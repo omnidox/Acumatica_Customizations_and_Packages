@@ -16,7 +16,11 @@ namespace iStarCostCalculationExtensions
     ///
     /// The PXButton is added to valueParametersPanel on the server so Acumatica
     /// can configure and process its callback normally. After the page renders,
-    /// JavaScript moves the rendered qp-button beside UsrActualGRAMSilver.
+    /// JavaScript:
+    ///
+    /// 1. Determines whether UsrActualGRAMSilver is currently visible.
+    /// 2. Hides the Calc button when the Silver field is hidden.
+    /// 3. Moves the rendered qp-button beside the Silver field when visible.
     /// </summary>
     public class InventoryItemMaintVendorQuoteButtonExt
         : PXGraphExtension<InventoryItemMaint>
@@ -210,7 +214,8 @@ namespace iStarCostCalculationExtensions
             /*
              * If another initialization path already added the button during
              * this request, do not create a duplicate. Register the relocation
-             * script again so the rendered element is still positioned.
+             * script again so the rendered element is still positioned or
+             * hidden according to the Silver field visibility.
              */
             if (existingButton != null)
             {
@@ -244,8 +249,10 @@ namespace iStarCostCalculationExtensions
                 calcButton);
 
             /*
-             * Move only the rendered browser element. The server-side PXButton
-             * remains a child of valueParametersPanel.
+             * Move or hide only the rendered browser element.
+             *
+             * The server-side PXButton remains a child of
+             * valueParametersPanel.
              */
             RegisterButtonRelocationScript(
                 page,
@@ -435,6 +442,58 @@ namespace iStarCostCalculationExtensions
         return null;
     }}
 
+    /*
+     * Determines whether an element is actually visible in the rendered page.
+     *
+     * The Silver server control may still exist for non-Silver items even when
+     * Acumatica hides its rendered field. Therefore, control existence alone
+     * cannot determine whether the Calc button should be shown.
+     */
+    function elementIsVisible(element) {{
+        if (!element ||
+            !document.documentElement.contains(element)) {{
+            return false;
+        }}
+
+        var current =
+            element;
+
+        while (current &&
+               current !== document.documentElement) {{
+            var style =
+                window.getComputedStyle
+                    ? window.getComputedStyle(current)
+                    : current.currentStyle;
+
+            if (style) {{
+                if (style.display === 'none' ||
+                    style.visibility === 'hidden' ||
+                    style.visibility === 'collapse') {{
+                    return false;
+                }}
+            }}
+
+            if (current.hidden === true ||
+                current.getAttribute('aria-hidden') === 'true') {{
+                return false;
+            }}
+
+            current =
+                current.parentElement;
+        }}
+
+        /*
+         * A field hidden by one of its ancestors normally has no rendered
+         * client rectangles.
+         */
+        if (typeof element.getClientRects === 'function' &&
+            element.getClientRects().length === 0) {{
+            return false;
+        }}
+
+        return true;
+    }}
+
     function moveButton() {{
         attemptCount++;
 
@@ -460,8 +519,8 @@ namespace iStarCostCalculationExtensions
                 '.fld-c');
 
         /*
-         * The ClientID belongs to the inner native button. Move the outer
-         * qp-button so Acumatica's Aurelia component remains intact.
+         * The ClientID belongs to the inner native button. Move or hide the
+         * outer qp-button so Acumatica's component remains intact.
          */
         var buttonHost =
             closestElement(
@@ -474,6 +533,49 @@ namespace iStarCostCalculationExtensions
             !buttonHost) {{
             return false;
         }}
+
+        /*
+         * The Silver control can exist in the HTML for every item even though
+         * Acumatica hides it for non-Silver items.
+         *
+         * Hide the Calc button whenever the actual Silver editor is not
+         * visible.
+         *
+         * This visibility check must occur before editorContainer is changed
+         * to display:flex. Otherwise this script could accidentally reveal a
+         * container that Acumatica intentionally hid.
+         */
+        var silverFieldIsVisible =
+            elementIsVisible(silverInput) &&
+            elementIsVisible(silverEditor) &&
+            elementIsVisible(editorContainer);
+
+        if (!silverFieldIsVisible) {{
+            buttonHost.style.display = 'none';
+
+            buttonHost.setAttribute(
+                'aria-hidden',
+                'true');
+
+            buttonHost.setAttribute(
+                'data-istar-vendor-quote-button-applicable',
+                'false');
+
+            buttonHost.removeAttribute(
+                'data-istar-vendor-quote-button-positioned');
+
+            return true;
+        }}
+
+        /*
+         * The field is visible, so the Calc button is applicable.
+         */
+        buttonHost.removeAttribute(
+            'aria-hidden');
+
+        buttonHost.setAttribute(
+            'data-istar-vendor-quote-button-applicable',
+            'true');
 
         /*
          * Place the Silver editor and Calc button on the same horizontal row.
@@ -530,8 +632,9 @@ namespace iStarCostCalculationExtensions
         }}
 
         /*
-         * Acumatica's Aurelia components may finish rendering shortly after
-         * the ASP.NET startup script executes, so retry for up to four seconds.
+         * Acumatica's client-side components may finish rendering shortly
+         * after the ASP.NET startup script executes, so retry for up to
+         * approximately four seconds.
          */
         if (attemptCount < maximumAttempts) {{
             window.setTimeout(
@@ -541,7 +644,8 @@ namespace iStarCostCalculationExtensions
         else if (window.console &&
                  typeof window.console.warn === 'function') {{
             window.console.warn(
-                '[VendorQuoteButton] Unable to position the Calc button after ' +
+                '[VendorQuoteButton] Unable to position or hide the Calc ' +
+                'button after ' +
                 maximumAttempts +
                 ' attempts.');
         }}
@@ -558,7 +662,8 @@ namespace iStarCostCalculationExtensions
                 true);
 
             PXTrace.WriteInformation(
-                $"{TracePrefix} Registered Calc button relocation script. " +
+                $"{TracePrefix} Registered Calc button relocation and " +
+                $"visibility script. " +
                 $"SilverClientID={rawSilverClientID}; " +
                 $"ButtonClientID={rawButtonClientID}");
         }
