@@ -298,6 +298,12 @@ namespace iStarCostCalculationExtensions
             InventoryItem item,
             POVendorInventory vendorRow)
         {
+            if (item?.InventoryID == null)
+            {
+                throw new PXException(
+                    "The current stock item is unavailable.");
+            }
+
             if (vendorRow?.RecordID == null)
             {
                 throw new PXException(
@@ -314,25 +320,36 @@ namespace iStarCostCalculationExtensions
                         new CostCalculationFilter());
             }
 
+            /*
+             * Required by the VendorRecordID selector's Where clause.
+             *
+             * Without this value, the selector searches for vendor rows
+             * whose InventoryID is null, returns no results, and cannot
+             * translate the internal RecordID to the visible VendorID.
+             */
+            CostCalculation.Cache.SetValue<
+                CostCalculationFilter.inventoryID>(
+                    filter,
+                    item.InventoryID);
+
+            /*
+             * VendorRecordID stores the internal POVendorInventory
+             * RecordID. PXSelector displays VendorID through SubstituteKey.
+             */
             CostCalculation.Cache.SetValue<
                 CostCalculationFilter.vendorRecordID>(
                     filter,
                     vendorRow.RecordID);
 
             /*
-             * LoadSelectedVendorIntoFilter populates:
-             *
-             * - Vendor Name
-             * - Precious Metal Cost
-             *
-             * It also recalculates Fabrication / Piece.
+             * Populate Vendor Name and Precious Metal Cost from the
+             * selected POVendorInventory record.
              */
             LoadSelectedVendorIntoFilter(filter);
 
             /*
-             * The vendor quote is intentionally cleared whenever
-             * the popup is newly opened so that a previous quote
-             * is not accidentally reused.
+             * Do not reuse the previous vendor quote when reopening
+             * the popup.
              */
             CostCalculation.Cache.SetValue<
                 CostCalculationFilter.vendorQuoteCost>(
@@ -356,7 +373,6 @@ namespace iStarCostCalculationExtensions
                 $"VendorName={filter.VendorName}, " +
                 $"PreciousMetalCost={filter.PreciousMetalCost}.");
         }
-
         /// <summary>
         /// Loads vendor-specific information into the popup after
         /// the popup Vendor selector changes.
