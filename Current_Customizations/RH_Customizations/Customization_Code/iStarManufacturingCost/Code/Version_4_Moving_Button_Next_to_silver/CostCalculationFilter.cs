@@ -15,42 +15,25 @@ namespace iStarCostCalculationExtensions
     ///
     /// The popup:
     ///
-    /// 1. Defaults to the exact vendor row currently selected
+    /// 1. Defaults to the vendor row currently selected
     ///    on the Vendors tab.
-    /// 2. Allows the user to select another exact
-    ///    POVendorInventory row.
-    /// 3. Displays enough selector columns to distinguish rows
-    ///    belonging to the same vendor, including:
-    ///
-    ///        - Vendor ID
-    ///        - Vendor name
-    ///        - Vendor location
-    ///        - Subitem
-    ///        - Vendor inventory ID
-    ///        - Purchase unit
-    ///        - Default status
-    ///        - Record ID
-    ///
-    /// 4. Stores POVendorInventory.RecordID as the authoritative
-    ///    selector value.
-    /// 5. Populates VendorID and VendorName from the selected row.
-    /// 6. Loads the selected vendor row's Precious Metal Cost.
-    /// 7. Calculates:
+    /// 2. Allows the user to select another vendor.
+    /// 3. Displays the selected vendor's name.
+    /// 4. Internally tracks the exact POVendorInventory row.
+    /// 5. Loads the selected vendor row's Precious Metal Cost.
+    /// 6. Calculates:
     ///
     ///        Fabrication / Piece =
     ///            Vendor Quote Cost - Precious Metal Cost
     ///
-    /// VendorRecordID and VendorID serve different purposes:
+    /// VendorID and VendorRecordID serve different purposes:
     ///
-    /// - VendorRecordID is the editable selector and uniquely
-    ///   identifies the exact POVendorInventory row.
-    /// - VendorID is read-only informational data derived from
-    ///   the selected POVendorInventory row.
+    /// - VendorID is the visible selector value.
+    /// - VendorRecordID is the hidden identifier of the exact
+    ///   POVendorInventory row that will be updated.
     /// </summary>
     [Serializable]
-    public class CostCalculationFilter
-        : PXBqlTable,
-          IBqlTable
+    public class CostCalculationFilter : PXBqlTable, IBqlTable
     {
         #region InventoryID
 
@@ -58,9 +41,8 @@ namespace iStarCostCalculationExtensions
         /// Current stock item's internal InventoryID.
         ///
         /// This field is populated programmatically when the
-        /// popup opens. It restricts the VendorRecordID selector
-        /// to POVendorInventory rows configured for the current
-        /// stock item.
+        /// popup opens. It restricts the VendorID selector to
+        /// vendors configured for the current stock item.
         ///
         /// It is not displayed in the popup.
         /// </summary>
@@ -77,93 +59,44 @@ namespace iStarCostCalculationExtensions
 
         #endregion
 
-        #region VendorRecordID
+        #region VendorID
 
         /// <summary>
-        /// Unique identifier of the exact POVendorInventory row
-        /// selected in the popup.
+        /// Vendor selected in the popup.
         ///
-        /// This is the authoritative selector value.
+        /// The stored value is the vendor's internal BAccountID,
+        /// which corresponds to POVendorInventory.VendorID.
         ///
-        /// Unlike VendorID, RecordID remains unique when one
-        /// vendor has multiple rows for the same stock item,
-        /// distinguished by values such as:
+        /// The selector displays Vendor.AcctCD, which is the
+        /// user-facing Vendor ID shown in Acumatica.
         ///
-        /// - Vendor location
-        /// - Subitem
-        /// - Vendor inventory ID
-        /// - Purchase unit
-        ///
-        /// The selector is restricted to POVendorInventory rows
-        /// belonging to the current stock item.
-        ///
-        /// RecordID is intentionally used as the selector's
-        /// displayed key. Using Vendor.AcctCD as SubstituteKey
-        /// would reintroduce ambiguity because multiple rows can
-        /// have the same Vendor ID.
+        /// The selector is limited to vendors that have a
+        /// POVendorInventory row for the current stock item.
         /// </summary>
         [PXInt]
         [PXUIField(
-            DisplayName = "Vendor Record",
+            DisplayName = "Vendor ID",
             Required = true)]
         [PXSelector(
             typeof(
                 Search2<
-                    POVendorInventory.recordID,
+                    Vendor.bAccountID,
                     InnerJoin<
-                        Vendor,
+                        POVendorInventory,
                         On<
-                            Vendor.bAccountID,
-                            Equal<
-                                POVendorInventory.vendorID>>>,
+                            POVendorInventory.vendorID,
+                            Equal<Vendor.bAccountID>>>,
                     Where<
                         POVendorInventory.inventoryID,
                         Equal<
                             Current<
                                 CostCalculationFilter.inventoryID>>>>),
-            typeof(POVendorInventory.recordID),
             typeof(Vendor.acctCD),
             typeof(Vendor.acctName),
             typeof(POVendorInventory.vendorLocationID),
             typeof(POVendorInventory.subItemID),
             typeof(POVendorInventory.vendorInventoryID),
             typeof(POVendorInventory.purchaseUnit),
-            typeof(POVendorInventory.isDefault),
-            DescriptionField = typeof(Vendor.acctName))]
-        public virtual int? VendorRecordID { get; set; }
-
-        public abstract class vendorRecordID
-            : BqlInt.Field<vendorRecordID>
-        {
-        }
-
-        #endregion
-
-        #region VendorID
-
-        /// <summary>
-        /// Internal BAccountID of the vendor associated with the
-        /// selected POVendorInventory row.
-        ///
-        /// This is no longer the popup selector.
-        ///
-        /// The graph extension populates it after the user selects
-        /// VendorRecordID. It is retained for:
-        ///
-        /// - displaying the selected vendor;
-        /// - logging;
-        /// - validation before applying the calculation.
-        /// </summary>
-        [PXInt]
-        [PXUIField(
-            DisplayName = "Vendor ID",
-            Enabled = false)]
-        [PXSelector(
-            typeof(
-                Search<
-                    Vendor.bAccountID>),
-            typeof(Vendor.acctCD),
-            typeof(Vendor.acctName),
             SubstituteKey = typeof(Vendor.acctCD),
             DescriptionField = typeof(Vendor.acctName))]
         public virtual int? VendorID { get; set; }
@@ -175,20 +108,50 @@ namespace iStarCostCalculationExtensions
 
         #endregion
 
+        #region VendorRecordID
+
+        /// <summary>
+        /// Hidden identifier of the exact POVendorInventory row
+        /// resolved from the selected VendorID.
+        ///
+        /// This is kept separate from VendorID because one vendor
+        /// may potentially have multiple POVendorInventory records
+        /// for the same stock item, distinguished by:
+        ///
+        /// - Vendor location
+        /// - Subitem
+        /// - Vendor inventory ID
+        /// - Purchase unit
+        ///
+        /// The graph extension populates this field after resolving
+        /// the POVendorInventory row for the selected vendor.
+        ///
+        /// It is not displayed in the popup.
+        /// </summary>
+        [PXInt]
+        [PXUIField(
+            DisplayName = "Vendor Record ID",
+            Visible = false)]
+        public virtual int? VendorRecordID { get; set; }
+
+        public abstract class vendorRecordID
+            : BqlInt.Field<vendorRecordID>
+        {
+        }
+
+        #endregion
+
         #region VendorName
 
         /// <summary>
-        /// Name of the vendor associated with the exact selected
-        /// POVendorInventory row.
+        /// Name of the vendor associated with VendorID.
         ///
         /// This field is populated programmatically whenever:
         ///
-        /// - the popup is initialized; or
-        /// - the user changes the Vendor Record selector.
+        /// - the popup is initialized, or
+        /// - the user changes the Vendor ID selector.
         /// </summary>
-        [PXString(
-            255,
-            IsUnicode = true)]
+        [PXString(255, IsUnicode = true)]
         [PXUIField(
             DisplayName = "Vendor Name",
             Enabled = false)]
@@ -229,7 +192,7 @@ namespace iStarCostCalculationExtensions
         /// <summary>
         /// Precious-metal cost already calculated by the
         /// existing licensed jewelry-costing customization
-        /// for the exact selected POVendorInventory row.
+        /// for the resolved POVendorInventory row.
         ///
         /// This field is read-only because it is supplied by
         /// the existing costing customization.

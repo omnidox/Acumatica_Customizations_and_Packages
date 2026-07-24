@@ -52,39 +52,31 @@
                     <px:PXButton ID="btnCancel" runat="server" DialogResult="Cancel" Text="Cancel"></px:PXButton>
                 </px:PXPanel>
             </px:PXSmartPanel>
-            <px:PXSmartPanel ID="pnlCostCalculation" runat="server" Height="240px" Width="520px" LoadOnDemand="True"
+            <px:PXSmartPanel runat="server" ID="pnlCostCalculation" Height="260px" Width="620px" LoadOnDemand="True"
                 AutoReload="True" CaptionVisible="True" Caption="Calculate Vendor Quote" Key="CostCalculation"
                 AcceptButtonID="btnCostCalculationOK" CancelButtonID="btnCostCalculationCancel">
-
-                <px:PXFormView ID="frmCostCalculation" runat="server" SkinID="Transparent" CaptionVisible="False"
+                <px:PXFormView runat="server" ID="frmCostCalculation" SkinID="Transparent" CaptionVisible="False"
                     Width="100%" DataSourceID="ds" DataMember="CostCalculation">
-
                     <Template>
-                        <px:PXLayoutRule ID="lrCostCalculation" runat="server" StartColumn="True" LabelsWidth="M"
+                        <px:PXLayoutRule runat="server" ID="lrCostCalculation" StartColumn="True" LabelsWidth="M"
                             ControlSize="M" />
-
-                        <px:PXSelector ID="edCostCalculationVendorID" runat="server" DataField="VendorID"
-                            CommitChanges="True" AutoRefresh="True" />
-
-                        <px:PXTextEdit ID="edCostCalculationVendorName" runat="server" DataField="VendorName"
-                            Enabled="False" />
-
-                        <px:PXNumberEdit ID="edCostCalculationVendorQuoteCost" runat="server"
-                            DataField="VendorQuoteCost" DisplayFormat="##0.0000" CommitChanges="True" />
-
-                        <px:PXNumberEdit ID="edCostCalculationPreciousMetalCost" runat="server"
-                            DataField="PreciousMetalCost" DisplayFormat="##0.000000" Enabled="False" />
-
-                        <px:PXNumberEdit ID="edCostCalculationFabricationPiece" runat="server"
-                            DataField="FabricationPiece" DisplayFormat="##0.0000" Enabled="False" />
+                        <px:PXSelector runat="server" DataField="VendorRecordID" AutoRefresh="True" CommitChanges="True"
+                            ID="edCostCalculationVendorRecordID" />
+                        <px:PXSelector runat="server" ID="edCostCalculationVendorID" DataField="VendorID" AutoRefresh=""
+                            CommitChanges="" Enabled="False" AllowEdit="False" />
+                        <px:PXTextEdit runat="server" DataField="VendorName" Enabled="False"
+                            ID="edCostCalculationVendorName" />
+                        <px:PXNumberEdit runat="server" ID="edCostCalculationVendorQuoteCost" DisplayFormat="##0.0000"
+                            CommitChanges="True" DataField="VendorQuoteCost" />
+                        <px:PXNumberEdit runat="server" ID="edCostCalculationPreciousMetalCost"
+                            DisplayFormat="##0.000000" Enabled="False" DataField="PreciousMetalCost" />
+                        <px:PXNumberEdit runat="server" ID="edCostCalculationFabricationPiece" DisplayFormat="##0.0000"
+                            Enabled="False" DataField="FabricationPiece" />
                     </Template>
                 </px:PXFormView>
-
-                <px:PXPanel ID="pnlCostCalculationButtons" runat="server" SkinID="Buttons">
-
-                    <px:PXButton ID="btnCostCalculationOK" runat="server" Text="OK" DialogResult="OK" />
-
-                    <px:PXButton ID="btnCostCalculationCancel" runat="server" Text="Cancel" DialogResult="Cancel" />
+                <px:PXPanel runat="server" ID="pnlCostCalculationButtons" SkinID="Buttons">
+                    <px:PXButton runat="server" ID="btnCostCalculationOK" Text="OK" DialogResult="OK" />
+                    <px:PXButton runat="server" ID="btnCostCalculationCancel" Text="Cancel" DialogResult="Cancel" />
                 </px:PXPanel>
             </px:PXSmartPanel>
             <px:PXFormView ID="form" runat="server" DataSourceID="ds" Style="z-index: 100" Width="100%"

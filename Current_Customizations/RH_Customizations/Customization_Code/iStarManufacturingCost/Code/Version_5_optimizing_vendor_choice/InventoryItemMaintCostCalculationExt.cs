@@ -20,29 +20,38 @@ namespace iStarCostCalculationExtensions
     /// 1. User selects a Silver stock item.
     /// 2. User selects a row on the Vendors tab.
     /// 3. User opens the Calculate Vendor Quote popup.
-    /// 4. The popup defaults to the vendor selected on the
-    ///    Vendors tab.
-    /// 5. The user may select another vendor through the popup's
-    ///    Vendor ID selector.
-    /// 6. The popup resolves the applicable POVendorInventory row
-    ///    and loads:
+    /// 4. The popup defaults to the exact POVendorInventory row
+    ///    selected on the Vendors tab.
+    /// 5. The user may select another exact POVendorInventory row
+    ///    through the popup's Vendor Record selector.
+    /// 6. The selector can distinguish rows belonging to the same
+    ///    Vendor ID by displaying values such as:
     ///
+    ///        - Vendor ID
+    ///        - Vendor Location
+    ///        - Purchase Unit
+    ///        - Vendor Inventory ID
+    ///        - Record ID
+    ///
+    /// 7. The popup loads:
+    ///
+    ///        - Vendor ID
     ///        - Vendor name
     ///        - Precious Metal Cost
     ///
-    /// 7. The user enters Vendor Quote Cost.
-    /// 8. The customization calculates:
+    /// 8. The user enters Vendor Quote Cost.
+    /// 9. The customization calculates:
     ///
     ///        Fabrication / Piece =
     ///            Vendor Quote Cost - Precious Metal Cost
     ///
-    /// 9. On OK, the customization updates only:
+    /// 10. On OK, the customization updates only:
     ///
     ///        UsrFabricationPiece
     ///
-    ///    using SetValueExt.
+    ///     using SetValueExt.
     ///
-    /// 10. Licensed jewelry-costing logic recalculates:
+    /// 11. Licensed jewelry-costing logic recalculates:
     ///
     ///        - UsrFabricationCost
     ///        - UsrUnitCost
@@ -101,10 +110,10 @@ namespace iStarCostCalculationExtensions
             }
 
             /*
-             * Do not rely only on the browser-side button visibility.
+             * Do not rely only on browser-side button visibility.
              *
-             * A callback could still be invoked directly, so the Silver-only
-             * rule must also be enforced on the server.
+             * A callback could still be invoked directly, so the
+             * Silver-only rule must also be enforced on the server.
              */
             if (!IsSilverItem(item))
             {
@@ -156,7 +165,7 @@ namespace iStarCostCalculationExtensions
         ///
         /// - an existing stock item is selected,
         /// - the item is a Silver item,
-        /// - a vendor row is selected, and
+        /// - an exact vendor row is selected, and
         /// - the Stock Item record is editable.
         /// </summary>
         protected virtual void _(
@@ -186,15 +195,14 @@ namespace iStarCostCalculationExtensions
                 actionAvailable);
 
             /*
-             * This also hides any standard Acumatica presentation of the
-             * PXAction for non-Silver items.
+             * The PXAction must remain visible for Silver items so
+             * the separately injected runtime button can invoke it.
              *
-             * The runtime button extension separately follows the rendered
-             * Silver field visibility.
+             * InventoryItemMaintVendorQuoteButtonExt hides only the
+             * standard toolbar presentation in the browser.
              */
             CalculateVendorQuote.SetVisible(
                 isSilverItem);
-
 
             PXTrace.WriteInformation(
                 $"{TracePrefix} Action state evaluated. " +
@@ -202,41 +210,34 @@ namespace iStarCostCalculationExtensions
                 $"CommodityType={GetCommodityType(e.Row) ?? "<null>"}, " +
                 $"IsSilver={isSilverItem}, " +
                 $"HasSelectedVendor={hasSelectedVendor}, " +
+                $"SelectedVendorRecordID={vendorRow?.RecordID}, " +
                 $"AllowUpdate={Base.Item.Cache.AllowUpdate}, " +
                 $"Enabled={actionAvailable}.");
         }
 
         /// <summary>
         /// Reloads vendor-specific popup values whenever the user
-        /// selects a different Vendor ID in the popup.
+        /// selects a different exact POVendorInventory row.
         ///
         /// The corresponding ASPX PXSelector must use:
         ///
-        /// DataField="VendorID"
-        /// CommitChanges="True"
+        ///     DataField="VendorRecordID"
+        ///     CommitChanges="True"
+        ///
+        /// VendorRecordID is the unique stored selector value.
+        /// VendorID is populated afterward as informational data.
         /// </summary>
         protected virtual void _(
             Events.FieldUpdated<
                 CostCalculationFilter,
-                CostCalculationFilter.vendorID> e)
+                CostCalculationFilter.vendorRecordID> e)
         {
             if (e.Row == null)
             {
                 return;
             }
 
-            /*
-             * The previously resolved RecordID may belong to the
-             * vendor that was selected before this change.
-             *
-             * Clear it before resolving the new vendor.
-             */
-            CostCalculation.Cache.SetValue<
-                CostCalculationFilter.vendorRecordID>(
-                    e.Row,
-                    null);
-
-            LoadSelectedVendorIntoFilter(
+            LoadSelectedVendorRecordIntoFilter(
                 e.Row);
         }
 
@@ -246,7 +247,7 @@ namespace iStarCostCalculationExtensions
         ///
         /// The corresponding ASPX control must use:
         ///
-        /// CommitChanges="True"
+        ///     CommitChanges="True"
         /// </summary>
         protected virtual void _(
             Events.FieldUpdated<
@@ -324,7 +325,7 @@ namespace iStarCostCalculationExtensions
         #region Vendor Selection
 
         /// <summary>
-        /// Returns the vendor row currently selected on the
+        /// Returns the exact vendor row currently selected on the
         /// Vendors tab.
         /// </summary>
         private POVendorInventory GetSelectedVendorRow()
@@ -334,10 +335,10 @@ namespace iStarCostCalculationExtensions
 
         /// <summary>
         /// Finds the exact POVendorInventory row identified by
-        /// its RecordID.
+        /// RecordID.
         ///
-        /// RecordID is used when applying the calculation so that
-        /// the exact row resolved by the popup is updated.
+        /// RecordID is the unique popup selector value and is also
+        /// used when applying the calculation.
         /// </summary>
         private POVendorInventory FindVendorRowByRecordID(
             int? vendorRecordID)
@@ -358,52 +359,6 @@ namespace iStarCostCalculationExtensions
                 .Select(
                     Base,
                     vendorRecordID);
-
-            return vendorRow;
-        }
-
-        /// <summary>
-        /// Resolves a POVendorInventory row for the current item
-        /// and the Vendor ID selected in the popup.
-        ///
-        /// If more than one row exists for the same item/vendor
-        /// combination, the default row is preferred. RecordID is
-        /// used as the secondary ordering value to keep selection
-        /// deterministic.
-        /// </summary>
-        private POVendorInventory FindVendorRowBySelection(
-            int? inventoryID,
-            int? vendorID)
-        {
-            if (inventoryID == null ||
-                vendorID == null)
-            {
-                return null;
-            }
-
-            POVendorInventory vendorRow =
-                PXSelect<
-                    POVendorInventory,
-                    Where<
-                        POVendorInventory.inventoryID,
-                        Equal<
-                            Required<
-                                POVendorInventory.inventoryID>>,
-                        And<
-                            POVendorInventory.vendorID,
-                            Equal<
-                                Required<
-                                    POVendorInventory.vendorID>>>>,
-                    OrderBy<
-                        Desc<
-                            POVendorInventory.isDefault,
-                            Asc<POVendorInventory.recordID>>>>
-                .SelectWindowed(
-                    Base,
-                    0,
-                    1,
-                    inventoryID,
-                    vendorID);
 
             return vendorRow;
         }
@@ -440,8 +395,8 @@ namespace iStarCostCalculationExtensions
         #region Popup Initialization
 
         /// <summary>
-        /// Initializes the popup from the row currently selected
-        /// on the Vendors tab.
+        /// Initializes the popup from the exact row currently
+        /// selected on the Vendors tab.
         ///
         /// The initializer is passed to AskExt so it executes when
         /// the dialog is first opened, rather than clearing values
@@ -473,6 +428,14 @@ namespace iStarCostCalculationExtensions
                     "The selected vendor record is unavailable.");
             }
 
+            if (vendorRow.InventoryID !=
+                item.InventoryID)
+            {
+                throw new PXException(
+                    "The selected vendor record does not belong " +
+                    "to the current stock item.");
+            }
+
             CostCalculationFilter filter =
                 CostCalculation.Current;
 
@@ -484,8 +447,9 @@ namespace iStarCostCalculationExtensions
             }
 
             /*
-             * InventoryID restricts the popup selector to vendors
-             * configured for the current stock item.
+             * InventoryID restricts the VendorRecordID selector
+             * to POVendorInventory rows belonging to the current
+             * stock item.
              */
             CostCalculation.Cache.SetValue<
                 CostCalculationFilter.inventoryID>(
@@ -493,19 +457,10 @@ namespace iStarCostCalculationExtensions
                     item.InventoryID);
 
             /*
-             * VendorID is the visible popup selector value.
+             * VendorRecordID is the editable popup selector value.
              *
-             * It stores Vendor.BAccountID internally while the
-             * PXSelector displays Vendor.AcctCD.
-             */
-            CostCalculation.Cache.SetValue<
-                CostCalculationFilter.vendorID>(
-                    filter,
-                    vendorRow.VendorID);
-
-            /*
-             * Preserve the exact vendor row selected on the
-             * Vendors tab for the initial popup state.
+             * It uniquely preserves the exact Vendors-tab row,
+             * even when multiple rows have the same VendorID.
              */
             CostCalculation.Cache.SetValue<
                 CostCalculationFilter.vendorRecordID>(
@@ -513,8 +468,8 @@ namespace iStarCostCalculationExtensions
                     vendorRow.RecordID);
 
             /*
-             * Populate Vendor Name and Precious Metal Cost from
-             * the exact Vendors-tab row.
+             * Populate Vendor ID, Vendor Name, and Precious Metal
+             * Cost from the exact selected row.
              */
             LoadVendorRowIntoFilter(
                 filter,
@@ -544,6 +499,8 @@ namespace iStarCostCalculationExtensions
                 $"VendorID={vendorRow.VendorID}, " +
                 $"VendorRecordID={vendorRow.RecordID}, " +
                 $"VendorLocationID={vendorRow.VendorLocationID}, " +
+                $"PurchaseUnit={vendorRow.PurchaseUnit}, " +
+                $"VendorInventoryID={vendorRow.VendorInventoryID}, " +
                 $"SubItemID={vendorRow.SubItemID}, " +
                 $"IsDefault={vendorRow.IsDefault}, " +
                 $"VendorName={filter.VendorName}, " +
@@ -551,18 +508,15 @@ namespace iStarCostCalculationExtensions
         }
 
         /// <summary>
-        /// Resolves and loads vendor-specific information after
-        /// the popup Vendor ID selector changes.
+        /// Loads vendor-specific information after the popup's
+        /// VendorRecordID selector changes.
         ///
-        /// This method deliberately does not use:
-        ///
-        /// Base.VendorItems.Current
-        ///
-        /// because that value represents the row selected on the
-        /// Vendors tab and does not automatically change when the
-        /// popup selector changes.
+        /// Unlike the previous VendorID-based implementation,
+        /// this method does not choose a row using IsDefault or
+        /// RecordID ordering. The user-selected RecordID already
+        /// identifies the exact row.
         /// </summary>
-        private void LoadSelectedVendorIntoFilter(
+        private void LoadSelectedVendorRecordIntoFilter(
             CostCalculationFilter filter)
         {
             if (filter == null)
@@ -571,27 +525,39 @@ namespace iStarCostCalculationExtensions
             }
 
             if (filter.InventoryID == null ||
-                filter.VendorID == null)
+                filter.VendorRecordID == null)
             {
                 ClearVendorInformation(
-                    filter);
+                    filter,
+                    clearVendorRecordID: false);
 
                 return;
             }
 
             POVendorInventory vendorRow =
-                FindVendorRowBySelection(
-                    filter.InventoryID,
-                    filter.VendorID);
+                FindVendorRowByRecordID(
+                    filter.VendorRecordID);
 
             if (vendorRow == null)
             {
                 ClearVendorInformation(
-                    filter);
+                    filter,
+                    clearVendorRecordID: false);
 
                 throw new PXException(
-                    "A vendor record could not be found for " +
-                    "the selected stock item and vendor.");
+                    "The selected vendor record could not be found.");
+            }
+
+            if (vendorRow.InventoryID !=
+                filter.InventoryID)
+            {
+                ClearVendorInformation(
+                    filter,
+                    clearVendorRecordID: false);
+
+                throw new PXException(
+                    "The selected vendor record does not belong " +
+                    "to the current stock item.");
             }
 
             LoadVendorRowIntoFilter(
@@ -599,11 +565,13 @@ namespace iStarCostCalculationExtensions
                 vendorRow);
 
             PXTrace.WriteInformation(
-                $"{TracePrefix} Popup vendor selection changed. " +
+                $"{TracePrefix} Exact popup vendor record changed. " +
                 $"InventoryID={filter.InventoryID}, " +
-                $"VendorID={filter.VendorID}, " +
+                $"VendorID={vendorRow.VendorID}, " +
                 $"VendorRecordID={vendorRow.RecordID}, " +
                 $"VendorLocationID={vendorRow.VendorLocationID}, " +
+                $"PurchaseUnit={vendorRow.PurchaseUnit}, " +
+                $"VendorInventoryID={vendorRow.VendorInventoryID}, " +
                 $"SubItemID={vendorRow.SubItemID}, " +
                 $"IsDefault={vendorRow.IsDefault}, " +
                 $"VendorName={filter.VendorName}, " +
@@ -611,7 +579,7 @@ namespace iStarCostCalculationExtensions
         }
 
         /// <summary>
-        /// Loads one resolved POVendorInventory row into the
+        /// Loads one exact POVendorInventory row into the
         /// unbound popup filter.
         /// </summary>
         private void LoadVendorRowIntoFilter(
@@ -640,8 +608,8 @@ namespace iStarCostCalculationExtensions
                     filter);
 
                 throw new PXException(
-                    "The selected vendor does not belong to " +
-                    "the current stock item.");
+                    "The selected vendor record does not belong " +
+                    "to the current stock item.");
             }
 
             ASCJSMPOVendorInventoryExt vendorExt =
@@ -655,7 +623,7 @@ namespace iStarCostCalculationExtensions
 
                 throw new PXException(
                     "The jewelry costing fields could not be loaded " +
-                    "for the selected vendor.");
+                    "for the selected vendor record.");
             }
 
             Vendor vendor =
@@ -666,22 +634,23 @@ namespace iStarCostCalculationExtensions
                 vendorExt.UsrPreciousMetalCost ?? 0m;
 
             /*
-             * Keep the visible selector synchronized with the
-             * resolved POVendorInventory row.
-             */
-            CostCalculation.Cache.SetValue<
-                CostCalculationFilter.vendorID>(
-                    filter,
-                    vendorRow.VendorID);
-
-            /*
-             * Store the exact row that will be updated if the user
-             * presses OK.
+             * Store the unique row selected by the user.
              */
             CostCalculation.Cache.SetValue<
                 CostCalculationFilter.vendorRecordID>(
                     filter,
                     vendorRow.RecordID);
+
+            /*
+             * VendorID is informational in the revised popup.
+             *
+             * It is derived from the selected POVendorInventory
+             * row rather than being used to choose that row.
+             */
+            CostCalculation.Cache.SetValue<
+                CostCalculationFilter.vendorID>(
+                    filter,
+                    vendorRow.VendorID);
 
             CostCalculation.Cache.SetValue<
                 CostCalculationFilter.vendorName>(
@@ -701,18 +670,31 @@ namespace iStarCostCalculationExtensions
         }
 
         /// <summary>
-        /// Clears all vendor-dependent popup fields.
+        /// Clears vendor-dependent popup fields.
+        ///
+        /// By default, VendorRecordID is also cleared. The caller
+        /// may preserve it temporarily when reporting that the
+        /// user-selected RecordID is invalid.
         /// </summary>
         private void ClearVendorInformation(
-            CostCalculationFilter filter)
+            CostCalculationFilter filter,
+            bool clearVendorRecordID = true)
         {
             if (filter == null)
             {
                 return;
             }
 
+            if (clearVendorRecordID)
+            {
+                CostCalculation.Cache.SetValue<
+                    CostCalculationFilter.vendorRecordID>(
+                        filter,
+                        null);
+            }
+
             CostCalculation.Cache.SetValue<
-                CostCalculationFilter.vendorRecordID>(
+                CostCalculationFilter.vendorID>(
                     filter,
                     null);
 
@@ -797,7 +779,7 @@ namespace iStarCostCalculationExtensions
 
         /// <summary>
         /// Validates and applies the popup result to the exact
-        /// POVendorInventory row resolved by the popup.
+        /// POVendorInventory row selected through VendorRecordID.
         ///
         /// Only UsrFabricationPiece is explicitly updated.
         ///
@@ -843,16 +825,13 @@ namespace iStarCostCalculationExtensions
                     "are unavailable.");
             }
 
-            if (filter.VendorID == null)
-            {
-                throw new PXException(
-                    "Select a vendor.");
-            }
-
+            /*
+             * VendorRecordID is now the authoritative selection.
+             */
             if (filter.VendorRecordID == null)
             {
                 throw new PXException(
-                    "The selected vendor record could not be resolved.");
+                    "Select a vendor record.");
             }
 
             if (filter.VendorQuoteCost == null)
@@ -872,15 +851,20 @@ namespace iStarCostCalculationExtensions
             }
 
             if (vendorRow.InventoryID !=
-                item.InventoryID)
+                item?.InventoryID)
             {
                 throw new PXException(
-                    "The selected vendor does not belong to " +
-                    "the current stock item.");
+                    "The selected vendor record does not belong " +
+                    "to the current stock item.");
             }
 
-            if (vendorRow.VendorID !=
-                filter.VendorID)
+            /*
+             * VendorID is derived informational data. Validate it
+             * when present so stale popup data cannot silently
+             * refer to another vendor.
+             */
+            if (filter.VendorID != null &&
+                vendorRow.VendorID != filter.VendorID)
             {
                 throw new PXException(
                     "The selected vendor record no longer matches " +
@@ -895,7 +879,7 @@ namespace iStarCostCalculationExtensions
             {
                 throw new PXException(
                     "The jewelry costing fields could not be loaded " +
-                    "for the selected vendor.");
+                    "for the selected vendor record.");
             }
 
             /*
@@ -923,7 +907,8 @@ namespace iStarCostCalculationExtensions
                 Base.VendorItems.Cache;
 
             /*
-             * Align the Vendors view with the row being updated.
+             * Align the Vendors view with the exact row being
+             * updated.
              */
             Base.VendorItems.Current =
                 vendorRow;
@@ -954,12 +939,14 @@ namespace iStarCostCalculationExtensions
             Base.VendorItems.View.RequestRefresh();
 
             PXTrace.WriteInformation(
-                $"{TracePrefix} Calculation applied. " +
+                $"{TracePrefix} Calculation applied to exact vendor row. " +
                 $"InventoryID={item.InventoryID}, " +
                 $"CommodityType={GetCommodityType(item)}, " +
                 $"VendorID={vendorRow.VendorID}, " +
                 $"VendorRecordID={vendorRow.RecordID}, " +
                 $"VendorLocationID={vendorRow.VendorLocationID}, " +
+                $"PurchaseUnit={vendorRow.PurchaseUnit}, " +
+                $"VendorInventoryID={vendorRow.VendorInventoryID}, " +
                 $"SubItemID={vendorRow.SubItemID}, " +
                 $"IsDefault={vendorRow.IsDefault}, " +
                 $"VendorName={filter.VendorName}, " +
