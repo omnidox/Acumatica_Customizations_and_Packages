@@ -450,11 +450,19 @@ namespace iStarCostCalculationExtensions
                     SilverOnlyMessage);
             }
 
-            if (vendorRow?.RecordID == null ||
+            if (vendorRow == null ||
                 vendorRow.VendorID == null)
             {
                 throw new PXException(
                     "The selected vendor record is unavailable.");
+            }
+
+            if (!IsPersistedVendorRow(
+                    vendorRow))
+            {
+                throw new PXException(
+                    "Please save the Stock Item before using " +
+                    "Vendor Quote Calculation.");
             }
 
             if (vendorRow.InventoryID !=
@@ -861,6 +869,13 @@ namespace iStarCostCalculationExtensions
             {
                 throw new PXException(
                     "Select a vendor record.");
+            }
+
+            if (filter.VendorRecordID <= 0)
+            {
+                throw new PXException(
+                    "Please save the Stock Item before applying " +
+                    "Vendor Quote Calculation.");
             }
 
             if (filter.VendorQuoteCost == null)
