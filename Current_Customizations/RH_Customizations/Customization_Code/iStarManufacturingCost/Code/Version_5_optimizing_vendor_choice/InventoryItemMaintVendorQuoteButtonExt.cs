@@ -18,9 +18,15 @@ namespace iStarCostCalculationExtensions
     /// can configure and process its callback normally. After the page renders,
     /// JavaScript:
     ///
-    /// 1. Determines whether UsrActualGRAMSilver is currently visible.
-    /// 2. Hides the Calc button when the Silver field is hidden.
-    /// 3. Moves the rendered qp-button beside the Silver field when visible.
+    /// 1. Identifies the injected runtime Calc button.
+    /// 2. Hides only the standard Acumatica toolbar representation of
+    ///    CalculateVendorQuote.
+    /// 3. Determines whether UsrActualGRAMSilver is currently visible.
+    /// 4. Hides the runtime Calc button when the Silver field is hidden.
+    /// 5. Moves the runtime Calc button beside the Silver field when visible.
+    ///
+    /// The CalculateVendorQuote PXAction remains visible and registered so the
+    /// injected runtime button can continue invoking it.
     /// </summary>
     public class InventoryItemMaintVendorQuoteButtonExt
         : PXGraphExtension<InventoryItemMaint>
@@ -55,6 +61,18 @@ namespace iStarCostCalculationExtensions
 
         private const string ActionName =
             "CalculateVendorQuote";
+
+        /*
+         * Acumatica currently renders the standard toolbar item using an ID
+         * ending with:
+         *
+         *     _ds_ToolBar_calculateVendorQuote
+         *
+         * This suffix distinguishes the toolbar item from the separately
+         * injected runtime PXButton.
+         */
+        private const string ToolbarElementIDSuffix =
+            "_ds_ToolBar_calculateVendorQuote";
 
         private const string HookRegistrationKey =
             "VendorQuoteButton.PageEventsRegistered";
@@ -213,9 +231,9 @@ namespace iStarCostCalculationExtensions
 
             /*
              * If another initialization path already added the button during
-             * this request, do not create a duplicate. Register the relocation
-             * script again so the rendered element is still positioned or
-             * hidden according to the Silver field visibility.
+             * this request, do not create a duplicate. Register the browser
+             * script again so the rendered runtime button is still positioned
+             * or hidden correctly and the toolbar item is hidden.
              */
             if (existingButton != null)
             {
@@ -242,6 +260,7 @@ namespace iStarCostCalculationExtensions
 
             /*
              * Add the PXButton to an actual Acumatica server-side container.
+             *
              * This allows Acumatica to render the control and process its native
              * callback to the existing CalculateVendorQuote PXAction.
              */
@@ -267,7 +286,8 @@ namespace iStarCostCalculationExtensions
                 $"Panel={DescribeControl(targetPanel)}; " +
                 $"Silver={DescribeControl(silverControl)}; " +
                 $"Button={DescribeControl(calcButton)}; " +
-                $"Action={ActionName}");
+                $"Action={ActionName}; " +
+                $"ToolbarIDSuffix={ToolbarElementIDSuffix}");
         }
 
         private static PXButton CreateCalcButton()
@@ -404,15 +424,28 @@ namespace iStarCostCalculationExtensions
                 HttpUtility.JavaScriptStringEncode(
                     rawButtonClientID);
 
+            string toolbarElementIDSuffix =
+                HttpUtility.JavaScriptStringEncode(
+                    ToolbarElementIDSuffix);
+
             string script =
                 $@"
 (function () {{
     var silverClientID = '{silverClientID}';
     var buttonClientID = '{buttonClientID}';
+    var toolbarElementIDSuffix = '{toolbarElementIDSuffix}';
 
     var attemptCount = 0;
     var maximumAttempts = 40;
     var retryDelayMilliseconds = 100;
+
+    /*
+     * Stores the runtime button host after it has been positively identified.
+     *
+     * This is used as an additional safeguard to ensure the toolbar-hiding
+     * logic never hides the runtime button or one of its ancestors.
+     */
+    var identifiedRuntimeButtonHost = null;
 
     function closestElement(element, selector) {{
         if (!element) {{
@@ -447,7 +480,7 @@ namespace iStarCostCalculationExtensions
      *
      * The Silver server control may still exist for non-Silver items even when
      * Acumatica hides its rendered field. Therefore, control existence alone
-     * cannot determine whether the Calc button should be shown.
+     * cannot determine whether the runtime Calc button should be shown.
      */
     function elementIsVisible(element) {{
         if (!element ||
@@ -494,17 +527,95 @@ namespace iStarCostCalculationExtensions
         return true;
     }}
 
+    /*
+     * Hides only the action rendered in the primary PXDataSource toolbar.
+     *
+     * The toolbar element observed on IN202500 has an ID similar to:
+     *
+     *     ctl00_phDS_ds_ToolBar_calculateVendorQuote
+     *
+     * Therefore, the selector targets only an element whose ID ends with:
+     *
+     *     _ds_ToolBar_calculateVendorQuote
+     *
+     * This is intentionally more specific than selecting by data-cmd because
+     * multiple rendered presentations can be associated with the same action.
+     */
+    function hideToolbarVendorQuoteButton() {{
+        var selector =
+            '[id$=""' +
+            toolbarElementIDSuffix +
+            '""]';
+
+        var toolbarElement =
+            document.querySelector(
+                selector);
+
+        if (!toolbarElement) {{
+            return false;
+        }}
+
+        /*
+         * Re-resolve the runtime button in case Acumatica replaced part of the
+         * DOM during a callback.
+         */
+        var runtimeInnerButton =
+            document.getElementById(
+                buttonClientID);
+
+        var runtimeButtonHost =
+            closestElement(
+                runtimeInnerButton,
+                'qp-button') ||
+            runtimeInnerButton ||
+            identifiedRuntimeButtonHost;
+
+        /*
+         * Never hide anything that is, contains, or is contained by the
+         * positively identified runtime Calc button.
+         */
+        if (runtimeButtonHost &&
+            (toolbarElement === runtimeButtonHost ||
+             toolbarElement.contains(runtimeButtonHost) ||
+             runtimeButtonHost.contains(toolbarElement))) {{
+            return false;
+        }}
+
+        toolbarElement.style.setProperty(
+            'display',
+            'none',
+            'important');
+
+        toolbarElement.setAttribute(
+            'aria-hidden',
+            'true');
+
+        toolbarElement.setAttribute(
+            'data-istar-hidden-toolbar-action',
+            'true');
+
+        return true;
+    }}
+
     function moveButton() {{
         attemptCount++;
 
         var silverInput =
-            document.getElementById(silverClientID);
+            document.getElementById(
+                silverClientID);
 
         var innerButton =
-            document.getElementById(buttonClientID);
+            document.getElementById(
+                buttonClientID);
 
         if (!silverInput ||
             !innerButton) {{
+            /*
+             * The primary toolbar may already exist even if the runtime button
+             * has not finished rendering.
+             */
+            hideToolbarVendorQuoteButton();
+
             return false;
         }}
 
@@ -531,14 +642,28 @@ namespace iStarCostCalculationExtensions
         if (!silverEditor ||
             !editorContainer ||
             !buttonHost) {{
+            hideToolbarVendorQuoteButton();
+
             return false;
         }}
+
+        /*
+         * The runtime button has now been positively identified.
+         */
+        identifiedRuntimeButtonHost =
+            buttonHost;
+
+        /*
+         * Hide only the primary toolbar element after positively identifying
+         * the injected runtime button.
+         */
+        hideToolbarVendorQuoteButton();
 
         /*
          * The Silver control can exist in the HTML for every item even though
          * Acumatica hides it for non-Silver items.
          *
-         * Hide the Calc button whenever the actual Silver editor is not
+         * Hide the runtime Calc button whenever the actual Silver editor is not
          * visible.
          *
          * This visibility check must occur before editorContainer is changed
@@ -551,7 +676,10 @@ namespace iStarCostCalculationExtensions
             elementIsVisible(editorContainer);
 
         if (!silverFieldIsVisible) {{
-            buttonHost.style.display = 'none';
+            buttonHost.style.setProperty(
+                'display',
+                'none',
+                'important');
 
             buttonHost.setAttribute(
                 'aria-hidden',
@@ -564,11 +692,14 @@ namespace iStarCostCalculationExtensions
             buttonHost.removeAttribute(
                 'data-istar-vendor-quote-button-positioned');
 
+            hideToolbarVendorQuoteButton();
+
             return true;
         }}
 
         /*
-         * The field is visible, so the Calc button is applicable.
+         * The Silver field is visible, so the runtime Calc button is
+         * applicable.
          */
         buttonHost.removeAttribute(
             'aria-hidden');
@@ -578,18 +709,41 @@ namespace iStarCostCalculationExtensions
             'true');
 
         /*
-         * Place the Silver editor and Calc button on the same horizontal row.
+         * Remove a prior display:none !important that may have been applied
+         * when a non-Silver item was previously selected.
          */
-        editorContainer.style.display = 'flex';
-        editorContainer.style.alignItems = 'center';
-        editorContainer.style.flexWrap = 'nowrap';
+        buttonHost.style.removeProperty(
+            'display');
 
-        silverEditor.style.flex = '0 1 auto';
+        /*
+         * Place the Silver editor and runtime Calc button on the same
+         * horizontal row.
+         */
+        editorContainer.style.display =
+            'flex';
 
-        buttonHost.style.display = 'inline-block';
-        buttonHost.style.flex = '0 0 auto';
-        buttonHost.style.marginLeft = '8px';
-        buttonHost.style.verticalAlign = 'middle';
+        editorContainer.style.alignItems =
+            'center';
+
+        editorContainer.style.flexWrap =
+            'nowrap';
+
+        silverEditor.style.flex =
+            '0 1 auto';
+
+        buttonHost.style.setProperty(
+            'display',
+            'inline-block',
+            'important');
+
+        buttonHost.style.flex =
+            '0 0 auto';
+
+        buttonHost.style.marginLeft =
+            '8px';
+
+        buttonHost.style.verticalAlign =
+            'middle';
 
         /*
          * Acumatica may initially render the tooltip or action caption instead
@@ -600,7 +754,8 @@ namespace iStarCostCalculationExtensions
                 '.btn-inner .text');
 
         if (textElement) {{
-            textElement.textContent = 'Calc';
+            textElement.textContent =
+                'Calc';
         }}
 
         /*
@@ -623,29 +778,46 @@ namespace iStarCostCalculationExtensions
             'data-istar-vendor-quote-button-positioned',
             'true');
 
+        /*
+         * Acumatica may rerender the toolbar while the page is finishing its
+         * client-side initialization.
+         */
+        hideToolbarVendorQuoteButton();
+
         return true;
     }}
 
     function attemptMove() {{
-        if (moveButton()) {{
-            return;
-        }}
+        var moveSucceeded =
+            moveButton();
 
         /*
-         * Acumatica's client-side components may finish rendering shortly
-         * after the ASP.NET startup script executes, so retry for up to
-         * approximately four seconds.
+         * Continue retrying for approximately four seconds even after the
+         * runtime button is successfully positioned.
+         *
+         * Acumatica may render or rerender the primary toolbar after the
+         * runtime button has already been moved.
          */
         if (attemptCount < maximumAttempts) {{
             window.setTimeout(
                 attemptMove,
                 retryDelayMilliseconds);
+
+            return;
         }}
-        else if (window.console &&
-                 typeof window.console.warn === 'function') {{
+
+        /*
+         * Perform one final toolbar-hide attempt after all positioning retries
+         * have completed.
+         */
+        hideToolbarVendorQuoteButton();
+
+        if (!moveSucceeded &&
+            window.console &&
+            typeof window.console.warn === 'function') {{
             window.console.warn(
-                '[VendorQuoteButton] Unable to position or hide the Calc ' +
-                'button after ' +
+                '[VendorQuoteButton] Unable to position or hide the runtime ' +
+                'Calc button after ' +
                 maximumAttempts +
                 ' attempts.');
         }}
@@ -662,10 +834,11 @@ namespace iStarCostCalculationExtensions
                 true);
 
             PXTrace.WriteInformation(
-                $"{TracePrefix} Registered Calc button relocation and " +
-                $"visibility script. " +
+                $"{TracePrefix} Registered runtime Calc button relocation, " +
+                $"Silver-field visibility, and primary-toolbar hiding script. " +
                 $"SilverClientID={rawSilverClientID}; " +
-                $"ButtonClientID={rawButtonClientID}");
+                $"ButtonClientID={rawButtonClientID}; " +
+                $"ToolbarIDSuffix={ToolbarElementIDSuffix}");
         }
 
         private static Control FindImmediateChild(
