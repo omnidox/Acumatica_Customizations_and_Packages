@@ -52,7 +52,6 @@
                     <px:PXButton ID="btnCancel" runat="server" DialogResult="Cancel" Text="Cancel"></px:PXButton>
                 </px:PXPanel>
             </px:PXSmartPanel>
-
             <px:PXSmartPanel ID="pnlCostCalculation" runat="server" Height="240px" Width="520px" LoadOnDemand="True"
                 AutoReload="True" CaptionVisible="True" Caption="Calculate Vendor Quote" Key="CostCalculation"
                 AcceptButtonID="btnCostCalculationOK" CancelButtonID="btnCostCalculationCancel">
@@ -64,7 +63,7 @@
                         <px:PXLayoutRule ID="lrCostCalculation" runat="server" StartColumn="True" LabelsWidth="M"
                             ControlSize="M" />
 
-                        <px:PXSelector ID="edCostCalculationVendorRecordID" runat="server" DataField="VendorRecordID"
+                        <px:PXSelector ID="edCostCalculationVendorID" runat="server" DataField="VendorID"
                             CommitChanges="True" AutoRefresh="True" />
 
                         <px:PXTextEdit ID="edCostCalculationVendorName" runat="server" DataField="VendorName"
@@ -88,7 +87,6 @@
                     <px:PXButton ID="btnCostCalculationCancel" runat="server" Text="Cancel" DialogResult="Cancel" />
                 </px:PXPanel>
             </px:PXSmartPanel>
-
             <px:PXFormView ID="form" runat="server" DataSourceID="ds" Style="z-index: 100" Width="100%"
                 DataMember="Item" Caption="Stock Item Summary" NoteIndicator="True" FilesIndicator="True"
                 ActivityIndicator="True" ActivityField="NoteActivity" DefaultControlID="edInventoryCD">
