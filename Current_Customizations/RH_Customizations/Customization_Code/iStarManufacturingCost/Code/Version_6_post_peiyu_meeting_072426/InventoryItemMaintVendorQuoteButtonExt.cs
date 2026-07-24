@@ -9,21 +9,27 @@ using PX.Web.UI;
 namespace iStarCostCalculationExtensions
 {
     /// <summary>
-    /// Adds a runtime Calc button beside the Silver, Grams field on IN202500.
+    /// Adds a runtime Calc button beside the Unit Cost field on IN202500.
     ///
     /// The button invokes the existing CalculateVendorQuote PXAction supplied
     /// by the vendor-quote costing graph extension.
     ///
     /// The PXButton is added to valueParametersPanel on the server so Acumatica
-    /// can configure and process its callback normally. After the page renders,
-    /// JavaScript:
+    /// can configure and process its callback normally.
+    ///
+    /// After the page renders, JavaScript:
     ///
     /// 1. Identifies the injected runtime Calc button.
     /// 2. Hides only the standard Acumatica toolbar representation of
     ///    CalculateVendorQuote.
     /// 3. Determines whether UsrActualGRAMSilver is currently visible.
     /// 4. Hides the runtime Calc button when the Silver field is hidden.
-    /// 5. Moves the runtime Calc button beside the Silver field when visible.
+    /// 5. Moves the runtime Calc button beside the Unit Cost field.
+    /// 6. Mirrors the enabled or disabled state of the underlying
+    ///    CalculateVendorQuote PXAction.
+    ///
+    /// The Silver field determines whether the button is applicable.
+    /// The Unit Cost field determines where the button is positioned.
     ///
     /// The CalculateVendorQuote PXAction remains visible and registered so the
     /// injected runtime button can continue invoking it.
@@ -41,7 +47,19 @@ namespace iStarCostCalculationExtensions
             "valueParametersPanel";
 
         /*
-         * This is the generated ASPX control ID currently assigned to
+         * Generated ASPX control ID currently assigned to Unit Cost.
+         *
+         * FindUnitCostControl also includes a DataField fallback in case
+         * the generated control ID changes after publishing.
+         */
+        private const string GeneratedUnitCostControlID =
+            "CstPXNumberEdit52";
+
+        private const string UnitCostDataField =
+            "UsrUnitCost";
+
+        /*
+         * Generated ASPX control ID currently assigned to
          * UsrActualGRAMSilver.
          *
          * Because generated IDs can change when the vendor customization is
@@ -81,7 +99,7 @@ namespace iStarCostCalculationExtensions
             "VendorQuoteButton.InjectionCompleted";
 
         private const string RelocationScriptKey =
-            "VendorQuoteButton.MoveBesideSilver";
+            "VendorQuoteButton.MoveBesideUnitCost";
 
         public static bool IsActive()
         {
@@ -128,6 +146,7 @@ namespace iStarCostCalculationExtensions
 
                 /*
                  * LoadComplete has been verified as a safe point for this page.
+                 *
                  * Attempting to modify the control tree during Initialize can
                  * interfere with Acumatica's page and view initialization.
                  */
@@ -192,11 +211,16 @@ namespace iStarCostCalculationExtensions
             if (targetPanel == null)
             {
                 PXTrace.WriteWarning(
-                    $"{TracePrefix} Target panel '{TargetPanelID}' was not found.");
+                    $"{TracePrefix} Target panel '{TargetPanelID}' " +
+                    "was not found.");
 
                 return;
             }
 
+            /*
+             * The Silver control determines whether the vendor-quote
+             * calculation is applicable to the current stock item.
+             */
             Control silverControl =
                 FindSilverControl(
                     page);
@@ -211,6 +235,25 @@ namespace iStarCostCalculationExtensions
                 return;
             }
 
+            /*
+             * The Unit Cost control is the visual positioning target.
+             *
+             * The runtime Calc button is moved beside this field.
+             */
+            Control unitCostControl =
+                FindUnitCostControl(
+                    page);
+
+            if (unitCostControl == null)
+            {
+                PXTrace.WriteWarning(
+                    $"{TracePrefix} Unit Cost control was not found. " +
+                    $"ExpectedControlID={GeneratedUnitCostControlID}; " +
+                    $"ExpectedDataField={UnitCostDataField}.");
+
+                return;
+            }
+
             PXDataSource dataSource =
                 ControlHelper.FindControl(
                     DataSourceID,
@@ -219,7 +262,8 @@ namespace iStarCostCalculationExtensions
             if (dataSource == null)
             {
                 PXTrace.WriteWarning(
-                    $"{TracePrefix} PXDataSource '{DataSourceID}' was not found.");
+                    $"{TracePrefix} PXDataSource '{DataSourceID}' " +
+                    "was not found.");
 
                 return;
             }
@@ -231,15 +275,21 @@ namespace iStarCostCalculationExtensions
 
             /*
              * If another initialization path already added the button during
-             * this request, do not create a duplicate. Register the browser
-             * script again so the rendered runtime button is still positioned
-             * or hidden correctly and the toolbar item is hidden.
+             * this request, do not create a duplicate.
+             *
+             * Register the browser script again so:
+             *
+             * - Silver applicability is reevaluated;
+             * - the button is moved beside Unit Cost;
+             * - the runtime button mirrors the PXAction enabled state;
+             * - the standard toolbar action remains hidden.
              */
             if (existingButton != null)
             {
                 RegisterButtonRelocationScript(
                     page,
                     silverControl,
+                    unitCostControl,
                     existingButton);
 
                 MarkInjectionCompleted(
@@ -261,8 +311,8 @@ namespace iStarCostCalculationExtensions
             /*
              * Add the PXButton to an actual Acumatica server-side container.
              *
-             * This allows Acumatica to render the control and process its native
-             * callback to the existing CalculateVendorQuote PXAction.
+             * This allows Acumatica to render the control and process its
+             * native callback to the existing CalculateVendorQuote PXAction.
              */
             targetPanel.Controls.Add(
                 calcButton);
@@ -272,10 +322,14 @@ namespace iStarCostCalculationExtensions
              *
              * The server-side PXButton remains a child of
              * valueParametersPanel.
+             *
+             * Silver determines applicability.
+             * Unit Cost determines placement.
              */
             RegisterButtonRelocationScript(
                 page,
                 silverControl,
+                unitCostControl,
                 calcButton);
 
             MarkInjectionCompleted(
@@ -284,7 +338,10 @@ namespace iStarCostCalculationExtensions
             PXTrace.WriteInformation(
                 $"{TracePrefix} Runtime Calc button added. " +
                 $"Panel={DescribeControl(targetPanel)}; " +
-                $"Silver={DescribeControl(silverControl)}; " +
+                $"SilverApplicabilityControl=" +
+                $"{DescribeControl(silverControl)}; " +
+                $"UnitCostPositionControl=" +
+                $"{DescribeControl(unitCostControl)}; " +
                 $"Button={DescribeControl(calcButton)}; " +
                 $"Action={ActionName}; " +
                 $"ToolbarIDSuffix={ToolbarElementIDSuffix}");
@@ -344,6 +401,37 @@ namespace iStarCostCalculationExtensions
                 SilverDataField);
         }
 
+        private static Control FindUnitCostControl(
+            Page page)
+        {
+            if (page == null)
+            {
+                return null;
+            }
+
+            /*
+             * Prefer the exact generated ASPX control ID currently known to
+             * represent Unit Cost.
+             */
+            Control unitCostControl =
+                ControlHelper.FindControl(
+                    GeneratedUnitCostControlID,
+                    page);
+
+            if (unitCostControl != null)
+            {
+                return unitCostControl;
+            }
+
+            /*
+             * Fall back to DataField in case a future publish changes the
+             * generated control ID.
+             */
+            return FindControlByDataField(
+                page,
+                UnitCostDataField);
+        }
+
         private static Control FindControlByDataField(
             Control root,
             string dataField)
@@ -385,15 +473,17 @@ namespace iStarCostCalculationExtensions
         private static void RegisterButtonRelocationScript(
             Page page,
             Control silverControl,
+            Control unitCostControl,
             Control calcButton)
         {
             if (page == null ||
                 silverControl == null ||
+                unitCostControl == null ||
                 calcButton == null)
             {
                 PXTrace.WriteWarning(
-                    $"{TracePrefix} Relocation script was not registered because " +
-                    "one or more required controls were unavailable.");
+                    $"{TracePrefix} Relocation script was not registered " +
+                    "because one or more required controls were unavailable.");
 
                 return;
             }
@@ -401,16 +491,21 @@ namespace iStarCostCalculationExtensions
             string rawSilverClientID =
                 silverControl.ClientID;
 
+            string rawUnitCostClientID =
+                unitCostControl.ClientID;
+
             string rawButtonClientID =
                 calcButton.ClientID;
 
             if (string.IsNullOrWhiteSpace(rawSilverClientID) ||
+                string.IsNullOrWhiteSpace(rawUnitCostClientID) ||
                 string.IsNullOrWhiteSpace(rawButtonClientID))
             {
                 PXTrace.WriteWarning(
-                    $"{TracePrefix} Relocation script was not registered because " +
-                    "one or more ClientIDs were empty. " +
+                    $"{TracePrefix} Relocation script was not registered " +
+                    "because one or more ClientIDs were empty. " +
                     $"SilverClientID={rawSilverClientID ?? "<null>"}; " +
+                    $"UnitCostClientID={rawUnitCostClientID ?? "<null>"}; " +
                     $"ButtonClientID={rawButtonClientID ?? "<null>"}");
 
                 return;
@@ -419,6 +514,10 @@ namespace iStarCostCalculationExtensions
             string silverClientID =
                 HttpUtility.JavaScriptStringEncode(
                     rawSilverClientID);
+
+            string unitCostClientID =
+                HttpUtility.JavaScriptStringEncode(
+                    rawUnitCostClientID);
 
             string buttonClientID =
                 HttpUtility.JavaScriptStringEncode(
@@ -432,6 +531,7 @@ namespace iStarCostCalculationExtensions
                 $@"
 (function () {{
     var silverClientID = '{silverClientID}';
+    var unitCostClientID = '{unitCostClientID}';
     var buttonClientID = '{buttonClientID}';
     var toolbarElementIDSuffix = '{toolbarElementIDSuffix}';
 
@@ -528,6 +628,84 @@ namespace iStarCostCalculationExtensions
     }}
 
     /*
+     * Determines whether an action element is disabled.
+     *
+     * Acumatica may express the disabled state through:
+     *
+     * - the native disabled property;
+     * - a disabled attribute;
+     * - aria-disabled;
+     * - a CSS class containing disabled;
+     * - or a nested button element.
+     */
+    function elementIsDisabled(element) {{
+        if (!element) {{
+            return false;
+        }}
+
+        if (element.disabled === true ||
+            element.getAttribute('disabled') !== null ||
+            element.getAttribute('aria-disabled') === 'true') {{
+            return true;
+        }}
+
+        var className =
+            typeof element.className === 'string'
+                ? element.className.toLowerCase()
+                : '';
+
+        if (className.indexOf('disabled') >= 0) {{
+            return true;
+        }}
+
+        var nestedControl =
+            element.querySelector(
+                'button, input, [role=""button""]');
+
+        if (nestedControl &&
+            nestedControl !== element) {{
+            return elementIsDisabled(
+                nestedControl);
+        }}
+
+        return false;
+    }}
+
+    function getToolbarVendorQuoteButton() {{
+        var selector =
+            '[id$=""' +
+            toolbarElementIDSuffix +
+            '""]';
+
+        return document.querySelector(
+            selector);
+    }}
+
+    /*
+     * Reads the enabled state from the standard toolbar rendering of the
+     * CalculateVendorQuote PXAction.
+     *
+     * The toolbar item is used as a client-side representation of the state
+     * established by CalculateVendorQuote.SetEnabled on the server.
+     */
+    function isVendorQuoteActionDisabled() {{
+        var toolbarElement =
+            getToolbarVendorQuoteButton();
+
+        /*
+         * When the toolbar element has not rendered yet, avoid incorrectly
+         * disabling the runtime button. The retry loop will reevaluate the
+         * state after Acumatica finishes rendering the toolbar.
+         */
+        if (!toolbarElement) {{
+            return false;
+        }}
+
+        return elementIsDisabled(
+            toolbarElement);
+    }}
+
+    /*
      * Hides only the action rendered in the primary PXDataSource toolbar.
      *
      * The toolbar element observed on IN202500 has an ID similar to:
@@ -542,14 +720,8 @@ namespace iStarCostCalculationExtensions
      * multiple rendered presentations can be associated with the same action.
      */
     function hideToolbarVendorQuoteButton() {{
-        var selector =
-            '[id$=""' +
-            toolbarElementIDSuffix +
-            '""]';
-
         var toolbarElement =
-            document.querySelector(
-                selector);
+            getToolbarVendorQuoteButton();
 
         if (!toolbarElement) {{
             return false;
@@ -597,6 +769,113 @@ namespace iStarCostCalculationExtensions
         return true;
     }}
 
+    /*
+     * Applies the CalculateVendorQuote PXAction state to the runtime button.
+     *
+     * The server-side action validation remains authoritative. This function
+     * only ensures that the runtime button visually and behaviorally reflects
+     * the state presented by Acumatica in the toolbar.
+     */
+    function applyRuntimeButtonEnabledState(
+        buttonHost,
+        innerButton) {{
+        if (!buttonHost ||
+            !innerButton) {{
+            return;
+        }}
+
+        var actionIsDisabled =
+            isVendorQuoteActionDisabled();
+
+        var runtimeNativeButton =
+            buttonHost.querySelector(
+                'button, input[type=""button""], [role=""button""]') ||
+            innerButton;
+
+        if (actionIsDisabled) {{
+            buttonHost.setAttribute(
+                'aria-disabled',
+                'true');
+
+            buttonHost.setAttribute(
+                'data-istar-vendor-quote-button-enabled',
+                'false');
+
+            buttonHost.classList.add(
+                'disabled');
+
+            /*
+             * Prevent a click from reaching the runtime control even if the
+             * rendered Acumatica component does not use a native button.
+             */
+            buttonHost.style.pointerEvents =
+                'none';
+
+            buttonHost.style.cursor =
+                'not-allowed';
+
+            buttonHost.style.opacity =
+                '0.55';
+
+            if (runtimeNativeButton) {{
+                runtimeNativeButton.disabled =
+                    true;
+
+                runtimeNativeButton.setAttribute(
+                    'disabled',
+                    'disabled');
+
+                runtimeNativeButton.setAttribute(
+                    'aria-disabled',
+                    'true');
+
+                runtimeNativeButton.tabIndex =
+                    -1;
+            }}
+
+            return;
+        }}
+
+        buttonHost.removeAttribute(
+            'aria-disabled');
+
+        buttonHost.setAttribute(
+            'data-istar-vendor-quote-button-enabled',
+            'true');
+
+        buttonHost.classList.remove(
+            'disabled');
+
+        buttonHost.style.removeProperty(
+            'pointer-events');
+
+        buttonHost.style.removeProperty(
+            'cursor');
+
+        buttonHost.style.removeProperty(
+            'opacity');
+
+        if (runtimeNativeButton) {{
+            runtimeNativeButton.disabled =
+                false;
+
+            runtimeNativeButton.removeAttribute(
+                'disabled');
+
+            runtimeNativeButton.removeAttribute(
+                'aria-disabled');
+
+            /*
+             * Remove only the tab index introduced by this script.
+             * Acumatica may subsequently restore its normal tab order.
+             */
+            if (runtimeNativeButton.tabIndex === -1) {{
+                runtimeNativeButton.removeAttribute(
+                    'tabindex');
+            }}
+        }}
+    }}
+
     function moveButton() {{
         attemptCount++;
 
@@ -604,15 +883,20 @@ namespace iStarCostCalculationExtensions
             document.getElementById(
                 silverClientID);
 
+        var unitCostInput =
+            document.getElementById(
+                unitCostClientID);
+
         var innerButton =
             document.getElementById(
                 buttonClientID);
 
         if (!silverInput ||
+            !unitCostInput ||
             !innerButton) {{
             /*
              * The primary toolbar may already exist even if the runtime button
-             * has not finished rendering.
+             * or one of the target controls has not finished rendering.
              */
             hideToolbarVendorQuoteButton();
 
@@ -624,14 +908,26 @@ namespace iStarCostCalculationExtensions
                 silverInput,
                 'qp-number-editor');
 
-        var editorContainer =
+        var silverContainer =
             closestElement(
                 silverInput,
                 '.fld-c');
 
+        var unitCostEditor =
+            closestElement(
+                unitCostInput,
+                'qp-number-editor');
+
+        var unitCostContainer =
+            closestElement(
+                unitCostInput,
+                '.fld-c');
+
         /*
-         * The ClientID belongs to the inner native button. Move or hide the
-         * outer qp-button so Acumatica's component remains intact.
+         * The ClientID belongs to the inner native button.
+         *
+         * Move or hide the outer qp-button so Acumatica's component remains
+         * intact.
          */
         var buttonHost =
             closestElement(
@@ -640,7 +936,9 @@ namespace iStarCostCalculationExtensions
             innerButton;
 
         if (!silverEditor ||
-            !editorContainer ||
+            !silverContainer ||
+            !unitCostEditor ||
+            !unitCostContainer ||
             !buttonHost) {{
             hideToolbarVendorQuoteButton();
 
@@ -652,6 +950,16 @@ namespace iStarCostCalculationExtensions
          */
         identifiedRuntimeButtonHost =
             buttonHost;
+
+        /*
+         * Capture the action state before hiding the toolbar representation.
+         *
+         * Hiding the toolbar does not normally change its enabled state, but
+         * reading and applying the state first makes the sequence explicit.
+         */
+        applyRuntimeButtonEnabledState(
+            buttonHost,
+            innerButton);
 
         /*
          * Hide only the primary toolbar element after positively identifying
@@ -666,16 +974,48 @@ namespace iStarCostCalculationExtensions
          * Hide the runtime Calc button whenever the actual Silver editor is not
          * visible.
          *
-         * This visibility check must occur before editorContainer is changed
-         * to display:flex. Otherwise this script could accidentally reveal a
-         * container that Acumatica intentionally hid.
+         * This visibility check must occur before either field container is
+         * changed to display:flex. Otherwise the script could accidentally
+         * reveal a container that Acumatica intentionally hid.
          */
         var silverFieldIsVisible =
             elementIsVisible(silverInput) &&
             elementIsVisible(silverEditor) &&
-            elementIsVisible(editorContainer);
+            elementIsVisible(silverContainer);
 
         if (!silverFieldIsVisible) {{
+            buttonHost.style.setProperty(
+                'display',
+                'none',
+                'important');
+
+            buttonHost.setAttribute(
+                'aria-hidden',
+                'true');
+
+            buttonHost.setAttribute(
+                'data-istar-vendor-quote-button-applicable',
+                'false');
+
+            buttonHost.removeAttribute(
+                'data-istar-vendor-quote-button-positioned');
+
+            hideToolbarVendorQuoteButton();
+
+            return true;
+        }}
+
+        /*
+         * Unit Cost must also be visible before positioning the runtime button.
+         *
+         * This avoids changing a hidden field container to display:flex.
+         */
+        var unitCostFieldIsVisible =
+            elementIsVisible(unitCostInput) &&
+            elementIsVisible(unitCostEditor) &&
+            elementIsVisible(unitCostContainer);
+
+        if (!unitCostFieldIsVisible) {{
             buttonHost.style.setProperty(
                 'display',
                 'none',
@@ -716,19 +1056,19 @@ namespace iStarCostCalculationExtensions
             'display');
 
         /*
-         * Place the Silver editor and runtime Calc button on the same
+         * Place the Unit Cost editor and runtime Calc button on the same
          * horizontal row.
          */
-        editorContainer.style.display =
+        unitCostContainer.style.display =
             'flex';
 
-        editorContainer.style.alignItems =
+        unitCostContainer.style.alignItems =
             'center';
 
-        editorContainer.style.flexWrap =
+        unitCostContainer.style.flexWrap =
             'nowrap';
 
-        silverEditor.style.flex =
+        unitCostEditor.style.flex =
             '0 1 auto';
 
         buttonHost.style.setProperty(
@@ -759,17 +1099,17 @@ namespace iStarCostCalculationExtensions
         }}
 
         /*
-         * Move the rendered qp-button immediately after the Silver editor.
+         * Move the rendered qp-button immediately after the Unit Cost editor.
          */
-        if (buttonHost.parentElement !== editorContainer ||
-            silverEditor.nextElementSibling !== buttonHost) {{
-            if (silverEditor.nextSibling) {{
-                editorContainer.insertBefore(
+        if (buttonHost.parentElement !== unitCostContainer ||
+            unitCostEditor.nextElementSibling !== buttonHost) {{
+            if (unitCostEditor.nextSibling) {{
+                unitCostContainer.insertBefore(
                     buttonHost,
-                    silverEditor.nextSibling);
+                    unitCostEditor.nextSibling);
             }}
             else {{
-                editorContainer.appendChild(
+                unitCostContainer.appendChild(
                     buttonHost);
             }}
         }}
@@ -777,6 +1117,16 @@ namespace iStarCostCalculationExtensions
         buttonHost.setAttribute(
             'data-istar-vendor-quote-button-positioned',
             'true');
+
+        /*
+         * Reapply the enabled state after moving the component.
+         *
+         * Acumatica may update the toolbar action state while the page is
+         * completing client-side initialization.
+         */
+        applyRuntimeButtonEnabledState(
+            buttonHost,
+            innerButton);
 
         /*
          * Acumatica may rerender the toolbar while the page is finishing its
@@ -795,8 +1145,8 @@ namespace iStarCostCalculationExtensions
          * Continue retrying for approximately four seconds even after the
          * runtime button is successfully positioned.
          *
-         * Acumatica may render or rerender the primary toolbar after the
-         * runtime button has already been moved.
+         * Acumatica may render or rerender the toolbar or action state after
+         * the runtime button has already been moved.
          */
         if (attemptCount < maximumAttempts) {{
             window.setTimeout(
@@ -807,17 +1157,19 @@ namespace iStarCostCalculationExtensions
         }}
 
         /*
-         * Perform one final toolbar-hide attempt after all positioning retries
-         * have completed.
+         * Perform one final position, enabled-state, and toolbar-hide attempt
+         * after the retry period has completed.
          */
+        moveButton();
+
         hideToolbarVendorQuoteButton();
 
         if (!moveSucceeded &&
             window.console &&
             typeof window.console.warn === 'function') {{
             window.console.warn(
-                '[VendorQuoteButton] Unable to position or hide the runtime ' +
-                'Calc button after ' +
+                '[VendorQuoteButton] Unable to position, enable, disable, ' +
+                'or hide the runtime Calc button after ' +
                 maximumAttempts +
                 ' attempts.');
         }}
@@ -835,8 +1187,11 @@ namespace iStarCostCalculationExtensions
 
             PXTrace.WriteInformation(
                 $"{TracePrefix} Registered runtime Calc button relocation, " +
-                $"Silver-field visibility, and primary-toolbar hiding script. " +
+                "Silver-field applicability, Unit Cost positioning, " +
+                "PXAction enabled-state mirroring, and primary-toolbar " +
+                "hiding script. " +
                 $"SilverClientID={rawSilverClientID}; " +
+                $"UnitCostClientID={rawUnitCostClientID}; " +
                 $"ButtonClientID={rawButtonClientID}; " +
                 $"ToolbarIDSuffix={ToolbarElementIDSuffix}");
         }
