@@ -52,7 +52,8 @@
                     <px:PXButton ID="btnCancel" runat="server" DialogResult="Cancel" Text="Cancel"></px:PXButton>
                 </px:PXPanel>
             </px:PXSmartPanel>
-            <px:PXSmartPanel ID="pnlCostCalculation" runat="server" Height="240px" Width="520px" LoadOnDemand="True"
+
+            <px:PXSmartPanel ID="pnlCostCalculation" runat="server" Height="260px" Width="620px" LoadOnDemand="True"
                 AutoReload="True" CaptionVisible="True" Caption="Calculate Vendor Quote" Key="CostCalculation"
                 AcceptButtonID="btnCostCalculationOK" CancelButtonID="btnCostCalculationCancel">
 
@@ -63,8 +64,23 @@
                         <px:PXLayoutRule ID="lrCostCalculation" runat="server" StartColumn="True" LabelsWidth="M"
                             ControlSize="M" />
 
-                        <px:PXSelector ID="edCostCalculationVendorID" runat="server" DataField="VendorID"
+                        <!--
+                This is now the editable selector.
+
+                The stored value is POVendorInventory.RecordID,
+                which uniquely identifies the exact vendor row.
+            -->
+                        <px:PXSelector ID="edCostCalculationVendorRecordID" runat="server" DataField="VendorRecordID"
                             CommitChanges="True" AutoRefresh="True" />
+
+                        <!--
+                Informational only.
+
+                VendorID is populated from the selected
+                POVendorInventory row.
+            -->
+                        <px:PXSelector ID="edCostCalculationVendorID" runat="server" DataField="VendorID"
+                            Enabled="False" AllowEdit="False" />
 
                         <px:PXTextEdit ID="edCostCalculationVendorName" runat="server" DataField="VendorName"
                             Enabled="False" />
@@ -87,6 +103,7 @@
                     <px:PXButton ID="btnCostCalculationCancel" runat="server" Text="Cancel" DialogResult="Cancel" />
                 </px:PXPanel>
             </px:PXSmartPanel>
+
             <px:PXFormView ID="form" runat="server" DataSourceID="ds" Style="z-index: 100" Width="100%"
                 DataMember="Item" Caption="Stock Item Summary" NoteIndicator="True" FilesIndicator="True"
                 ActivityIndicator="True" ActivityField="NoteActivity" DefaultControlID="edInventoryCD">
