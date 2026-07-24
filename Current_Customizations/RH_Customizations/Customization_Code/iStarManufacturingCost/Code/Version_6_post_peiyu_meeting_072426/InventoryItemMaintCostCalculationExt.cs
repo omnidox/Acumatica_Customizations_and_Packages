@@ -130,12 +130,26 @@ namespace iStarCostCalculationExtensions
             POVendorInventory initiallySelectedVendorRow =
                 GetSelectedVendorRow();
 
-            if (initiallySelectedVendorRow?.RecordID == null ||
+            if (initiallySelectedVendorRow == null ||
                 initiallySelectedVendorRow.VendorID == null)
             {
                 throw new PXException(
                     "Select a vendor row before calculating " +
                     "the vendor quote.");
+            }
+
+            if (!IsPersistedVendorRow(
+                    initiallySelectedVendorRow))
+            {
+                PXTrace.WriteWarning(
+                    $"{TracePrefix} Vendor row has not yet been saved. " +
+                    $"InventoryID={item.InventoryID}, " +
+                    $"VendorID={initiallySelectedVendorRow.VendorID}, " +
+                    $"VendorRecordID={initiallySelectedVendorRow.RecordID}.");
+
+                throw new PXException(
+                    "Please save the Stock Item before using " +
+                    "Vendor Quote Calculation.");
             }
 
             WebDialogResult result =
@@ -181,14 +195,14 @@ namespace iStarCostCalculationExtensions
             POVendorInventory vendorRow =
                 GetSelectedVendorRow();
 
-            bool hasSelectedVendor =
-                vendorRow?.RecordID != null &&
-                vendorRow.VendorID != null;
+            bool hasPersistedSelectedVendor =
+                IsPersistedVendorRow(
+                    vendorRow);
 
             bool actionAvailable =
                 hasCurrentItem
                 && isSilverItem
-                && hasSelectedVendor
+                && hasPersistedSelectedVendor
                 && Base.Item.Cache.AllowUpdate;
 
             CalculateVendorQuote.SetEnabled(
@@ -209,7 +223,8 @@ namespace iStarCostCalculationExtensions
                 $"InventoryID={e.Row?.InventoryID}, " +
                 $"CommodityType={GetCommodityType(e.Row) ?? "<null>"}, " +
                 $"IsSilver={isSilverItem}, " +
-                $"HasSelectedVendor={hasSelectedVendor}, " +
+                $"HasPersistedSelectedVendor={hasPersistedSelectedVendor}, " +
+                $"SelectedVendorRecordID={vendorRow?.RecordID}, " +
                 $"SelectedVendorRecordID={vendorRow?.RecordID}, " +
                 $"AllowUpdate={Base.Item.Cache.AllowUpdate}, " +
                 $"Enabled={actionAvailable}.");
@@ -323,6 +338,20 @@ namespace iStarCostCalculationExtensions
         #endregion
 
         #region Vendor Selection
+        /// <summary>
+        /// Returns true only after the vendor row has been persisted
+        /// to the database.
+        ///
+        /// Newly inserted POVendorInventory rows receive temporary
+        /// negative RecordIDs while they exist only in PXCache.
+        /// </summary>
+        private static bool IsPersistedVendorRow(
+            POVendorInventory vendorRow)
+        {
+            return vendorRow?.RecordID != null
+                && vendorRow.RecordID > 0
+                && vendorRow.VendorID != null;
+        }
 
         /// <summary>
         /// Returns the exact vendor row currently selected on the
