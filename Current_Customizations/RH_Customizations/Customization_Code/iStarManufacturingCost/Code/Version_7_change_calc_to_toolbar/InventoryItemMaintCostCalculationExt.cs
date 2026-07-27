@@ -175,25 +175,54 @@ namespace iStarCostCalculationExtensions
         #region Event Handlers
 
         /// <summary>
-        /// Enables and displays the action only when:
+        /// Reevaluates the action when the current Stock Item changes.
+        ///
+        /// The action is available only when:
         ///
         /// - an existing stock item is selected,
         /// - the item is a Silver item,
-        /// - an exact vendor row is selected, and
+        /// - an exact persisted vendor row is selected, and
         /// - the Stock Item record is editable.
         /// </summary>
         protected virtual void _(
             Events.RowSelected<InventoryItem> e)
         {
+            UpdateCalculateVendorQuoteState(
+                e.Row,
+                Base.VendorItems.Current);
+        }
+
+        /// <summary>
+        /// Reevaluates the action when the selected Vendors-grid row changes.
+        ///
+        /// This ensures that the grid toolbar button is enabled or disabled
+        /// immediately when the user selects a different vendor row.
+        /// </summary>
+        protected virtual void _(
+            Events.RowSelected<POVendorInventory> e)
+        {
+            UpdateCalculateVendorQuoteState(
+                Base.Item.Current,
+                e.Row);
+        }
+
+        /// <summary>
+        /// Calculates and applies the visible and enabled state of the
+        /// Calculate Vendor Quote PXAction.
+        ///
+        /// A Vendors-grid toolbar button bound directly to this action
+        /// automatically receives the resulting action state.
+        /// </summary>
+        private void UpdateCalculateVendorQuoteState(
+            InventoryItem item,
+            POVendorInventory vendorRow)
+        {
             bool hasCurrentItem =
-                e.Row?.InventoryID != null;
+                item?.InventoryID != null;
 
             bool isSilverItem =
                 IsSilverItem(
-                    e.Row);
-
-            POVendorInventory vendorRow =
-                GetSelectedVendorRow();
+                    item);
 
             bool hasPersistedSelectedVendor =
                 IsPersistedVendorRow(
@@ -209,22 +238,21 @@ namespace iStarCostCalculationExtensions
                 actionAvailable);
 
             /*
-             * The PXAction must remain visible for Silver items so
-             * the separately injected runtime button can invoke it.
+             * Keep the action visible only for Silver items.
              *
-             * InventoryItemMaintVendorQuoteButtonExt hides only the
-             * standard toolbar presentation in the browser.
+             * The Vendors-grid toolbar button is bound directly to this
+             * PXAction and automatically receives its enabled and visible state.
              */
             CalculateVendorQuote.SetVisible(
                 isSilverItem);
 
             PXTrace.WriteInformation(
                 $"{TracePrefix} Action state evaluated. " +
-                $"InventoryID={e.Row?.InventoryID}, " +
-                $"CommodityType={GetCommodityType(e.Row) ?? "<null>"}, " +
+                $"InventoryID={item?.InventoryID}, " +
+                $"CommodityType={GetCommodityType(item) ?? "<null>"}, " +
                 $"IsSilver={isSilverItem}, " +
                 $"HasPersistedSelectedVendor={hasPersistedSelectedVendor}, " +
-                $"SelectedVendorRecordID={vendorRow?.RecordID}, " +
+                $"SelectedVendorID={vendorRow?.VendorID}, " +
                 $"SelectedVendorRecordID={vendorRow?.RecordID}, " +
                 $"AllowUpdate={Base.Item.Cache.AllowUpdate}, " +
                 $"Enabled={actionAvailable}.");
@@ -338,6 +366,7 @@ namespace iStarCostCalculationExtensions
         #endregion
 
         #region Vendor Selection
+
         /// <summary>
         /// Returns true only after the vendor row has been persisted
         /// to the database.
