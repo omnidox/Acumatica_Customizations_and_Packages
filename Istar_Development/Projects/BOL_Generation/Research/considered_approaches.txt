@@ -1,0 +1,23 @@
+ok, let's re-evaluate / consider the research done thus far. It seems we have the following mix of approaches. Are the approaches comprehensive or are there some i have not mentioned? 
+
+
+
+
+
+approach 1: create a third party application that prompts for multiple shipments or order #'s in order to generate the filled pdf's based on templates.
+
+Approach 2: Let Acumatica handle the above internally
+
+Approach 3: Hybrid of the two above, where acumatica sends information to third part, third party processes it and uses it to generate the filled pdf's based on templates.
+
+
+I'm thinking we can start with approach 1 as a stand alone approach, and once that is implemented, we can try approach 3. 
+
+
+Then once we have the data, in order to add the data to template, we can do so in one of three approaches below. 
+
+approach 1: use the excel template and LibreOffice Headless to generate the relevant pdf files
+
+approach 2: use html/pdf/jinja/pikedpf to generate the relevant pdf files
+
+approach 3: use report designer/templates to generate the relevant pdf files
