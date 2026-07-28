@@ -680,12 +680,12 @@
 
                                 <AutoSize Enabled="True" />
 
-                                <ActionBar CustomItemsGroup="2">
+                                <ActionBar>
                                     <CustomItems>
                                         <px:PXToolBarButton Key="CalculateVendorQuoteGrid" Text="Calc"
-                                            Tooltip="Calculate Vendor Quote" CommandSourceID="ds"
-                                            CommandName="CalculateVendorQuote" DependOnGrid="PXGridVendorItems"
-                                            SyncText="False" AllowHide="False" />
+                                            Tooltip="Calc" AllowHide="False" SyncText="False"
+                                            CommandSourceID="ds" CommandName="CalculateVendorQuote"
+                                            DependOnGrid="PXGridVendorItems" />
                                     </CustomItems>
                                 </ActionBar>
 
