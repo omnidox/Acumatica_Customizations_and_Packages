@@ -17,17 +17,28 @@ async function populateTemplate(outputExcelPath) {
     throw new Error('Worksheet "BOL" was not found.');
   }
 
-  // Replace these with the actual cells from the template.
-  worksheet.getCell("F4").value = "MBOL-TEST-000001";
-  worksheet.getCell("F5").value = "BOL-TEST-000001";
-  worksheet.getCell("F6").value = "LOAD-123456";
-  worksheet.getCell("B10").value = "CUSTOMER-ORDER-98765";
-  worksheet.getCell("F10").value = new Date("2026-07-27");
-  worksheet.getCell("B14").value = "Test Transportation Company";
-  worksheet.getCell("F14").value = "TEST";
-  worksheet.getCell("B26").value = 120;
-  worksheet.getCell("D26").value = 6;
-  worksheet.getCell("F26").value = 2450.75;
+  // Carrier information (right side, rows 7-11)
+  worksheet.getCell("K7").value = "XPO Logistics";        // Carrier name
+  worksheet.getCell("K8").value = "TRL-2025-000001";      // Trailer number
+  worksheet.getCell("K9").value = "SL-98765";             // Seal number
+  worksheet.getCell("J10").value = "XPOL";                // SCAC
+  worksheet.getCell("K11").value = "PRO-2025-123456";     // Pro number
+
+  // Third party freight charges bill to (rows 13-15)
+  worksheet.getCell("B13").value = "Test Transportation Company";
+  worksheet.getCell("B14").value = "456 Commerce Drive, Suite 200";
+  worksheet.getCell("B15").value = "Atlanta, GA 30303";
+
+  // Special instructions / Target Load ID (row 16)
+  worksheet.getCell("F16").value = "LOAD-123456";
+
+  // Customer order info (data rows start at 22)
+  worksheet.getCell("A22").value = "CUSTOMER-ORDER-98765";
+  worksheet.getCell("E22").value = 120;        // # PKGS
+  worksheet.getCell("F22").value = 2450.75;    // WEIGHT
+  worksheet.getCell("G22").value = 2450.75;    // WEIGHT (duplicate col)
+  worksheet.getCell("H22").value = "Y";        // Pallet Y/N
+  worksheet.getCell("I22").value = "Pallet";
 
   await workbook.xlsx.writeFile(outputExcelPath);
 }
