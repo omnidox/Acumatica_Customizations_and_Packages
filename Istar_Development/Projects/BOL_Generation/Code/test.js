@@ -17,6 +17,31 @@ async function populateTemplate(outputExcelPath) {
     throw new Error('Worksheet "BOL" was not found.');
   }
 
+  // ---------------------------------------------------------
+  // PDF / PRINT CONFIGURATION
+  // ---------------------------------------------------------
+  worksheet.pageSetup = {
+    paperSize: 1, // US Letter (8.5 x 11 inches)
+    orientation: "portrait",
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 1,
+    horizontalCentered: true,
+    verticalCentered: false,
+    margins: {
+      left: 0.2,
+      right: 0.2,
+      top: 0.2,
+      bottom: 0.2,
+      header: 0,
+      footer: 0,
+    },
+  };
+  worksheet.pageSetup.printArea = "A1:M49";
+
+  // ---------------------------------------------------------
+  // FIELD POPULATION
+  // ---------------------------------------------------------
   // Carrier information (right side, rows 7-11)
   worksheet.getCell("K7").value = "XPO Logistics";        // Carrier name
   worksheet.getCell("K8").value = "TRL-2025-000001";      // Trailer number
@@ -39,6 +64,14 @@ async function populateTemplate(outputExcelPath) {
   worksheet.getCell("G22").value = 2450.75;    // WEIGHT (duplicate col)
   worksheet.getCell("H22").value = "Y";        // Pallet Y/N
   worksheet.getCell("I22").value = "Pallet";
+
+  // ---------------------------------------------------------
+  // HIDE UNUSED SHEETS
+  // ---------------------------------------------------------
+  // Only show the BOL sheet in the PDF; hide all others
+  for (const sheet of workbook.worksheets) {
+    sheet.state = sheet.name === "BOL" ? "visible" : "hidden";
+  }
 
   await workbook.xlsx.writeFile(outputExcelPath);
 }
