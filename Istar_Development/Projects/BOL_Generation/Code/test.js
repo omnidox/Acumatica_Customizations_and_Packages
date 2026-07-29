@@ -11,7 +11,7 @@ async function populateTemplate(outputExcelPath) {
 
   await workbook.xlsx.readFile(TEMPLATE_PATH);
 
-  const worksheet = workbook.getWorksheet("BOL");
+  const worksheet = workbook.getWorksheet("MasterBOL");
 
   if (!worksheet) {
     throw new Error('Worksheet "BOL" was not found.');

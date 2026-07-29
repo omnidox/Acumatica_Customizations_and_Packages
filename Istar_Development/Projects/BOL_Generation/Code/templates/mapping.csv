@@ -1,0 +1,15 @@
+Field_Name	Location_In_BOL_Template_to_input	Source	Source_field
+Targer Load ID #			
+Master Bill Of Lading Number			
+Carrier Name			
+SCAC			
+Pro Number			
+Customer_order_number_master_Bol_Range	[BOL_Template.xlsx]MasterBOL!A22:A29		"Target Original Values PO 10001971908.csv'!A2 & ""-"" & TEXT('Target Original Values PO 10001971908.csv'!M2,""0000"") first eight values"
+# PKGS_master_BOL_Range	[BOL_Template.xlsx]MasterBOL!E22:E29		
+WEIGHT_master_Bol_Range	[BOL_Template.xlsx]MasterBOL!F22:F29		
+Grand Total # PKGS	[BOL_Template.xlsx]MasterBOL!E30	calculation	SUM(MasterBOL!E22:E29Supplemental_Master_BOL!E5:E25)
+Grand Total Weight	[BOL_Template.xlsx]MasterBOL!F30	calculation	SUM(MasterBOL!F22:F29Supplemental_Master_BOL!F5:F25)
+carrier_package_qty	[BOL_Template.xlsx]MasterBOL!C34	[BOL_Template.xlsx]MasterBOL!$E$30	MasterBOL!E30
+carrier_weight	[BOL_Template.xlsx]MasterBOL!E34	[BOL_Template.xlsx]MasterBOL!$F$30	MasterBOL!F30
+carrier_package_qty_total	[BOL_Template.xlsx]MasterBOL!$C$42	calculation	SUM([BOL_Template.xlsx]MasterBOL!$C$35:$C$41)
+carrier_weight_total	[BOL_Template.xlsx]MasterBOL!$E$42	calculation	SUM([BOL_Template.xlsx]MasterBOL!$E$35:$E$41)
