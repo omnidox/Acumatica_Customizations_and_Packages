@@ -216,7 +216,7 @@ function enrichOrderData(csvRow, apiData) {
     customerOrderNbr,
     bolNumber: apiData.BOLNumber || "No BOL # found",
     cartons: parseInt(csvRow["Cartons"], 10),
-    weight: apiData.ShippedWeight ?? parseFloat(csvRow["Weight"]),
+    weight: Math.round(apiData.ShippedWeight ?? parseFloat(csvRow["Weight"])),
     loadNumber: csvRow["Load Number"],
     scac: csvRow["Assigned SCAC"],
     proNumber: csvRow["PRO"],
