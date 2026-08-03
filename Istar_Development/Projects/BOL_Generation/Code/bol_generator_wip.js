@@ -4,12 +4,36 @@ import { spawn } from "node:child_process";
 import ExcelJS from "exceljs";
 import { createReadStream } from "node:fs";
 import { parse } from "csv-parse";
+import "dotenv/config";
 
-const TEMPLATE_PATH = path.resolve("templates/BOL_Template.xlsx");
-const CSV_PATH = path.resolve("data/Target Original Values PO 10001971908.csv");
-const OUTPUT_DIRECTORY = path.resolve("output");
-const ACUMATICA_BASE_URL = "http://localhost:8888/AcumaticaERP";
+const TEMPLATE_PATH = path.resolve(process.env.BOL_TEMPLATE_PATH || "templates/BOL_Template.xlsx");
+const CSV_PATH = path.resolve(process.env.BOL_CSV_INPUT_PATH || "data/Target Original Values PO 10001971908.csv");
+const OUTPUT_DIRECTORY = path.resolve(process.env.BOL_OUTPUT_DIRECTORY || "output");
+const LIBREOFFICE_PATH = process.env.LIBREOFFICE_PATH || "libreoffice";
+
+const ACUMATICA_BASE_URL = requireEnv("ACUMATICA_BASE_URL");
+const ACUMATICA_USERNAME = requireEnv("ACUMATICA_USERNAME");
+const ACUMATICA_PASSWORD = requireEnv("ACUMATICA_PASSWORD");
+const ACUMATICA_COMPANY = process.env.ACUMATICA_COMPANY || "";
+
+const ACUMATICA_LOGIN_ENDPOINT = `${ACUMATICA_BASE_URL}/entity/auth/login`;
+const ACUMATICA_LOGOUT_ENDPOINT = `${ACUMATICA_BASE_URL}/entity/auth/logout`;
 const ACUMATICA_ENDPOINT = `${ACUMATICA_BASE_URL}/entity/iStarBOL/25.200.001/BOLShipmentInquiry?$expand=BOLShipmentInquiryDetails`;
+
+/**
+ * Reads a required environment variable or throws a clear error.
+ * @param {string} name
+ * @returns {string}
+ */
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `Missing required environment variable: ${name}. Check your .env file.`,
+    );
+  }
+  return value;
+}
 
 // ============================================================================
 // DATA LOADING & PARSING
@@ -42,19 +66,75 @@ async function loadCsvData(csvPath) {
 }
 
 /**
+ * Logs into Acumatica using username/password and returns the session cookie
+ * to attach to subsequent requests.
+ * @returns {Promise<string>} Cookie header value (e.g. ".ASPXAUTH=...; ...")
+ */
+async function acumaticaLogin() {
+  const response = await fetch(ACUMATICA_LOGIN_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      name: ACUMATICA_USERNAME,
+      password: ACUMATICA_PASSWORD,
+      ...(ACUMATICA_COMPANY ? { company: ACUMATICA_COMPANY } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    const bodyText = await response.text().catch(() => "");
+    throw new Error(
+      `Acumatica login failed: ${response.status} ${response.statusText}\n${bodyText}`,
+    );
+  }
+
+  const setCookieHeader = response.headers.get("set-cookie");
+  if (!setCookieHeader) {
+    throw new Error("Acumatica login succeeded but no session cookie was returned.");
+  }
+
+  // Node's fetch may combine multiple Set-Cookie values with a comma; split and
+  // keep only the "name=value" portion of each cookie for the outgoing header.
+  const cookiePairs = setCookieHeader
+    .split(/,(?=[^;]+?=)/)
+    .map((c) => c.split(";")[0].trim())
+    .filter(Boolean);
+
+  return cookiePairs.join("; ");
+}
+
+/**
+ * Logs out of the Acumatica session (best-effort cleanup).
+ * @param {string} sessionCookie
+ */
+async function acumaticaLogout(sessionCookie) {
+  try {
+    await fetch(ACUMATICA_LOGOUT_ENDPOINT, {
+      method: "POST",
+      headers: { Cookie: sessionCookie },
+    });
+  } catch {
+    // Non-fatal; session will expire on its own.
+  }
+}
+
+/**
  * Calls the Acumatica BOLShipmentInquiry API for a given customer order number.
  * Endpoint/contract: BOL_Generator_API_Contract_v0.1.md
  * @param {string} customerOrderNbr - e.g. "10001971908-3811"
- * @param {Object} [authHeaders] - Optional auth headers (cookie/session or bearer token)
+ * @param {string} sessionCookie - Cookie header value from acumaticaLogin()
  * @returns {Promise<Object>} Flattened shipment detail fields
  */
-async function fetchAcumaticaShipmentData(customerOrderNbr, authHeaders = {}) {
+async function fetchAcumaticaShipmentData(customerOrderNbr, sessionCookie) {
   const response = await fetch(ACUMATICA_ENDPOINT, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
-      ...authHeaders,
+      Cookie: sessionCookie,
     },
     body: JSON.stringify({
       Customer_order_NBR: {
@@ -341,7 +421,7 @@ function populateSupplementalBOLs(workbook, orders) {
 async function convertToPdf(excelPath, outputDirectory) {
   return new Promise((resolve, reject) => {
     const proc = spawn(
-      "libreoffice",
+      LIBREOFFICE_PATH,
       [
         "--headless",
         "--nologo",
@@ -410,12 +490,20 @@ async function main() {
     const csvRecords = await loadCsvData(CSV_PATH);
     console.log(`Loaded ${csvRecords.length} orders from CSV`);
 
-    console.log("Fetching Acumatica data for each order...");
-    const enrichedOrders = [];
-    for (const csvRow of csvRecords) {
-      const customerOrderNbr = `${csvRow["Purchase Order Number"]}-${String(csvRow["Destination"]).padStart(4, "0")}`;
-      const apiData = await fetchAcumaticaShipmentData(customerOrderNbr);
-      enrichedOrders.push(enrichOrderData(csvRow, apiData));
+    console.log("Logging into Acumatica...");
+    const sessionCookie = await acumaticaLogin();
+
+    let enrichedOrders;
+    try {
+      console.log("Fetching Acumatica data for each order...");
+      enrichedOrders = [];
+      for (const csvRow of csvRecords) {
+        const customerOrderNbr = `${csvRow["Purchase Order Number"]}-${String(csvRow["Destination"]).padStart(4, "0")}`;
+        const apiData = await fetchAcumaticaShipmentData(customerOrderNbr, sessionCookie);
+        enrichedOrders.push(enrichOrderData(csvRow, apiData));
+      }
+    } finally {
+      await acumaticaLogout(sessionCookie);
     }
 
     console.log("Loading Excel template...");
