@@ -7,9 +7,35 @@ import { parse } from "csv-parse";
 import "dotenv/config";
 
 const TEMPLATE_PATH = path.resolve(process.env.BOL_TEMPLATE_PATH || "templates/BOL_Template.xlsx");
-const CSV_PATH = path.resolve(process.env.BOL_CSV_INPUT_PATH || "data/Target Original Values PO 10001971908.csv");
 const OUTPUT_DIRECTORY = path.resolve(process.env.BOL_OUTPUT_DIRECTORY || "output");
 const LIBREOFFICE_PATH = process.env.LIBREOFFICE_PATH || "libreoffice";
+
+/**
+ * Resolves the CSV input path from the command line, falling back to .env.
+ * Supports:
+ *   node bol_generator_wip.js "path/to/file.csv"
+ *   node bol_generator_wip.js --csv "path/to/file.csv"
+ * @returns {string} Absolute path to the CSV file
+ */
+function resolveCsvPath() {
+  const args = process.argv.slice(2);
+
+  const flagIndex = args.indexOf("--csv");
+  const flagValue = flagIndex !== -1 ? args[flagIndex + 1] : null;
+  const positionalValue = args.find((arg) => !arg.startsWith("--"));
+
+  const csvPath = flagValue || positionalValue || process.env.BOL_CSV_INPUT_PATH;
+
+  if (!csvPath) {
+    throw new Error(
+      "No CSV input provided. Pass it as an argument " +
+        '(node bol_generator_wip.js "path/to/file.csv" or --csv "path/to/file.csv") ' +
+        "or set BOL_CSV_INPUT_PATH in .env.",
+    );
+  }
+
+  return path.resolve(csvPath);
+}
 
 const ACUMATICA_BASE_URL = requireEnv("ACUMATICA_BASE_URL");
 const ACUMATICA_USERNAME = requireEnv("ACUMATICA_USERNAME");
@@ -486,24 +512,37 @@ async function main() {
 
     await fs.mkdir(OUTPUT_DIRECTORY, { recursive: true });
 
-    console.log("Loading CSV data...");
-    const csvRecords = await loadCsvData(CSV_PATH);
+    const csvPath = resolveCsvPath();
+    console.log(`Loading CSV data from ${csvPath}...`);
+    const csvRecords = await loadCsvData(csvPath);
     console.log(`Loaded ${csvRecords.length} orders from CSV`);
 
     console.log("Logging into Acumatica...");
     const sessionCookie = await acumaticaLogin();
 
     let enrichedOrders;
+    const skippedOrders = [];
     try {
       console.log("Fetching Acumatica data for each order...");
       enrichedOrders = [];
       for (const csvRow of csvRecords) {
         const customerOrderNbr = `${csvRow["Purchase Order Number"]}-${String(csvRow["Destination"]).padStart(4, "0")}`;
-        const apiData = await fetchAcumaticaShipmentData(customerOrderNbr, sessionCookie);
-        enrichedOrders.push(enrichOrderData(csvRow, apiData));
+        try {
+          const apiData = await fetchAcumaticaShipmentData(customerOrderNbr, sessionCookie);
+          enrichedOrders.push(enrichOrderData(csvRow, apiData));
+        } catch (orderError) {
+          console.warn(`  Skipping order ${customerOrderNbr}: ${orderError.message}`);
+          skippedOrders.push({ customerOrderNbr, reason: orderError.message });
+        }
       }
     } finally {
       await acumaticaLogout(sessionCookie);
+    }
+
+    console.log(`Resolved ${enrichedOrders.length} of ${csvRecords.length} orders (${skippedOrders.length} skipped).`);
+
+    if (enrichedOrders.length === 0) {
+      throw new Error("No orders could be resolved via Acumatica; nothing to generate.");
     }
 
     console.log("Loading Excel template...");
@@ -540,6 +579,13 @@ async function main() {
     console.log("\nBOL generation complete!");
     console.log(`Excel: ${outputExcelPath}`);
     console.log(`PDF: ${pdfResult.pdfPath}`);
+    console.log(`Orders included: ${enrichedOrders.length} of ${csvRecords.length}`);
+    if (skippedOrders.length > 0) {
+      console.log(`\nSkipped orders (${skippedOrders.length}):`);
+      for (const { customerOrderNbr, reason } of skippedOrders) {
+        console.log(`  - ${customerOrderNbr}: ${reason}`);
+      }
+    }
   } catch (error) {
     console.error("Error during BOL generation:", error.message);
     console.error(error);
