@@ -305,6 +305,54 @@ function generateUniqueSheetName(workbook, baseLabel) {
 }
 
 /**
+ * Clones a worksheet's layout (columns, rows, cell values/styles, merged
+ * cells, page setup) into a new worksheet. exceljs has no built-in "clone"
+ * API, so this copies everything by hand.
+ * @param {ExcelJS.Workbook} workbook
+ * @param {string} sourceSheetName - Name of the sheet to clone from
+ * @param {string} newSheetName - Name for the new sheet
+ * @returns {ExcelJS.Worksheet}
+ */
+function cloneWorksheet(workbook, sourceSheetName, newSheetName) {
+  const sourceSheet = workbook.getWorksheet(sourceSheetName);
+  if (!sourceSheet) {
+    throw new Error(`Cannot clone: source sheet "${sourceSheetName}" not found`);
+  }
+
+  const newSheet = workbook.addWorksheet(newSheetName, {
+    properties: { ...sourceSheet.properties },
+    pageSetup: { ...sourceSheet.pageSetup },
+    views: sourceSheet.views,
+  });
+
+  // Copy column widths/styles
+  newSheet.columns = sourceSheet.columns.map((col) => ({
+    width: col.width,
+    style: col.style,
+  }));
+
+  // Copy every row: values, styles, and height
+  sourceSheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+    const newRow = newSheet.getRow(rowNumber);
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      const newCell = newRow.getCell(colNumber);
+      newCell.value = cell.value;
+      newCell.style = cell.style;
+    });
+    newRow.height = row.height;
+    newRow.commit();
+  });
+
+  // Copy merged cell ranges
+  const merges = sourceSheet.model.merges || [];
+  merges.forEach((range) => {
+    newSheet.mergeCells(range);
+  });
+
+  return newSheet;
+}
+
+/**
  * Populates the MasterBOL sheet with the first 8 orders (rows 22-29).
  * Returns overflow orders for Supplemental_Master_BOL.
  * @param {ExcelJS.Worksheet} worksheet - MasterBOL sheet
@@ -377,8 +425,11 @@ function populateSupplementalMasterBOLs(workbook, orders) {
     if (iterationNum === 1) {
       sheet = workbook.getWorksheet("Supplemental_Master_BOL");
     } else {
-      // TODO: clone formatting/merged cells from the template sheet properly
-      sheet = workbook.addWorksheet(`Supplemental_Master_BOL_${iterationNum}`);
+      sheet = cloneWorksheet(
+        workbook,
+        "Supplemental_Master_BOL",
+        `Supp_Master_BOL_${iterationNum}`,
+      );
     }
 
     if (!sheet) {
@@ -424,9 +475,8 @@ function populateSupplementalBOLs(workbook, orders) {
       throw new Error("Supplemental_BOL template sheet not found");
     }
 
-    // TODO: clone formatting/merged cells from the template sheet properly
     const sheetName = generateUniqueSheetName(workbook, order.customerOrderNbr);
-    const newSheet = workbook.addWorksheet(sheetName);
+    const newSheet = cloneWorksheet(workbook, "Supplemental_BOL", sheetName);
 
     newSheet.getCell("B1").value = formatSystemDate();
 
@@ -555,7 +605,27 @@ async function main() {
         const customerOrderNbr = `${csvRow["Purchase Order Number"]}-${String(csvRow["Destination"]).padStart(4, "0")}`;
         try {
           const apiData = await fetchAcumaticaShipmentData(customerOrderNbr, sessionCookie);
-          enrichedOrders.push(enrichOrderData(csvRow, apiData));
+          console.log(`\n--- Raw Acumatica response for ${customerOrderNbr} ---`);
+          console.log(JSON.stringify(apiData, null, 2));
+
+          const enriched = enrichOrderData(csvRow, apiData);
+          console.log(`--- Enriched fields for ${customerOrderNbr} ---`);
+          console.log({
+            bolNumber: enriched.bolNumber,
+            shipToName: enriched.shipToName,
+            shipToAddress: enriched.shipToAddress,
+            shipToCity: enriched.shipToCity,
+            shipToState: enriched.shipToState,
+            shipToZip: enriched.shipToZip,
+            shipVia: enriched.shipVia,
+            scac: enriched.scac,
+            proNumber: enriched.proNumber,
+            loadNumber: enriched.loadNumber,
+            cartons: enriched.cartons,
+            weight: enriched.weight,
+          });
+
+          enrichedOrders.push(enriched);
         } catch (orderError) {
           console.warn(`  Skipping order ${customerOrderNbr}: ${orderError.message}`);
           skippedOrders.push({ customerOrderNbr, reason: orderError.message });
