@@ -1,0 +1,728 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "iStarBOL/25.200.001",
+    "version": "4"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8888/AcumaticaERP/entity/iStarBOL/25.200.001"
+    }
+  ],
+  "paths": {
+
+
+"/BOLShipmentInquiry/{actionName}": {
+    "post": {
+        "tags": [
+            "BOLShipmentInquiry"
+        ],
+        "summary": "Performs an action in the system.",
+        "operationId": "BOLShipmentInquiry_InvokeAction_CustomAction",
+        "parameters": [
+            {
+                "$ref": "#/components/parameters/actionName"
+            }
+        ],
+        "requestBody": {
+            "description": "The record to which the action should be applied and the parameters of the action.",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/BOLShipmentInquiryCustomAction"
+                    }
+                },
+                "text/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/BOLShipmentInquiryCustomAction"
+                    }
+                }
+            },
+            "required": true,
+            "x-bodyName": "invocation"
+        },
+        "responses": {
+            "401": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_401"
+            },
+            "500": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_500"
+            },
+            "204": {
+                "$ref": "#/components/responses/InvokeAction_204"
+            },
+            "202": {
+                "$ref": "#/components/responses/InvokeAction_202"
+            },
+            "400": {
+                "$ref": "#/components/responses/InvokeAction_400"
+            },
+            "412": {
+                "$ref": "#/components/responses/InvokeAction_412"
+            },
+            "422": {
+                "description": "The data specified in the request is invalid.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    },
+                    "text/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    }
+                }
+            },
+            "409": {
+                "$ref": "#/components/responses/InvokeAction_409"
+            }
+        }
+    }
+},
+"/BOLShipmentInquiry/$adHocSchema": {
+    "get": {
+        "tags": [
+            "BOLShipmentInquiry"
+        ],
+        "summary": "Retrieves the schema of custom fields and workflow actions of the entity from the system.",
+        "operationId": "BOLShipmentInquiry_GetAdHocSchema",
+        "responses": {
+            "409": {
+                "$ref": "#/components/responses/EntityController_409"
+            },
+            "401": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_401"
+            },
+            "500": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_500"
+            },
+            "200": {
+                "description": "The field name, field type, view name, action name, and parameter names and types for fields and workflow actions that are not defined in the contract of the endpoint for this entity.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    },
+                    "text/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    }
+                }
+            }
+        }
+    }
+},
+"/BOLShipmentInquiry/{ids}": {
+    "get": {
+        "tags": [
+            "BOLShipmentInquiry"
+        ],
+        "summary": "Retrieves a record by the values of its key fields from the system.",
+        "operationId": "BOLShipmentInquiry_GetByKeys",
+        "parameters": [
+            {
+                "$ref": "#/components/parameters/ids"
+            },
+            {
+                "$ref": "#/components/parameters/select"
+            },
+            {
+                "$ref": "#/components/parameters/filter"
+            },
+            {
+                "$ref": "#/components/parameters/expand"
+            },
+            {
+                "$ref": "#/components/parameters/custom"
+            }
+        ],
+        "responses": {
+            "409": {
+                "$ref": "#/components/responses/EntityController_409"
+            },
+            "401": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_401"
+            },
+            "500": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_500"
+            },
+            "200": {
+                "description": "The requested record.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    },
+                    "text/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "delete": {
+        "tags": [
+            "BOLShipmentInquiry"
+        ],
+        "summary": "Deletes the record by the values of its key fields.",
+        "operationId": "BOLShipmentInquiry_DeleteByKeys",
+        "parameters": [
+            {
+                "$ref": "#/components/parameters/ids"
+            }
+        ],
+        "responses": {
+            "409": {
+                "$ref": "#/components/responses/EntityController_409"
+            },
+            "401": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_401"
+            },
+            "500": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_500"
+            },
+            "204": {
+                "$ref": "#/components/responses/DeleteByKeys_204"
+            }
+        }
+    }
+},
+"/BOLShipmentInquiry/{ids}/files/{filename}": {
+    "put": {
+        "tags": [
+            "BOLShipmentInquiry"
+        ],
+        "summary": "Attaches a file to a record.",
+        "operationId": "BOLShipmentInquiry_PutFile",
+        "parameters": [
+            {
+                "$ref": "#/components/parameters/ids"
+            },
+            {
+                "$ref": "#/components/parameters/filename"
+            }
+        ],
+        "responses": {
+            "409": {
+                "$ref": "#/components/responses/EntityController_409"
+            },
+            "401": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_401"
+            },
+            "500": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_500"
+            },
+            "204": {
+                "$ref": "#/components/responses/PutFile_204"
+            }
+        }
+    }
+},
+"/BOLShipmentInquiry/{id}": {
+    "get": {
+        "tags": [
+            "BOLShipmentInquiry"
+        ],
+        "summary": "Retrieves a record by the value of the session entity ID from the system.",
+        "operationId": "BOLShipmentInquiry_GetById",
+        "parameters": [
+            {
+                "$ref": "#/components/parameters/id"
+            },
+            {
+                "$ref": "#/components/parameters/select"
+            },
+            {
+                "$ref": "#/components/parameters/filter"
+            },
+            {
+                "$ref": "#/components/parameters/expand"
+            },
+            {
+                "$ref": "#/components/parameters/custom"
+            }
+        ],
+        "responses": {
+            "409": {
+                "$ref": "#/components/responses/EntityController_409"
+            },
+            "401": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_401"
+            },
+            "500": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_500"
+            },
+            "200": {
+                "description": "The requested record.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    },
+                    "text/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "delete": {
+        "tags": [
+            "BOLShipmentInquiry"
+        ],
+        "summary": "Deletes the record by its session identifier.",
+        "operationId": "BOLShipmentInquiry_DeleteById",
+        "parameters": [
+            {
+                "$ref": "#/components/parameters/id"
+            }
+        ],
+        "responses": {
+            "409": {
+                "$ref": "#/components/responses/EntityController_409"
+            },
+            "401": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_401"
+            },
+            "500": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_500"
+            },
+            "204": {
+                "$ref": "#/components/responses/DeleteById_204"
+            }
+        }
+    }
+},
+"/BOLShipmentInquiry": {
+    "get": {
+        "tags": [
+            "BOLShipmentInquiry"
+        ],
+        "summary": "Retrieves records that satisfy the specified conditions from the system.",
+        "operationId": "BOLShipmentInquiry_GetList",
+        "parameters": [
+            {
+                "$ref": "#/components/parameters/select"
+            },
+            {
+                "$ref": "#/components/parameters/filter"
+            },
+            {
+                "$ref": "#/components/parameters/expand"
+            },
+            {
+                "$ref": "#/components/parameters/custom"
+            },
+            {
+                "$ref": "#/components/parameters/skip"
+            },
+            {
+                "$ref": "#/components/parameters/top"
+            }
+        ],
+        "responses": {
+            "409": {
+                "$ref": "#/components/responses/EntityController_409"
+            },
+            "401": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_401"
+            },
+            "500": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_500"
+            },
+            "200": {
+                "description": "The list of records that satisfy the specified conditions.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/BOLShipmentInquiry"
+                            }
+                        }
+                    },
+                    "text/json": {
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/BOLShipmentInquiry"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "put": {
+        "tags": [
+            "BOLShipmentInquiry"
+        ],
+        "summary": "Creates a record or updates an existing record.",
+        "operationId": "BOLShipmentInquiry_PutEntity",
+        "parameters": [
+            {
+                "$ref": "#/components/parameters/select"
+            },
+            {
+                "$ref": "#/components/parameters/filter"
+            },
+            {
+                "$ref": "#/components/parameters/expand"
+            },
+            {
+                "$ref": "#/components/parameters/custom"
+            }
+        ],
+        "requestBody": {
+            "description": "The record to be passed to the system.",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/BOLShipmentInquiry"
+                    }
+                },
+                "text/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/BOLShipmentInquiry"
+                    }
+                }
+            },
+            "required": true,
+            "x-bodyName": "entity"
+        },
+        "responses": {
+            "409": {
+                "$ref": "#/components/responses/EntityController_409"
+            },
+            "401": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_401"
+            },
+            "500": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_500"
+            },
+            "200": {
+                "description": "The created or updated record.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    },
+                    "text/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    }
+                }
+            },
+            "400": {
+                "$ref": "#/components/responses/PutEntity_400"
+            },
+            "412": {
+                "$ref": "#/components/responses/PutEntity_412"
+            },
+            "422": {
+                "description": "The data specified in the request is invalid.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    },
+                    "text/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "patch": {
+        "tags": [
+            "BOLShipmentInquiry"
+        ],
+        "summary": "Updates the fields of an existing record that are specified in the request body.",
+        "operationId": "BOLShipmentInquiry_PatchEntity",
+        "parameters": [
+            {
+                "$ref": "#/components/parameters/select"
+            },
+            {
+                "$ref": "#/components/parameters/filter"
+            },
+            {
+                "$ref": "#/components/parameters/expand"
+            },
+            {
+                "$ref": "#/components/parameters/custom"
+            }
+        ],
+        "requestBody": {
+            "description": "The record to be updated in the system.",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/BOLShipmentInquiry"
+                    }
+                },
+                "text/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/BOLShipmentInquiry"
+                    }
+                }
+            },
+            "required": true,
+            "x-bodyName": "entity"
+        },
+        "responses": {
+            "409": {
+                "$ref": "#/components/responses/EntityController_409"
+            },
+            "401": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_401"
+            },
+            "500": {
+                "$ref": "#/components/responses/ContractBasedControllerBase_500"
+            },
+            "200": {
+                "description": "The updated record.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    },
+                    "text/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    }
+                }
+            },
+            "400": {
+                "$ref": "#/components/responses/PatchEntity_400"
+            },
+            "412": {
+                "$ref": "#/components/responses/PatchEntity_412"
+            },
+            "404": {
+                "$ref": "#/components/responses/PatchEntity_404"
+            },
+            "422": {
+                "description": "The data specified in the request is invalid.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    },
+                    "text/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BOLShipmentInquiry"
+                        }
+                    }
+                }
+            }
+        }
+    }
+},
+"BOLShipmentInquiry": {
+    "allOf": [
+        {
+            "$ref": "#/components/schemas/Entity"
+        },
+        {
+            "type": "object",
+            "properties": {
+                "Customer_order_NBR": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "BOLShipmentInquiryDetails": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/components/schemas/BOLShipmentInquiryDetail"
+                    }
+                },
+                "_workflowActions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/components/schemas/BOLShipmentInquiryCustomAction"
+                    }
+                }
+            }
+        }
+    ]
+},
+"BOLShipmentInquiryCustomAction": {
+    "required": [
+        "entity"
+    ],
+    "type": "object",
+    "properties": {
+        "entity": {
+            "$ref": "#/components/schemas/BOLShipmentInquiry"
+        },
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "custom": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/CustomField"
+                        }
+                    }
+                }
+            },
+            "description": "The parameters of the action."
+        }
+    }
+},
+"BOLShipmentInquiryDetail": {
+    "allOf": [
+        {
+            "$ref": "#/components/schemas/Entity"
+        },
+        {
+            "type": "object",
+            "properties": {
+                "ShipmentNbr": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "Type": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "Status": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "CustomerOrderNbr": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "Customer": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "ShipmentDate": {
+                    "$ref": "#/components/schemas/DateTimeValue"
+                },
+                "WarehouseID": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "ShipVia": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "Description": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "ShippedQuantity": {
+                    "$ref": "#/components/schemas/DecimalValue"
+                },
+                "ShippedWeight": {
+                    "$ref": "#/components/schemas/DecimalValue"
+                },
+                "ShippedVolume": {
+                    "$ref": "#/components/schemas/DecimalValue"
+                },
+                "Packages": {
+                    "$ref": "#/components/schemas/IntValue"
+                },
+                "AddressLine1": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "AddressLine2": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "AddressLine3": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "City": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "State": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "PostalCode": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "Country": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "CustomerName": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "Location": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "LocationName": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "UserDefinedField3": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "Operation": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "ToWarehouse": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "PackageWeight": {
+                    "$ref": "#/components/schemas/DecimalValue"
+                },
+                "Owner": {
+                    "$ref": "#/components/schemas/IntValue"
+                },
+                "FOBPoint": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "ShippingTerms": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "ShippingZoneID": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "FreightCost": {
+                    "$ref": "#/components/schemas/DecimalValue"
+                },
+                "FreightPrice": {
+                    "$ref": "#/components/schemas/DecimalValue"
+                },
+                "FreightCurrency": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "Branch": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "BranchName": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "CreatedBy": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "CreatedOn": {
+                    "$ref": "#/components/schemas/DateTimeValue"
+                },
+                "LastModifiedBy": {
+                    "$ref": "#/components/schemas/StringValue"
+                },
+                "LastModifiedOn": {
+                    "$ref": "#/components/schemas/DateTimeValue"
+                }
+            }
+        }
+    ]
+},
+{
+    "name": "BOLShipmentInquiry",
+    "description": "BOL Shipment Lookup (GI990407)"
+},

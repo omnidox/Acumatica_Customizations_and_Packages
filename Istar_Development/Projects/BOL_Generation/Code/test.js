@@ -14,7 +14,7 @@ async function populateTemplate(outputExcelPath) {
   const worksheet = workbook.getWorksheet("MasterBOL");
 
   if (!worksheet) {
-    throw new Error('Worksheet "BOL" was not found.');
+    throw new Error('Worksheet "MasterBOL" was not found.');
   }
 
   // ---------------------------------------------------------
@@ -70,7 +70,7 @@ async function populateTemplate(outputExcelPath) {
   // ---------------------------------------------------------
   // Only show the BOL sheet in the PDF; hide all others
   for (const sheet of workbook.worksheets) {
-    sheet.state = sheet.name === "BOL" ? "visible" : "hidden";
+    sheet.state = sheet.name === "MasterBOL" ? "visible" : "hidden";
   }
 
   await workbook.xlsx.writeFile(outputExcelPath);

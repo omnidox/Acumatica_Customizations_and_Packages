@@ -21,3 +21,15 @@ approach 1: use the excel template and LibreOffice Headless to generate the rele
 approach 2: use html/pdf/jinja/pikedpf to generate the relevant pdf files
 
 approach 3: use report designer/templates to generate the relevant pdf files
+
+
+
+Thank you, this was very helpful and clarified the business process quite a bit.
+
+I just have a few remaining questions:
+
+How is the Master Bill of Lading Number assigned today? Is it generated automatically by AS/400, entered manually, or provided by another system?
+How are the individual Bill of Lading Numbers assigned? Are they generated automatically or entered manually?
+Does each Load ID always correspond to exactly one Master Bill of Lading, or can a single Load ID ever result in multiple Master BOLs?
+
+If it's easier to explain than to describe over email, I'd also be happy to schedule a short meeting. It might be helpful if you could walk me through your current process, including how you use the routing information and any Excel files during the BOL generation process. I think seeing the workflow would help ensure I fully understand the business process before implementing it in Acumatica.
