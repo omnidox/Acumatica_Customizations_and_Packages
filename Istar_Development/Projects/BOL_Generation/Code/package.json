@@ -1,0 +1,17 @@
+{
+  "name": "bol-generator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Generates Master/Supplemental BOL PDFs from CSV input and the Acumatica BOLShipmentInquiry API.",
+  "main": "bol_generator_wip.js",
+  "scripts": {
+    "start": "node bol_generator_wip.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0"
+  }
+}
