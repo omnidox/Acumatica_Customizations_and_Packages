@@ -513,7 +513,7 @@ function populateSupplementalBOLs(workbook, orders) {
     newSheet.getCell("I4").value = order.bolNumber;
 
     // Single customer order row (row 22)
-    newSheet.getCell("A22").value = order.bolNumber;
+    newSheet.getCell("A22").value = order.customerOrderNbr;
     newSheet.getCell("E22").value = order.cartons;
     newSheet.getCell("F22").value = order.weight;
     newSheet.getCell("G22").value = order.weight;
