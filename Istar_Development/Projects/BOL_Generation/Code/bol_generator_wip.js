@@ -280,6 +280,31 @@ function formatSystemDate() {
 }
 
 /**
+ * Excel worksheet names must be <= 31 chars and cannot contain: \ / ? * [ ] :
+ * Builds a short, unique, valid sheet name for a given order, using an
+ * incrementing counter to guarantee uniqueness even if truncation collides.
+ * @param {ExcelJS.Workbook} workbook
+ * @param {string} baseLabel - Desired label (e.g. order number), pre-truncation
+ * @returns {string} A valid, unique worksheet name
+ */
+function generateUniqueSheetName(workbook, baseLabel) {
+  const MAX_LENGTH = 31;
+  const sanitized = String(baseLabel).replace(/[\\/?*[\]:]/g, "-");
+  const prefix = "Supp_BOL_";
+  let candidate = `${prefix}${sanitized}`.slice(0, MAX_LENGTH);
+
+  let counter = 1;
+  while (workbook.getWorksheet(candidate)) {
+    const suffix = `_${counter}`;
+    const truncatedBase = `${prefix}${sanitized}`.slice(0, MAX_LENGTH - suffix.length);
+    candidate = `${truncatedBase}${suffix}`;
+    counter++;
+  }
+
+  return candidate;
+}
+
+/**
  * Populates the MasterBOL sheet with the first 8 orders (rows 22-29).
  * Returns overflow orders for Supplemental_Master_BOL.
  * @param {ExcelJS.Worksheet} worksheet - MasterBOL sheet
@@ -400,7 +425,8 @@ function populateSupplementalBOLs(workbook, orders) {
     }
 
     // TODO: clone formatting/merged cells from the template sheet properly
-    const newSheet = workbook.addWorksheet(`Supplemental_BOL_${order.customerOrderNbr}`);
+    const sheetName = generateUniqueSheetName(workbook, order.customerOrderNbr);
+    const newSheet = workbook.addWorksheet(sheetName);
 
     newSheet.getCell("B1").value = formatSystemDate();
 
