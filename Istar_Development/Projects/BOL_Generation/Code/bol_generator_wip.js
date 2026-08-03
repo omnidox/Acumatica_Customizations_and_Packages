@@ -413,6 +413,10 @@ function populateMasterBOL(worksheet, orders, grandTotalCartons, grandTotalWeigh
   worksheet.getCell("C34").value = grandTotalCartons;
   worksheet.getCell("E34").value = grandTotalWeight;
 
+  // Carrier detail totals (row 42) - sums any additional line items on rows 34-41
+  worksheet.getCell("C42").value = { formula: "SUM(C34:C41)" };
+  worksheet.getCell("E42").value = { formula: "SUM(E34:E41)" };
+
   configureWorksheetPrinting(worksheet, "A1:M49");
 
   return overflowOrders;
@@ -532,6 +536,11 @@ function populateSupplementalBOLs(workbook, orders) {
     newSheet.getCell("A34").value = order.cartons;
     newSheet.getCell("C34").value = order.cartons;
     newSheet.getCell("E34").value = order.weight;
+
+    // Carrier detail totals (row 42) - sums any additional line items on rows 34-41
+    newSheet.getCell("A42").value = { formula: "SUM(A34:A41)" };
+    newSheet.getCell("C42").value = { formula: "SUM(C34:C41)" };
+    newSheet.getCell("E42").value = { formula: "SUM(E34:E41)" };
 
     configureWorksheetPrinting(newSheet, "A1:M49");
   });
