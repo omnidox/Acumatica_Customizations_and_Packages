@@ -659,23 +659,17 @@ async function main() {
     console.log(`Creating ${enrichedOrders.length} individual Supplemental_BOL sheets...`);
     populateSupplementalBOLs(workbook, enrichedOrders);
 
-    // Hide reference/lookup sheets that aren't part of the printable BOL output.
-    const referenceSheetNames = ["ADDRESS", "Customer Order Info"];
-    for (const name of referenceSheetNames) {
-      const sheet = workbook.getWorksheet(name);
-      if (sheet) sheet.state = "hidden";
-    }
-
-    // The original "Supplemental_BOL" template sheet is never populated directly
-    // (we always clone it into per-order sheets), so hide the leftover template.
-    const supplementalBolTemplate = workbook.getWorksheet("Supplemental_BOL");
-    if (supplementalBolTemplate) supplementalBolTemplate.state = "hidden";
-
-    // The original "Supplemental_Master_BOL" sheet is only populated when there's
-    // overflow past MasterBOL's 8 rows; hide it if it was never used.
+    // Remove reference/template sheets that aren't part of the printable BOL
+    // output. Note: we REMOVE (not just hide) these, since LibreOffice's
+    // headless PDF conversion does not reliably respect Excel's hidden-sheet
+    // flag and will print hidden sheets anyway.
+    const sheetsToRemove = ["ADDRESS", "Customer Order Info", "Supplemental_BOL"];
     if (overflowOrders.length === 0) {
-      const supplementalMasterTemplate = workbook.getWorksheet("Supplemental_Master_BOL");
-      if (supplementalMasterTemplate) supplementalMasterTemplate.state = "hidden";
+      sheetsToRemove.push("Supplemental_Master_BOL");
+    }
+    for (const name of sheetsToRemove) {
+      const sheet = workbook.getWorksheet(name);
+      if (sheet) workbook.removeWorksheet(sheet.id);
     }
 
     const timestamp = Date.now();
