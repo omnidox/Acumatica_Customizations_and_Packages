@@ -202,13 +202,29 @@ async function fetchAcumaticaShipmentData(customerOrderNbr, sessionCookie) {
 }
 
 /**
+ * Resolves the Customer Order Nbr for a CSV row. If the CSV has a
+ * non-empty "Customer Order Nbr" column, that value is used as-is
+ * (verbatim override). Otherwise it's computed as
+ * "Purchase Order Number" + "-" + zero-padded "Destination".
+ * @param {Object} csvRow
+ * @returns {string}
+ */
+function resolveCustomerOrderNbr(csvRow) {
+  const override = csvRow["Customer Order Nbr"];
+  if (override && String(override).trim() !== "") {
+    return String(override).trim();
+  }
+  return `${csvRow["Purchase Order Number"]}-${String(csvRow["Destination"]).padStart(4, "0")}`;
+}
+
+/**
  * Transforms CSV row + Acumatica API response into a normalized order object.
  * @param {Object} csvRow - Single row from CSV
  * @param {Object} apiData - Response from Acumatica API
  * @returns {Object} Normalized order data
  */
 function enrichOrderData(csvRow, apiData) {
-  const customerOrderNbr = `${csvRow["Purchase Order Number"]}-${String(csvRow["Destination"]).padStart(4, "0")}`;
+  const customerOrderNbr = resolveCustomerOrderNbr(csvRow);
 
   return {
     csvRow,
@@ -602,7 +618,7 @@ async function main() {
       console.log("Fetching Acumatica data for each order...");
       enrichedOrders = [];
       for (const csvRow of csvRecords) {
-        const customerOrderNbr = `${csvRow["Purchase Order Number"]}-${String(csvRow["Destination"]).padStart(4, "0")}`;
+        const customerOrderNbr = resolveCustomerOrderNbr(csvRow);
         try {
           const apiData = await fetchAcumaticaShipmentData(customerOrderNbr, sessionCookie);
           console.log(`\n--- Raw Acumatica response for ${customerOrderNbr} ---`);
