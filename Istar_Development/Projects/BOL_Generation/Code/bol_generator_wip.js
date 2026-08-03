@@ -370,12 +370,15 @@ function cloneWorksheet(workbook, sourceSheetName, newSheetName) {
 
 /**
  * Populates the MasterBOL sheet with the first 8 orders (rows 22-29).
- * Returns overflow orders for Supplemental_Master_BOL.
+ * Grand total cells reflect ALL orders across MasterBOL + Supplemental_Master_BOL
+ * combined, not just this sheet's own 8 rows.
  * @param {ExcelJS.Worksheet} worksheet - MasterBOL sheet
  * @param {Array<Object>} orders - Array of enriched order objects
+ * @param {number} grandTotalCartons - Combined total packages across all sheets
+ * @param {number} grandTotalWeight - Combined total weight across all sheets
  * @returns {Array<Object>} Remaining orders that didn't fit (8+)
  */
-function populateMasterBOL(worksheet, orders) {
+function populateMasterBOL(worksheet, orders, grandTotalCartons, grandTotalWeight) {
   const masterBolCapacity = 8; // Rows 22-29
   const ordersForMaster = orders.slice(0, masterBolCapacity);
   const overflowOrders = orders.slice(masterBolCapacity);
@@ -384,6 +387,7 @@ function populateMasterBOL(worksheet, orders) {
 
   const firstOrder = ordersForMaster[0];
   if (firstOrder) {
+    worksheet.getCell("I4").value = firstOrder.csvRow["Purchase Order Number"]; // Master Bill of Lading Number
     worksheet.getCell("K7").value = firstOrder.shipVia;      // Carrier name
     worksheet.getCell("J10").value = firstOrder.scac;         // SCAC
     worksheet.getCell("K11").value = firstOrder.proNumber;    // Pro number
@@ -400,16 +404,14 @@ function populateMasterBOL(worksheet, orders) {
     worksheet.getCell(`H${rowNum}`).value = "Y";             // Pallet indicator
   });
 
-  // Grand totals (row 30)
-  const totalCartons = ordersForMaster.reduce((sum, o) => sum + o.cartons, 0);
-  const totalWeight = ordersForMaster.reduce((sum, o) => sum + o.weight, 0);
-  worksheet.getCell("E30").value = totalCartons;
-  worksheet.getCell("F30").value = totalWeight;
-  worksheet.getCell("G30").value = totalWeight;
+  // Grand totals (row 30) - combined across MasterBOL + Supplemental_Master_BOL
+  worksheet.getCell("E30").value = grandTotalCartons;
+  worksheet.getCell("F30").value = grandTotalWeight;
+  worksheet.getCell("G30").value = grandTotalWeight;
 
-  // Carrier detail section (row 34)
-  worksheet.getCell("C34").value = totalCartons;
-  worksheet.getCell("E34").value = totalWeight;
+  // Carrier detail section (row 34) - reflects the same combined grand total
+  worksheet.getCell("C34").value = grandTotalCartons;
+  worksheet.getCell("E34").value = grandTotalWeight;
 
   configureWorksheetPrinting(worksheet, "A1:M49");
 
@@ -423,10 +425,15 @@ function populateMasterBOL(worksheet, orders) {
 /**
  * Creates and populates Supplemental_Master_BOL sheets for overflow orders.
  * If more than 45 orders remain (rows 5-49), creates multiple iterations.
+ * Grand total cells reflect ALL orders across MasterBOL + Supplemental_Master_BOL
+ * combined (same combined total written to every iteration), not just the
+ * rows on that particular sheet.
  * @param {ExcelJS.Workbook} workbook
  * @param {Array<Object>} orders - Overflow orders from MasterBOL
+ * @param {number} grandTotalCartons - Combined total packages across all sheets
+ * @param {number} grandTotalWeight - Combined total weight across all sheets
  */
-function populateSupplementalMasterBOLs(workbook, orders) {
+function populateSupplementalMasterBOLs(workbook, orders, grandTotalCartons, grandTotalWeight) {
   if (orders.length === 0) return;
 
   const supplementalCapacity = 45; // Rows 5-49
@@ -463,11 +470,9 @@ function populateSupplementalMasterBOLs(workbook, orders) {
       sheet.getCell(`G${rowNum}`).value = order.weight;
     });
 
-    // Grand totals (row 50)
-    const totalCartons = ordersForThisSheet.reduce((sum, o) => sum + o.cartons, 0);
-    const totalWeight = ordersForThisSheet.reduce((sum, o) => sum + o.weight, 0);
-    sheet.getCell("E50").value = totalCartons;
-    sheet.getCell("F50").value = totalWeight;
+    // Grand totals (row 50) - combined across MasterBOL + Supplemental_Master_BOL
+    sheet.getCell("E50").value = grandTotalCartons;
+    sheet.getCell("F50").value = grandTotalWeight;
 
     configureWorksheetPrinting(sheet, "A1:G50");
 
@@ -665,11 +670,16 @@ async function main() {
     if (!masterBolSheet) {
       throw new Error('Worksheet "MasterBOL" not found in template');
     }
-    const overflowOrders = populateMasterBOL(masterBolSheet, enrichedOrders);
+
+    // Grand total across MasterBOL + Supplemental_Master_BOL combined (all orders).
+    const grandTotalCartons = enrichedOrders.reduce((sum, o) => sum + o.cartons, 0);
+    const grandTotalWeight = enrichedOrders.reduce((sum, o) => sum + o.weight, 0);
+
+    const overflowOrders = populateMasterBOL(masterBolSheet, enrichedOrders, grandTotalCartons, grandTotalWeight);
 
     if (overflowOrders.length > 0) {
       console.log(`Populating Supplemental_Master_BOL sheet(s) with ${overflowOrders.length} overflow orders...`);
-      populateSupplementalMasterBOLs(workbook, overflowOrders);
+      populateSupplementalMasterBOLs(workbook, overflowOrders, grandTotalCartons, grandTotalWeight);
     }
 
     console.log(`Creating ${enrichedOrders.length} individual Supplemental_BOL sheets...`);
