@@ -10,9 +10,8 @@
     /CustomizationApi/GetProject endpoint once per project, decodes each Base64
     package, and saves it as a ZIP file.
 
-    This script can be run directly from PowerShell or by double-clicking:
-
-        Run-Customization-Export.bat
+    While each customization is being generated and returned, the script displays
+    an animated progress indicator. It also displays overall project progress.
 
 .ENV FORMAT
     The .env file should contain:
@@ -36,6 +35,8 @@
     - Never commit the .env file to Git.
     - Duplicate and blank project names are removed automatically.
     - IsAutoResolveConflicts defaults to false.
+    - The per-project progress indicator is indeterminate because Acumatica's
+      GetProject endpoint does not report byte-level download progress.
 #>
 
 [CmdletBinding()]
@@ -113,7 +114,6 @@ function Import-DotEnvFile {
     }
 
     $values = @{}
-
     $lineNumber = 0
 
     foreach ($rawLine in Get-Content -LiteralPath $Path -ErrorAction Stop) {
@@ -151,7 +151,6 @@ function Import-DotEnvFile {
             throw "Invalid variable name '$name' on .env line $lineNumber."
         }
 
-        # Remove matching outer quotes.
         if (
             $value.Length -ge 2 -and
             (
@@ -162,7 +161,6 @@ function Import-DotEnvFile {
             $value = $value.Substring(1, $value.Length - 2)
         }
 
-        # Support basic escaped characters for double-quoted values.
         $value = $value.Replace('\n', "`n")
         $value = $value.Replace('\r', "`r")
         $value = $value.Replace('\t', "`t")
@@ -271,6 +269,7 @@ function Add-ExportResult {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
         [System.Collections.Generic.List[object]]$ResultList,
 
         [Parameter(Mandatory = $true)]
@@ -371,12 +370,140 @@ function Get-ProjectNamesFromCsv {
     }
 }
 
+function Invoke-AcumaticaProjectDownload {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Uri,
+
+        [Parameter(Mandatory = $true)]
+        [Microsoft.PowerShell.Commands.WebRequestSession]$WebSession,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Body,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectName,
+
+        [Parameter(Mandatory = $true)]
+        [int]$CurrentProject,
+
+        [Parameter(Mandatory = $true)]
+        [int]$TotalProjects
+    )
+
+    $spinnerFrames = @("|", "/", "-", "\")
+    $spinnerIndex = 0
+    $startTime = Get-Date
+
+    $powerShellInstance = [PowerShell]::Create()
+    $asyncResult = $null
+
+    try {
+        $null = $powerShellInstance.AddScript({
+            param(
+                $RequestUri,
+                $RequestSession,
+                $RequestBody
+            )
+
+            Invoke-RestMethod `
+                -Method Post `
+                -Uri $RequestUri `
+                -WebSession $RequestSession `
+                -ContentType "application/json" `
+                -Headers @{
+                    Accept = "application/json"
+                } `
+                -Body $RequestBody `
+                -ErrorAction Stop
+        })
+
+        $null = $powerShellInstance.AddArgument($Uri)
+        $null = $powerShellInstance.AddArgument($WebSession)
+        $null = $powerShellInstance.AddArgument($Body)
+
+        $asyncResult = $powerShellInstance.BeginInvoke()
+
+        while (-not $asyncResult.IsCompleted) {
+            $elapsed = (Get-Date) - $startTime
+
+            $overallPercent = [math]::Floor(
+                (($CurrentProject - 1) / $TotalProjects) * 100
+            )
+
+            $spinner = $spinnerFrames[
+                $spinnerIndex % $spinnerFrames.Count
+            ]
+
+            $elapsedText = $elapsed.ToString("mm\:ss")
+
+            Write-Progress `
+                -Id 1 `
+                -Activity "Exporting Acumatica customizations" `
+                -Status "Project $CurrentProject of $TotalProjects" `
+                -PercentComplete $overallPercent
+
+            Write-Progress `
+                -Id 2 `
+                -ParentId 1 `
+                -Activity $ProjectName `
+                -Status "$spinner Waiting for Acumatica - elapsed $elapsedText" `
+                -PercentComplete -1
+
+            $spinnerIndex++
+
+            Start-Sleep -Milliseconds 200
+        }
+
+        $output = $powerShellInstance.EndInvoke($asyncResult)
+
+        if ($powerShellInstance.HadErrors) {
+            $errorMessages = @(
+                $powerShellInstance.Streams.Error |
+                    ForEach-Object {
+                        $_.Exception.Message
+                    }
+            )
+
+            if ($errorMessages.Count -gt 0) {
+                throw ($errorMessages -join "; ")
+            }
+
+            throw "The Acumatica project request failed."
+        }
+
+        if ($null -eq $output -or $output.Count -eq 0) {
+            throw "The Customization API returned an empty response."
+        }
+
+        if ($output.Count -eq 1) {
+            return $output[0]
+        }
+
+        return $output
+    }
+    finally {
+        Write-Progress `
+            -Id 2 `
+            -ParentId 1 `
+            -Activity $ProjectName `
+            -Completed
+
+        if ($null -ne $powerShellInstance) {
+            $powerShellInstance.Dispose()
+        }
+    }
+}
+
 # ---------------------------------------------------------------------------
 # Resolve input file locations
 # ---------------------------------------------------------------------------
 
 if ([string]::IsNullOrWhiteSpace($EnvFilePath)) {
-    $EnvFilePath = Join-Path -Path $scriptDirectory -ChildPath ".env"
+    $EnvFilePath = Join-Path `
+        -Path $scriptDirectory `
+        -ChildPath ".env"
 }
 else {
     $EnvFilePath = Resolve-PathRelativeToScript `
@@ -615,24 +742,35 @@ try {
     foreach ($projectName in $ProjectNames) {
         $index++
 
+        $startingPercent = [math]::Floor(
+            (($index - 1) / $ProjectNames.Count) * 100
+        )
+
+        Write-Progress `
+            -Id 1 `
+            -Activity "Exporting Acumatica customizations" `
+            -Status "Starting project $index of $($ProjectNames.Count)" `
+            -PercentComplete $startingPercent
+
         Write-Host "[$index/$($ProjectNames.Count)] Exporting: $projectName"
 
         try {
             $requestBody = @{
-                projectName           = $projectName
+                projectName            = $projectName
                 IsAutoResolveConflicts = [bool]$AutoResolveConflicts
             } | ConvertTo-Json
 
-            $response = Invoke-RestMethod `
-                -Method Post `
+            $response = Invoke-AcumaticaProjectDownload `
                 -Uri $getProjectUrl `
                 -WebSession $session `
-                -ContentType "application/json" `
-                -Headers @{
-                    Accept = "application/json"
-                } `
                 -Body $requestBody `
-                -ErrorAction Stop
+                -ProjectName $projectName `
+                -CurrentProject $index `
+                -TotalProjects $ProjectNames.Count
+
+            if ($response -is [System.Array] -and $response.Count -eq 1) {
+                $response = $response[0]
+            }
 
             if ($null -eq $response) {
                 throw "The Customization API returned an empty response."
@@ -712,7 +850,13 @@ try {
                 -HasConflicts $hasConflicts `
                 -FilePath $zipPath
 
+            $fileSizeMb = [math]::Round(
+                ((Get-Item -LiteralPath $zipPath).Length / 1MB),
+                2
+            )
+
             Write-Host "      Saved: $zipPath"
+            Write-Host "      Size:  $fileSizeMb MB"
 
             if ($hasConflicts) {
                 Write-Warning "The API reported file-system conflicts for this project."
@@ -732,11 +876,31 @@ try {
                 -ErrorMessage $message
         }
 
+        $completedPercent = [math]::Floor(
+            ($index / $ProjectNames.Count) * 100
+        )
+
+        Write-Progress `
+            -Id 1 `
+            -Activity "Exporting Acumatica customizations" `
+            -Status "Completed $index of $($ProjectNames.Count) projects" `
+            -PercentComplete $completedPercent
+
         Write-Host ""
     }
+
+    Write-Progress `
+        -Id 1 `
+        -Activity "Exporting Acumatica customizations" `
+        -Completed
 }
 catch {
     $fatalError = $_.Exception.Message
+
+    Write-Progress `
+        -Id 1 `
+        -Activity "Exporting Acumatica customizations" `
+        -Completed
 
     Write-Host ""
     Write-Error "The customization export could not continue. $fatalError"
@@ -761,6 +925,18 @@ catch {
     }
 }
 finally {
+    Write-Progress `
+        -Id 2 `
+        -Activity "Current customization" `
+        -Completed `
+        -ErrorAction SilentlyContinue
+
+    Write-Progress `
+        -Id 1 `
+        -Activity "Exporting Acumatica customizations" `
+        -Completed `
+        -ErrorAction SilentlyContinue
+
     if ($loginSucceeded -and $null -ne $session) {
         try {
             Write-Host ""
@@ -784,7 +960,6 @@ finally {
         }
     }
 
-    # Clear credential variables from the active PowerShell session.
     $password = $null
     $username = $null
     $loginBody = $null
@@ -809,6 +984,10 @@ catch {
     Write-Error "Unable to write the export report. $($_.Exception.Message)"
     exit 1
 }
+
+# ---------------------------------------------------------------------------
+# Calculate summary counts
+# ---------------------------------------------------------------------------
 
 $successCount = @(
     $results |
