@@ -1,26 +1,38 @@
 ﻿<#
 .SYNOPSIS
-    Exports the configured Acumatica customization projects as individual ZIP files.
+    Exports Acumatica customization projects listed in a CSV file.
 
 .DESCRIPTION
-    Logs in using Acumatica's session-based REST authentication, calls the
-    /CustomizationApi/GetProject endpoint once per project, decodes each Base64
-    package, and saves it as a ZIP file.
+    Reads customization project names from CustomizationProjects.csv, logs in
+    using Acumatica's session-based REST authentication, calls the
+    /CustomizationApi/GetProject endpoint once per project, decodes each
+    Base64 package, and saves it as a ZIP file.
 
-    This script is designed to be run either:
+    This script can be run:
 
     1. Directly from PowerShell.
-    2. By double-clicking the accompanying BAT launcher.
+    2. By double-clicking Run-Customization-Export.bat.
+
+.CSV FORMAT
+    The CSV must contain a column named:
+
+        ProjectName
+
+    Example:
+
+        ProjectName
+        "ConsignmentOrdersBE"
+        "ASCJewelryLibrary[v1.2.2]"
 
 .NOTES
     - The Acumatica user must have the Customizer role.
     - OAuth is not used.
-    - The default Acumatica instance is:
+    - Default Acumatica instance:
       https://istar.privatecloudcorp.com/AcumaticaERP
-    - The default company is:
+    - Default company:
       Company
+    - Duplicate and blank project names are removed automatically.
     - IsAutoResolveConflicts defaults to false.
-    - Review the $ProjectNames list before running.
 #>
 
 [CmdletBinding()]
@@ -33,6 +45,8 @@ param(
 
     [string]$Locale = "en-US",
 
+    [string]$ProjectCsvPath = "",
+
     [string]$OutputDirectory = "",
 
     [switch]$AutoResolveConflicts,
@@ -44,17 +58,41 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # ---------------------------------------------------------------------------
-# Script location and output directory
+# Resolve the script directory
 # ---------------------------------------------------------------------------
 
-# $PSScriptRoot always points to the folder containing this PS1 file.
-# This prevents the output location from changing based on how the BAT file
-# or PowerShell was launched.
 $scriptDirectory = $PSScriptRoot
 
 if ([string]::IsNullOrWhiteSpace($scriptDirectory)) {
     $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
 }
+
+if ([string]::IsNullOrWhiteSpace($scriptDirectory)) {
+    $scriptDirectory = (Get-Location).Path
+}
+
+$scriptDirectory = [System.IO.Path]::GetFullPath($scriptDirectory)
+
+# ---------------------------------------------------------------------------
+# Resolve the CSV path
+# ---------------------------------------------------------------------------
+
+if ([string]::IsNullOrWhiteSpace($ProjectCsvPath)) {
+    $ProjectCsvPath = Join-Path `
+        -Path $scriptDirectory `
+        -ChildPath "CustomizationProjects.csv"
+}
+elseif (-not [System.IO.Path]::IsPathRooted($ProjectCsvPath)) {
+    $ProjectCsvPath = Join-Path `
+        -Path $scriptDirectory `
+        -ChildPath $ProjectCsvPath
+}
+
+$ProjectCsvPath = [System.IO.Path]::GetFullPath($ProjectCsvPath)
+
+# ---------------------------------------------------------------------------
+# Resolve the output directory
+# ---------------------------------------------------------------------------
 
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = Join-Path `
@@ -62,44 +100,12 @@ if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
         -ChildPath "Acumatica-Customization-Exports"
 }
 elseif (-not [System.IO.Path]::IsPathRooted($OutputDirectory)) {
-    # Treat a relative output path as relative to the PS1 file, not the current
-    # PowerShell working directory.
     $OutputDirectory = Join-Path `
         -Path $scriptDirectory `
         -ChildPath $OutputDirectory
 }
 
-# Convert the output directory into a full absolute path.
 $OutputDirectory = [System.IO.Path]::GetFullPath($OutputDirectory)
-
-# ---------------------------------------------------------------------------
-# Project names
-# ---------------------------------------------------------------------------
-
-# These names must exactly match the project names shown on the Acumatica
-# Customization Projects screen.
-$ProjectNames = @(
-    "ConsignmentOrdersBE",
-    "ASCJewelryLibrary[v1.2.2]",
-    "TRUECOMMERCE[25.193.0171][9.0.1.137]",
-    "ASCIStarWMSCustomization[June19]",
-    "AsgardLabels[Basic][25.201.0213][6.4.2.2]",
-    "AsgardLabels[RomanSunStone][25.200.0248][1.0.0]",
-    "OneUCCPerPackage",
-    "OneLabelPerPackage",
-    "UserRoleExtender",
-    "AsgardButtonControl[06.09.2026]",
-    "iStarCustomizations[25.201][July1]",
-    "MasterPackISV[25.201][06.25.2026]",
-    "MasterPackExtension[07.10.2026][1]",
-    "CustomWMSManualPackTransfer[07.13.2026][1]",
-    "POReceiptLineAdditionalColumn[06.19.2026][1]",
-    "Velixo[25R2]",
-    "SplitGIsAndReports[24.209.0013][April426]",
-    "iStarShippingRestrictionsCustomizations[06.30.2026]",
-    "MonthlyForecastReferenceTable[06.30.2026][1]",
-    "FlexManufacturing25R201v260422"
-)
 
 # ---------------------------------------------------------------------------
 # Helper functions
@@ -132,19 +138,25 @@ function Write-ApiLog {
         return
     }
 
-    foreach ($entry in $LogEntries) {
-        $type = if ($null -ne $entry.logType -and $entry.logType) {
-            [string]$entry.logType
-        }
-        else {
-            "information"
+    foreach ($entry in @($LogEntries)) {
+        $type = "information"
+        $message = ""
+
+        if (
+            $null -ne $entry.PSObject.Properties["logType"] -and
+            -not [string]::IsNullOrWhiteSpace([string]$entry.logType)
+        ) {
+            $type = [string]$entry.logType
         }
 
-        $message = if ($null -ne $entry.message -and $entry.message) {
-            [string]$entry.message
+        if (
+            $null -ne $entry.PSObject.Properties["message"] -and
+            -not [string]::IsNullOrWhiteSpace([string]$entry.message)
+        ) {
+            $message = [string]$entry.message
         }
         else {
-            $entry | ConvertTo-Json -Compress -Depth 10
+            $message = $entry | ConvertTo-Json -Compress -Depth 10
         }
 
         Write-Host "      [$type] $message"
@@ -172,17 +184,91 @@ function Add-ExportResult {
 
     $ResultList.Add(
         [pscustomobject]@{
-            ProjectName = $ProjectName
-            Status      = $Status
+            ProjectName  = $ProjectName
+            Status       = $Status
             HasConflicts = $HasConflicts
-            FilePath    = $FilePath
-            Error       = $ErrorMessage
+            FilePath     = $FilePath
+            Error        = $ErrorMessage
         }
     )
 }
 
+function Get-ProjectNamesFromCsv {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CsvPath
+    )
+
+    if (-not (Test-Path -LiteralPath $CsvPath -PathType Leaf)) {
+        throw "The project CSV file was not found: $CsvPath"
+    }
+
+    try {
+        $csvRows = @(
+            Import-Csv `
+                -LiteralPath $CsvPath `
+                -ErrorAction Stop
+        )
+    }
+    catch {
+        throw "The CSV file could not be read. $($_.Exception.Message)"
+    }
+
+    if ($csvRows.Count -eq 0) {
+        throw "The CSV file contains no project rows."
+    }
+
+    $headerNames = @(
+        $csvRows[0].PSObject.Properties.Name
+    )
+
+    if ($headerNames -notcontains "ProjectName") {
+        throw "The CSV must contain a column named 'ProjectName'. Found columns: $($headerNames -join ', ')"
+    }
+
+    $projectNames = New-Object System.Collections.Generic.List[string]
+    $seenNames = New-Object "System.Collections.Generic.HashSet[string]" `
+        ([System.StringComparer]::OrdinalIgnoreCase)
+
+    $blankRowCount = 0
+    $duplicateCount = 0
+
+    foreach ($row in $csvRows) {
+        $projectName = [string]$row.ProjectName
+
+        if ($null -ne $projectName) {
+            $projectName = $projectName.Trim()
+        }
+
+        if ([string]::IsNullOrWhiteSpace($projectName)) {
+            $blankRowCount++
+            continue
+        }
+
+        if ($seenNames.Add($projectName)) {
+            $projectNames.Add($projectName)
+        }
+        else {
+            $duplicateCount++
+            Write-Warning "Duplicate project name ignored: $projectName"
+        }
+    }
+
+    if ($projectNames.Count -eq 0) {
+        throw "The CSV contains no valid project names."
+    }
+
+    return [pscustomobject]@{
+        ProjectNames   = $projectNames.ToArray()
+        BlankRowCount  = $blankRowCount
+        DuplicateCount = $duplicateCount
+        CsvRowCount    = $csvRows.Count
+    }
+}
+
 # ---------------------------------------------------------------------------
-# Validate settings and create endpoint URLs
+# Validate connection settings
 # ---------------------------------------------------------------------------
 
 if ([string]::IsNullOrWhiteSpace($BaseUrl)) {
@@ -195,11 +281,6 @@ if ([string]::IsNullOrWhiteSpace($Company)) {
     exit 1
 }
 
-if ($ProjectNames.Count -eq 0) {
-    Write-Error "No Acumatica customization project names are configured."
-    exit 1
-}
-
 $BaseUrl = $BaseUrl.Trim().TrimEnd("/")
 
 $loginUrl = "$BaseUrl/entity/auth/login"
@@ -207,19 +288,50 @@ $logoutUrl = "$BaseUrl/entity/auth/logout"
 $getProjectUrl = "$BaseUrl/CustomizationApi/GetProject"
 
 # ---------------------------------------------------------------------------
-# Create run directory
+# Load project names from the CSV
+# ---------------------------------------------------------------------------
+
+try {
+    $csvImportResult = Get-ProjectNamesFromCsv `
+        -CsvPath $ProjectCsvPath
+
+    $ProjectNames = @($csvImportResult.ProjectNames)
+}
+catch {
+    Write-Host ""
+    Write-Error "Unable to load customization project names. $($_.Exception.Message)"
+    Write-Host ""
+    Write-Host "Expected CSV path:"
+    Write-Host $ProjectCsvPath
+    Write-Host ""
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Create the timestamped run directory
 # ---------------------------------------------------------------------------
 
 $timestamp = Get-Date -Format "yyyy-MM-dd_HHmmss"
-$runDirectory = Join-Path -Path $OutputDirectory -ChildPath $timestamp
-$reportPath = Join-Path -Path $runDirectory -ChildPath "Export-Report.csv"
+
+$runDirectory = Join-Path `
+    -Path $OutputDirectory `
+    -ChildPath $timestamp
+
+$reportPath = Join-Path `
+    -Path $runDirectory `
+    -ChildPath "Export-Report.csv"
+
+$projectListCopyPath = Join-Path `
+    -Path $runDirectory `
+    -ChildPath "CustomizationProjects-Used.csv"
 
 try {
     New-Item `
         -ItemType Directory `
         -Path $runDirectory `
         -Force `
-        -ErrorAction Stop | Out-Null
+        -ErrorAction Stop |
+        Out-Null
 }
 catch {
     Write-Host ""
@@ -227,16 +339,36 @@ catch {
     exit 1
 }
 
+# Save a normalized copy of the exact project list used for this export.
+try {
+    $ProjectNames |
+        ForEach-Object {
+            [pscustomobject]@{
+                ProjectName = $_
+            }
+        } |
+        Export-Csv `
+            -LiteralPath $projectListCopyPath `
+            -NoTypeInformation `
+            -Encoding UTF8 `
+            -Force `
+            -ErrorAction Stop
+}
+catch {
+    Write-Warning "Could not save the normalized project-list copy: $($_.Exception.Message)"
+}
+
 # ---------------------------------------------------------------------------
-# Authentication preparation
+# Authentication and result variables
 # ---------------------------------------------------------------------------
 
 $credential = $null
 $plainPassword = $null
 $session = $null
 $loginSucceeded = $false
-$results = New-Object System.Collections.Generic.List[object]
 $fatalError = $null
+
+$results = New-Object System.Collections.Generic.List[object]
 
 Write-Host ""
 Write-Host "============================================================"
@@ -245,8 +377,19 @@ Write-Host "============================================================"
 Write-Host ""
 Write-Host "Server:             $BaseUrl"
 Write-Host "Company:            $Company"
-Write-Host "Branch:             $(if ([string]::IsNullOrWhiteSpace($Branch)) { '[default]' } else { $Branch })"
-Write-Host "Projects:           $($ProjectNames.Count)"
+
+if ([string]::IsNullOrWhiteSpace($Branch)) {
+    Write-Host "Branch:             [default]"
+}
+else {
+    Write-Host "Branch:             $Branch"
+}
+
+Write-Host "Project CSV:        $ProjectCsvPath"
+Write-Host "CSV rows:           $($csvImportResult.CsvRowCount)"
+Write-Host "Unique projects:    $($ProjectNames.Count)"
+Write-Host "Duplicates removed: $($csvImportResult.DuplicateCount)"
+Write-Host "Blank rows removed: $($csvImportResult.BlankRowCount)"
 Write-Host "Output directory:   $runDirectory"
 Write-Host "Resolve conflicts:  $([bool]$AutoResolveConflicts)"
 Write-Host ""
@@ -269,7 +412,8 @@ try {
         throw "The Acumatica password cannot be empty."
     }
 
-    $session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+    $session = New-Object `
+        Microsoft.PowerShell.Commands.WebRequestSession
 
     $loginBody = @{
         name     = $credential.UserName
@@ -290,7 +434,8 @@ try {
             Accept = "application/json"
         } `
         -Body $loginBody `
-        -ErrorAction Stop | Out-Null
+        -ErrorAction Stop |
+        Out-Null
 
     $loginSucceeded = $true
 
@@ -298,7 +443,7 @@ try {
     Write-Host ""
 
     # -----------------------------------------------------------------------
-    # Export each project
+    # Export each project from the CSV
     # -----------------------------------------------------------------------
 
     $index = 0
@@ -329,9 +474,19 @@ try {
                 throw "The Customization API returned an empty response."
             }
 
-            Write-ApiLog -LogEntries $response.log
+            if ($null -ne $response.PSObject.Properties["log"]) {
+                Write-ApiLog -LogEntries $response.log
+            }
 
-            $projectContentBase64 = [string]$response.projectContentBase64
+            $projectContentBase64 = ""
+
+            if (
+                $null -ne
+                $response.PSObject.Properties["projectContentBase64"]
+            ) {
+                $projectContentBase64 =
+                    [string]$response.projectContentBase64
+            }
 
             if ([string]::IsNullOrWhiteSpace($projectContentBase64)) {
                 throw "The API returned no projectContentBase64 value."
@@ -346,7 +501,7 @@ try {
                 throw "The API response could not be decoded from Base64. $($_.Exception.Message)"
             }
 
-            # Standard ZIP files begin with the bytes "PK".
+            # Standard ZIP files begin with the ASCII bytes PK.
             if (
                 $null -eq $zipBytes -or
                 $zipBytes.Length -lt 2 -or
@@ -357,23 +512,34 @@ try {
             }
 
             $safeName = Get-SafeFileName -Name $projectName
+
             $zipPath = Join-Path `
                 -Path $runDirectory `
                 -ChildPath "$safeName.zip"
 
-            [System.IO.File]::WriteAllBytes($zipPath, $zipBytes)
+            [System.IO.File]::WriteAllBytes(
+                $zipPath,
+                $zipBytes
+            )
 
             if (-not (Test-Path -LiteralPath $zipPath -PathType Leaf)) {
                 throw "The ZIP file was not found after it was written."
             }
 
-            $hasConflicts = [bool]$response.hasConflicts
+            $hasConflicts = $false
 
-            $status = if ($hasConflicts) {
-                "ExportedWithConflicts"
+            if (
+                $null -ne
+                $response.PSObject.Properties["hasConflicts"]
+            ) {
+                $hasConflicts = [bool]$response.hasConflicts
+            }
+
+            if ($hasConflicts) {
+                $status = "ExportedWithConflicts"
             }
             else {
-                "Exported"
+                $status = "Exported"
             }
 
             Add-ExportResult `
@@ -412,8 +578,6 @@ catch {
     Write-Host ""
     Write-Error "The customization export could not continue. $fatalError"
 
-    # When login or setup fails before projects are processed, create report
-    # rows for projects that were not attempted.
     $processedProjectNames = @(
         $results |
             ForEach-Object {
@@ -447,7 +611,8 @@ finally {
                 -Headers @{
                     Accept = "application/json"
                 } `
-                -ErrorAction Stop | Out-Null
+                -ErrorAction Stop |
+                Out-Null
 
             Write-Host "Signed out."
         }
@@ -456,21 +621,19 @@ finally {
         }
     }
 
-    # Remove the plain-text password reference as soon as it is no longer
-    # needed. This does not place the password in the report or on disk.
     $plainPassword = $null
     $credential = $null
     $session = $null
 }
 
 # ---------------------------------------------------------------------------
-# Write report
+# Write the export report
 # ---------------------------------------------------------------------------
 
 try {
     $results |
         Export-Csv `
-            -Path $reportPath `
+            -LiteralPath $reportPath `
             -NoTypeInformation `
             -Encoding UTF8 `
             -Force `
@@ -481,6 +644,10 @@ catch {
     Write-Error "Unable to write the export report. $($_.Exception.Message)"
     exit 1
 }
+
+# ---------------------------------------------------------------------------
+# Calculate summary counts
+# ---------------------------------------------------------------------------
 
 $successCount = @(
     $results |
@@ -516,6 +683,9 @@ Write-Host "============================================================"
 Write-Host " Export Summary"
 Write-Host "============================================================"
 Write-Host ""
+Write-Host "CSV rows:            $($csvImportResult.CsvRowCount)"
+Write-Host "Unique projects:     $($ProjectNames.Count)"
+Write-Host "Duplicates removed:  $($csvImportResult.DuplicateCount)"
 Write-Host "Successful:          $successCount"
 Write-Host "With conflicts:      $conflictCount"
 Write-Host "Failed:              $failedCount"
@@ -526,6 +696,9 @@ Write-Host $runDirectory
 Write-Host ""
 Write-Host "Export report:"
 Write-Host $reportPath
+Write-Host ""
+Write-Host "Project list used:"
+Write-Host $projectListCopyPath
 Write-Host ""
 
 if (-not $DoNotOpenExportFolder) {
@@ -546,13 +719,13 @@ if (
     $notAttemptedCount -gt 0
 ) {
     Write-Host "The export completed with one or more errors."
-    Write-Host "Review Export-Report.csv for the exact details."
+    Write-Host "Review Export-Report.csv for exact details."
     Write-Host ""
 
     exit 1
 }
 
-Write-Host "All configured projects were exported successfully."
+Write-Host "All projects listed in the CSV were exported successfully."
 
 if ($conflictCount -gt 0) {
     Write-Host "$conflictCount project(s) were exported with reported file-system conflicts."
