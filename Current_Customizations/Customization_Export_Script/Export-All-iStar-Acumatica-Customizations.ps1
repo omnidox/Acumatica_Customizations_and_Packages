@@ -3,51 +3,56 @@
     Exports Acumatica customization projects listed in a CSV file.
 
 .DESCRIPTION
+    Reads Acumatica connection settings and credentials from a local .env file.
+
     Reads customization project names from CustomizationProjects.csv, logs in
     using Acumatica's session-based REST authentication, calls the
-    /CustomizationApi/GetProject endpoint once per project, decodes each
-    Base64 package, and saves it as a ZIP file.
+    /CustomizationApi/GetProject endpoint once per project, decodes each Base64
+    package, and saves it as a ZIP file.
 
-    This script can be run:
+    This script can be run directly from PowerShell or by double-clicking:
 
-    1. Directly from PowerShell.
-    2. By double-clicking Run-Customization-Export.bat.
+        Run-Customization-Export.bat
+
+.ENV FORMAT
+    The .env file should contain:
+
+        ACUMATICA_USERNAME=your_username
+        ACUMATICA_PASSWORD=your_password
+        ACUMATICA_BASE_URL=https://istar.privatecloudcorp.com/AcumaticaERP
+        ACUMATICA_COMPANY=Company
+        ACUMATICA_BRANCH=
+        ACUMATICA_LOCALE=en-US
 
 .CSV FORMAT
     The CSV must contain a column named:
 
         ProjectName
 
-    Example:
-
-        ProjectName
-        "ConsignmentOrdersBE"
-        "ASCJewelryLibrary[v1.2.2]"
-
 .NOTES
     - The Acumatica user must have the Customizer role.
     - OAuth is not used.
-    - Default Acumatica instance:
-      https://istar.privatecloudcorp.com/AcumaticaERP
-    - Default company:
-      Company
+    - The .env file contains plain-text credentials.
+    - Never commit the .env file to Git.
     - Duplicate and blank project names are removed automatically.
     - IsAutoResolveConflicts defaults to false.
 #>
 
 [CmdletBinding()]
 param(
-    [string]$BaseUrl = "https://istar.privatecloudcorp.com/AcumaticaERP",
-
-    [string]$Company = "Company",
-
-    [string]$Branch = "",
-
-    [string]$Locale = "en-US",
+    [string]$EnvFilePath = "",
 
     [string]$ProjectCsvPath = "",
 
     [string]$OutputDirectory = "",
+
+    [string]$BaseUrl = "",
+
+    [string]$Company = "",
+
+    [string]$Branch = "",
+
+    [string]$Locale = "",
 
     [switch]$AutoResolveConflicts,
 
@@ -58,7 +63,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # ---------------------------------------------------------------------------
-# Resolve the script directory
+# Resolve script directory
 # ---------------------------------------------------------------------------
 
 $scriptDirectory = $PSScriptRoot
@@ -74,42 +79,141 @@ if ([string]::IsNullOrWhiteSpace($scriptDirectory)) {
 $scriptDirectory = [System.IO.Path]::GetFullPath($scriptDirectory)
 
 # ---------------------------------------------------------------------------
-# Resolve the CSV path
-# ---------------------------------------------------------------------------
-
-if ([string]::IsNullOrWhiteSpace($ProjectCsvPath)) {
-    $ProjectCsvPath = Join-Path `
-        -Path $scriptDirectory `
-        -ChildPath "CustomizationProjects.csv"
-}
-elseif (-not [System.IO.Path]::IsPathRooted($ProjectCsvPath)) {
-    $ProjectCsvPath = Join-Path `
-        -Path $scriptDirectory `
-        -ChildPath $ProjectCsvPath
-}
-
-$ProjectCsvPath = [System.IO.Path]::GetFullPath($ProjectCsvPath)
-
-# ---------------------------------------------------------------------------
-# Resolve the output directory
-# ---------------------------------------------------------------------------
-
-if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
-    $OutputDirectory = Join-Path `
-        -Path $scriptDirectory `
-        -ChildPath "Acumatica-Customization-Exports"
-}
-elseif (-not [System.IO.Path]::IsPathRooted($OutputDirectory)) {
-    $OutputDirectory = Join-Path `
-        -Path $scriptDirectory `
-        -ChildPath $OutputDirectory
-}
-
-$OutputDirectory = [System.IO.Path]::GetFullPath($OutputDirectory)
-
-# ---------------------------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------------------------
+
+function Resolve-PathRelativeToScript {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PathValue,
+
+        [Parameter(Mandatory = $true)]
+        [string]$BaseDirectory
+    )
+
+    if ([System.IO.Path]::IsPathRooted($PathValue)) {
+        return [System.IO.Path]::GetFullPath($PathValue)
+    }
+
+    return [System.IO.Path]::GetFullPath(
+        (Join-Path -Path $BaseDirectory -ChildPath $PathValue)
+    )
+}
+
+function Import-DotEnvFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "The .env file was not found: $Path"
+    }
+
+    $values = @{}
+
+    $lineNumber = 0
+
+    foreach ($rawLine in Get-Content -LiteralPath $Path -ErrorAction Stop) {
+        $lineNumber++
+
+        $line = [string]$rawLine
+
+        if ($null -eq $line) {
+            continue
+        }
+
+        $line = $line.Trim()
+
+        if (
+            [string]::IsNullOrWhiteSpace($line) -or
+            $line.StartsWith("#")
+        ) {
+            continue
+        }
+
+        if ($line.StartsWith("export ")) {
+            $line = $line.Substring(7).Trim()
+        }
+
+        $separatorIndex = $line.IndexOf("=")
+
+        if ($separatorIndex -lt 1) {
+            throw "Invalid .env entry on line $lineNumber. Expected NAME=value."
+        }
+
+        $name = $line.Substring(0, $separatorIndex).Trim()
+        $value = $line.Substring($separatorIndex + 1).Trim()
+
+        if ($name -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+            throw "Invalid variable name '$name' on .env line $lineNumber."
+        }
+
+        # Remove matching outer quotes.
+        if (
+            $value.Length -ge 2 -and
+            (
+                ($value.StartsWith('"') -and $value.EndsWith('"')) -or
+                ($value.StartsWith("'") -and $value.EndsWith("'"))
+            )
+        ) {
+            $value = $value.Substring(1, $value.Length - 2)
+        }
+
+        # Support basic escaped characters for double-quoted values.
+        $value = $value.Replace('\n', "`n")
+        $value = $value.Replace('\r', "`r")
+        $value = $value.Replace('\t', "`t")
+
+        $values[$name] = $value
+    }
+
+    return $values
+}
+
+function Get-RequiredEnvironmentValue {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$EnvironmentValues,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    if (-not $EnvironmentValues.ContainsKey($Name)) {
+        throw "The required .env value '$Name' is missing."
+    }
+
+    $value = [string]$EnvironmentValues[$Name]
+
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        throw "The required .env value '$Name' is empty."
+    }
+
+    return $value
+}
+
+function Get-OptionalEnvironmentValue {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$EnvironmentValues,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+
+        [string]$DefaultValue = ""
+    )
+
+    if (-not $EnvironmentValues.ContainsKey($Name)) {
+        return $DefaultValue
+    }
+
+    return [string]$EnvironmentValues[$Name]
+}
 
 function Get-SafeFileName {
     [CmdletBinding()]
@@ -219,16 +323,16 @@ function Get-ProjectNamesFromCsv {
         throw "The CSV file contains no project rows."
     }
 
-    $headerNames = @(
-        $csvRows[0].PSObject.Properties.Name
-    )
+    $headerNames = @($csvRows[0].PSObject.Properties.Name)
 
     if ($headerNames -notcontains "ProjectName") {
         throw "The CSV must contain a column named 'ProjectName'. Found columns: $($headerNames -join ', ')"
     }
 
     $projectNames = New-Object System.Collections.Generic.List[string]
-    $seenNames = New-Object "System.Collections.Generic.HashSet[string]" `
+
+    $seenNames = New-Object `
+        "System.Collections.Generic.HashSet[string]" `
         ([System.StringComparer]::OrdinalIgnoreCase)
 
     $blankRowCount = 0
@@ -268,27 +372,106 @@ function Get-ProjectNamesFromCsv {
 }
 
 # ---------------------------------------------------------------------------
-# Validate connection settings
+# Resolve input file locations
 # ---------------------------------------------------------------------------
 
-if ([string]::IsNullOrWhiteSpace($BaseUrl)) {
-    Write-Error "BaseUrl cannot be empty."
-    exit 1
+if ([string]::IsNullOrWhiteSpace($EnvFilePath)) {
+    $EnvFilePath = Join-Path -Path $scriptDirectory -ChildPath ".env"
+}
+else {
+    $EnvFilePath = Resolve-PathRelativeToScript `
+        -PathValue $EnvFilePath `
+        -BaseDirectory $scriptDirectory
 }
 
-if ([string]::IsNullOrWhiteSpace($Company)) {
-    Write-Error "Company cannot be empty."
+if ([string]::IsNullOrWhiteSpace($ProjectCsvPath)) {
+    $ProjectCsvPath = Join-Path `
+        -Path $scriptDirectory `
+        -ChildPath "CustomizationProjects.csv"
+}
+else {
+    $ProjectCsvPath = Resolve-PathRelativeToScript `
+        -PathValue $ProjectCsvPath `
+        -BaseDirectory $scriptDirectory
+}
+
+if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
+    $OutputDirectory = Join-Path `
+        -Path $scriptDirectory `
+        -ChildPath "Acumatica-Customization-Exports"
+}
+else {
+    $OutputDirectory = Resolve-PathRelativeToScript `
+        -PathValue $OutputDirectory `
+        -BaseDirectory $scriptDirectory
+}
+
+$EnvFilePath = [System.IO.Path]::GetFullPath($EnvFilePath)
+$ProjectCsvPath = [System.IO.Path]::GetFullPath($ProjectCsvPath)
+$OutputDirectory = [System.IO.Path]::GetFullPath($OutputDirectory)
+
+# ---------------------------------------------------------------------------
+# Load .env settings
+# ---------------------------------------------------------------------------
+
+try {
+    $envValues = Import-DotEnvFile -Path $EnvFilePath
+
+    $username = Get-RequiredEnvironmentValue `
+        -EnvironmentValues $envValues `
+        -Name "ACUMATICA_USERNAME"
+
+    $password = Get-RequiredEnvironmentValue `
+        -EnvironmentValues $envValues `
+        -Name "ACUMATICA_PASSWORD"
+
+    if ([string]::IsNullOrWhiteSpace($BaseUrl)) {
+        $BaseUrl = Get-RequiredEnvironmentValue `
+            -EnvironmentValues $envValues `
+            -Name "ACUMATICA_BASE_URL"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($Company)) {
+        $Company = Get-RequiredEnvironmentValue `
+            -EnvironmentValues $envValues `
+            -Name "ACUMATICA_COMPANY"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($Branch)) {
+        $Branch = Get-OptionalEnvironmentValue `
+            -EnvironmentValues $envValues `
+            -Name "ACUMATICA_BRANCH" `
+            -DefaultValue ""
+    }
+
+    if ([string]::IsNullOrWhiteSpace($Locale)) {
+        $Locale = Get-OptionalEnvironmentValue `
+            -EnvironmentValues $envValues `
+            -Name "ACUMATICA_LOCALE" `
+            -DefaultValue "en-US"
+    }
+}
+catch {
+    Write-Host ""
+    Write-Error "Unable to load Acumatica settings from .env. $($_.Exception.Message)"
+    Write-Host ""
+    Write-Host "Expected .env path:"
+    Write-Host $EnvFilePath
+    Write-Host ""
     exit 1
 }
 
 $BaseUrl = $BaseUrl.Trim().TrimEnd("/")
+$Company = $Company.Trim()
+$Branch = $Branch.Trim()
+$Locale = $Locale.Trim()
 
 $loginUrl = "$BaseUrl/entity/auth/login"
 $logoutUrl = "$BaseUrl/entity/auth/logout"
 $getProjectUrl = "$BaseUrl/CustomizationApi/GetProject"
 
 # ---------------------------------------------------------------------------
-# Load project names from the CSV
+# Load project names from CSV
 # ---------------------------------------------------------------------------
 
 try {
@@ -308,7 +491,7 @@ catch {
 }
 
 # ---------------------------------------------------------------------------
-# Create the timestamped run directory
+# Create timestamped output directory
 # ---------------------------------------------------------------------------
 
 $timestamp = Get-Date -Format "yyyy-MM-dd_HHmmss"
@@ -339,7 +522,6 @@ catch {
     exit 1
 }
 
-# Save a normalized copy of the exact project list used for this export.
 try {
     $ProjectNames |
         ForEach-Object {
@@ -355,20 +537,12 @@ try {
             -ErrorAction Stop
 }
 catch {
-    Write-Warning "Could not save the normalized project-list copy: $($_.Exception.Message)"
+    Write-Warning "Could not save the normalized project list: $($_.Exception.Message)"
 }
 
 # ---------------------------------------------------------------------------
-# Authentication and result variables
+# Display settings
 # ---------------------------------------------------------------------------
-
-$credential = $null
-$plainPassword = $null
-$session = $null
-$loginSucceeded = $false
-$fatalError = $null
-
-$results = New-Object System.Collections.Generic.List[object]
 
 Write-Host ""
 Write-Host "============================================================"
@@ -377,6 +551,7 @@ Write-Host "============================================================"
 Write-Host ""
 Write-Host "Server:             $BaseUrl"
 Write-Host "Company:            $Company"
+Write-Host "Username:           $username"
 
 if ([string]::IsNullOrWhiteSpace($Branch)) {
     Write-Host "Branch:             [default]"
@@ -385,6 +560,7 @@ else {
     Write-Host "Branch:             $Branch"
 }
 
+Write-Host "Environment file:   $EnvFilePath"
 Write-Host "Project CSV:        $ProjectCsvPath"
 Write-Host "CSV rows:           $($csvImportResult.CsvRowCount)"
 Write-Host "Unique projects:    $($ProjectNames.Count)"
@@ -394,30 +570,22 @@ Write-Host "Output directory:   $runDirectory"
 Write-Host "Resolve conflicts:  $([bool]$AutoResolveConflicts)"
 Write-Host ""
 
+# ---------------------------------------------------------------------------
+# Authenticate and export
+# ---------------------------------------------------------------------------
+
+$session = $null
+$loginSucceeded = $false
+$fatalError = $null
+$results = New-Object System.Collections.Generic.List[object]
+
 try {
-    $credential = Get-Credential `
-        -Message "Enter your Acumatica username and password"
-
-    if ($null -eq $credential) {
-        throw "No Acumatica credentials were provided."
-    }
-
-    if ([string]::IsNullOrWhiteSpace($credential.UserName)) {
-        throw "The Acumatica username cannot be empty."
-    }
-
-    $plainPassword = $credential.GetNetworkCredential().Password
-
-    if ([string]::IsNullOrWhiteSpace($plainPassword)) {
-        throw "The Acumatica password cannot be empty."
-    }
-
     $session = New-Object `
         Microsoft.PowerShell.Commands.WebRequestSession
 
     $loginBody = @{
-        name     = $credential.UserName
-        password = $plainPassword
+        name     = $username
+        password = $password
         company  = $Company
         branch   = $Branch
         locale   = $Locale
@@ -441,10 +609,6 @@ try {
 
     Write-Host "Signed in successfully."
     Write-Host ""
-
-    # -----------------------------------------------------------------------
-    # Export each project from the CSV
-    # -----------------------------------------------------------------------
 
     $index = 0
 
@@ -501,7 +665,6 @@ try {
                 throw "The API response could not be decoded from Base64. $($_.Exception.Message)"
             }
 
-            # Standard ZIP files begin with the ASCII bytes PK.
             if (
                 $null -eq $zipBytes -or
                 $zipBytes.Length -lt 2 -or
@@ -621,13 +784,15 @@ finally {
         }
     }
 
-    $plainPassword = $null
-    $credential = $null
+    # Clear credential variables from the active PowerShell session.
+    $password = $null
+    $username = $null
+    $loginBody = $null
     $session = $null
 }
 
 # ---------------------------------------------------------------------------
-# Write the export report
+# Write export report
 # ---------------------------------------------------------------------------
 
 try {
@@ -644,10 +809,6 @@ catch {
     Write-Error "Unable to write the export report. $($_.Exception.Message)"
     exit 1
 }
-
-# ---------------------------------------------------------------------------
-# Calculate summary counts
-# ---------------------------------------------------------------------------
 
 $successCount = @(
     $results |

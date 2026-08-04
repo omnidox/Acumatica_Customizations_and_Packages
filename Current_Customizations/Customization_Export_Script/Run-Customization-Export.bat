@@ -8,19 +8,20 @@ cd /d "%~dp0"
 
 set "PS_SCRIPT=%~dp0Export-All-iStar-Acumatica-Customizations.ps1"
 set "PROJECT_CSV=%~dp0CustomizationProjects.csv"
+set "ENV_FILE=%~dp0.env"
 
 echo ============================================================
 echo  iStar Acumatica Customization Export
 echo ============================================================
 echo.
-echo Acumatica:
-echo https://istar.privatecloudcorp.com/AcumaticaERP
-echo.
-echo Company:
-echo Company
+echo PowerShell script:
+echo %PS_SCRIPT%
 echo.
 echo Project CSV:
 echo %PROJECT_CSV%
+echo.
+echo Environment file:
+echo %ENV_FILE%
 echo.
 
 rem Validate that the PowerShell script exists.
@@ -37,10 +38,23 @@ if not exist "%PROJECT_CSV%" (
     echo ERROR: The customization-project CSV was not found:
     echo %PROJECT_CSV%
     echo.
-    echo Keep these three files in the same folder:
-    echo   Export-All-iStar-Acumatica-Customizations.ps1
-    echo   Run-Customization-Export.bat
-    echo   CustomizationProjects.csv
+    pause
+    exit /b 1
+)
+
+rem Validate that the .env file exists.
+if not exist "%ENV_FILE%" (
+    echo ERROR: The credential file was not found:
+    echo %ENV_FILE%
+    echo.
+    echo Create a file named .env in this folder with:
+    echo.
+    echo ACUMATICA_USERNAME=your_username
+    echo ACUMATICA_PASSWORD=your_password
+    echo ACUMATICA_BASE_URL=https://istar.privatecloudcorp.com/AcumaticaERP
+    echo ACUMATICA_COMPANY=Company
+    echo ACUMATICA_BRANCH=
+    echo ACUMATICA_LOCALE=en-US
     echo.
     pause
     exit /b 1
@@ -51,6 +65,7 @@ powershell.exe ^
     -NoProfile ^
     -ExecutionPolicy Bypass ^
     -File "%PS_SCRIPT%" ^
+    -EnvFilePath "%ENV_FILE%" ^
     -ProjectCsvPath "%PROJECT_CSV%"
 
 set "EXIT_CODE=%ERRORLEVEL%"
