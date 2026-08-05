@@ -83,7 +83,7 @@ namespace IStar.ScanPerformance
 
         public static void Invalidate()
         {
-            PXContext.SetSlot<State>(SlotKey, null);
+            PXContext.ClearSlot(SlotKey);
         }
 
         public static PXDelegateResult CreateResult(
