@@ -138,15 +138,15 @@ The behavior is functionally valid but inefficient for unusually large shipments
 
 The three evaluations are initiated by Acumatica's standard scan workflow to validate the item, select the next scan state, and determine command availability. The third-party `PackModeLogicExt` participates by processing and sorting the results, but it does not create the three consumers. This repeated work is generally insignificant for small shipments but becomes costly for shipment `0000787`, which contains approximately 1,808 splits. One evaluation also enables `PackAllIntoBoxCommand`, even though worksheet picking is not currently used.
 
-## Proposed next optimization
+## Third problem: Repeated shipment-split processing
 
-The proposed next step is a request-scoped cache for:
+The profiler showed three executions of the same 1,808-row `pickedForPack` split query during each scan. A request-scoped cache was added for:
 
 ```text
 WMS.PackModeLogicExt.pickedForPack()
 ```
 
-The objective is to reuse the materialized split results during one scan request instead of querying the same data three times.
+The customization stores one materialized result for repeated reads during the current HTTP request. The cache is keyed by the scan instance, shipment, mode, selected package, and removal state. It cannot persist into the next scan callback or be shared between requests.
 
 Research confirmed that packing quantities are modified through:
 
@@ -158,14 +158,115 @@ Confirm()
 
 Therefore, the cache must be invalidated after confirmation or any packing mutation. Reusing a pre-update result after `PackSplit()` could cause stale quantities or incorrect command states.
 
-Expected behavior:
+### Solution applied
 
-- Read-only scan processing could reduce three full split loads to one.
-- A request that changes packing quantities may require one load before the update and another after invalidation.
-- Cached data must never persist across separate HTTP requests.
+A separate customization was created:
+
+```text
+PackModePickedForPackRequestCache.cs
+```
+
+It extends the third-party `WMS.PackModeLogicExt` and reuses its materialized `pickedForPack()` result during the current request. A coordinated extension of `WMS.ConfirmStateLogicExt` clears the cache after every confirmation attempt so subsequent `CanPack` evaluations reload current quantities.
+
+### Verified improvement
+
+| Metric | Before cache | After cache | Improvement |
+|---|---:|---:|---:|
+| Average scan time | 2.43 sec | 2.08 sec | 14% faster |
+| Average CPU time | 1.92 sec | 1.64 sec | 15% lower |
+| Cache/select operations | 10,228 | 8,371 | 18% fewer |
+| Select processing time | 1.56 sec | 1.26 sec | 19% lower |
+| SQL time | 0.60 sec | 0.51 sec | 15% lower |
+| Full `pickedForPack` split loads | 3 | 2 | One eliminated |
+
+Two of the three comparable scans completed in approximately 1.86-1.90 seconds. The third took approximately 2.48 seconds because of higher SQL time, producing an overall average of 2.08 seconds. The profiler confirmed that `PackModePickedForPackRequestCacheExt.pickedForPack()` was active and reduced the rows returned by this repeated query from 5,424 to 3,616 per scan.
+
+Two loads remain intentionally on quantity-changing requests:
+
+```text
+Initial state and command evaluation
+-> load and cache current splits
+
+Confirm and PackSplit
+-> change package quantities
+-> invalidate the cache
+
+Post-confirmation state and command evaluation
+-> reload current splits
+```
+
+This preserves correct packed quantities and command states. Forcing a quantity-changing request to use only one load could reuse pre-confirmation data after `PackSplit()`.
+
+## LINQ fallback investigation
+
+The profiler continues to report the following application-side LINQ fallback during scan and related grid callbacks:
+
+```text
+SQLQueryable<PXResult<SOShipLineSplit>>
+-> Convert()
+-> SelectMany
+-> OfType
+-> ToList
+```
+
+The source filename is not retained in the dynamically compiled `_CustomMethod` stack. Controlled customization isolation was therefore used to narrow the possible source.
+
+### Confirmed source
+
+dnSpy confirmed that the fallback originates in standard Acumatica's `PickPackShip.GetSplits()` method. Its joined shipment-split query uses:
+
+```text
+AsEnumerable<PXResult<SOShipLineSplit>>()
+-> Cast<PXResult<SOShipLineSplit, SOShipLine, INLocation>>()
+-> PXResult.Convert<TResult>()
+-> LINQ fallback
+```
+
+The confirmed call path is:
+
+```text
+WMS.PackModeLogicExt.pickedForPack()
+-> PickPackShip.PackMode.Logic.pickedForPack()
+-> PickPackShip.GetSplits()
+-> PXResult.Convert<TResult>()
+```
+
+The SQL LINQ provider cannot translate the result-shape conversion, so Acumatica completes it in application memory. Master Pack invokes and sorts these results but does not create the unsupported LINQ expression. The request cache reduces how often the fallback runs; eliminating it would require a safe override of `GetSplits()` that preserves its joins, assigned/unassigned handling, processed separation, and warehouse ordering.
+
+The following customizations were deactivated during the `ProfilerLog_5`, `ProfilerLog_6`, and `ProfilerLog_7` isolation tests and have been ruled out:
+
+- `ConsignmentOrdersBE`
+- `SP_DBCostUpdates1`
+- `ASCJewelryLibrary[v1.2.2]`
+- `TRUECOMMERCE[25.193.0171][9.0.1.137]`
+- `ASCIStarWMSCustomization[June19]`
+- `AsgardLabels[Basic][25.201.0213][6.4.2.2]`
+- `AsgardLabels[RomanSunStone][25.200.0248][1.0.0]`
+- `OneUCCPerPackage`
+- `OneLabelPerPackage`
+- `UserRoleExtender`
+- `AsgardButtonControl[06.09.2026]`
+- `iStarCustomizations[25.201][05.18.2026]v1`
+- `iStarCustomizations[25.201][July1]`
+- `MasterPackISV[25.201[06.25.2026]`
+- `MasterPackISV[25.201[07.01.2026]`
+- `MasterPackISV[25.201[07.09.2026]`
+- `MasterPackExtension[07.10.2026][1]`
+- `MasterPackExtension[07.22.2026][1]`
+- `CustomWMSManualPackTransfer[07.22.2026][1]`
+- `POReceiptLineAdditionalColumn[06.19.2026][1]`
+- `Velixo[25R2]`
+- `SplitGIsAndReports[24.209.0013][April426]`
+- `iStarShippingRestrictionsCustomizations[06.30.2026]`
+- `MonthlyForecastReferenceTable[06.22.2026][1]`
+- `MonthlyForecastReferenceTable[06.30.2026][1]`
+- `iStarManufacturingCost[07.28.2026][1]`
+- `FlexManufacturing25R201v260422`
+
+The identical `SOShipLineSplit` LINQ fallback remained present during every measured scan after these customizations were deactivated. In `ProfilerLog_8`, deactivating `MasterPackExtension[07.22.2026][1]` removed some ancillary UI, event, note, item, customer, site, and package-related work, but it did not remove or change the fallback. The two safe full split loads also remained unchanged. These customizations are therefore not considered the source of the current scan-related LINQ fallback.
 
 ## Overall result
 
-The completed optimizations have reduced average scan time from approximately **5.19 seconds to 2.43 seconds**, a total improvement of approximately **53%**. SQL calls have fallen from approximately **1,850 to 208 per scan**, a reduction of approximately **89%**.
+The completed optimizations have reduced average scan time from approximately **5.19 seconds to 2.08 seconds**, a total improvement of approximately **60%**. SQL calls have fallen from approximately **1,850 to about 211 per comparable scan**, a reduction of approximately **89%**.
 
-The primary per-split Advanced Labels lookup and repeated Master Pack barcode lookups have both been eliminated. The remaining optimization opportunity is repeated loading of the same shipment splits by standard Acumatica validation and state-management logic.
+The primary per-split Advanced Labels lookup and repeated Master Pack barcode lookups have both been eliminated. Request-scoped reuse has also removed one of the three repeated `pickedForPack` split loads while preserving a required reload after packing quantities change. The previously identified LINQ fallback remains a separate optimization opportunity.
