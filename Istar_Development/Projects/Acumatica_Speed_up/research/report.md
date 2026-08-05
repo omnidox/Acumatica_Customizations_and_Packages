@@ -11,11 +11,11 @@ Across four scan requests:
 | Metric | Observed |
 |---|---:|
 | Average scan time | 5.19 seconds |
-| Range | 4.20–5.82 seconds |
-| SQL calls per scan | 1,101–2,110 |
-| Cache/select operations | 13,558–15,716 |
-| SQL time per scan | 1.30–1.91 seconds |
-| CPU time per scan | 3.14–4.45 seconds |
+| Range | 4.20-5.82 seconds |
+| SQL calls per scan | 1,101-2,110 |
+| Cache/select operations | 13,558-15,716 |
+| SQL time per scan | 1.30-1.91 seconds |
+| CPU time per scan | 3.14-4.45 seconds |
 | Shipment splits returned | Approximately 1,808 |
 
 ## First problem: Advanced Labels transaction quantity formula
@@ -72,14 +72,14 @@ A separate customization was created:
 PackModeBarcodeLookupOptimization.cs
 ```
 
-It uses Acumatica’s supported extension-of-extension structure to run after `WMS.PackModeLogicExt`. It replaces only the third-party barcode handler and leaves the remainder of the Master Pack functionality unchanged.
+It uses Acumatica's supported extension-of-extension structure to run after `WMS.PackModeLogicExt`. It replaces only the third-party barcode handler and leaves the remainder of the Master Pack functionality unchanged.
 
 The optimized process is:
 
 ```text
 Look up the scanned barcode
-→ identify the inventory item
-→ confirm the item exists on the shipment
+-> identify the inventory item
+-> confirm the item exists on the shipment
 ```
 
 The third-party code was not edited directly.
@@ -110,31 +110,33 @@ The three confirmed consumers are:
 
 ```text
 IsItemMissing
-→ pickedForPack
-→ GetSplits
+-> pickedForPack
+-> GetSplits
 ```
 
 2. Scanner state selection:
 
 ```text
 ShipmentState.SetNextState
-→ CanPack
-→ pickedForPack
-→ GetSplits
+-> CanPack
+-> pickedForPack
+-> GetSplits
 ```
 
 3. Command enablement:
 
 ```text
 PackAllIntoBoxCommand.IsEnabled
-→ CanPack
-→ pickedForPack
-→ GetSplits
+-> CanPack
+-> pickedForPack
+-> GetSplits
 ```
 
-These calls are primarily part of Acumatica’s standard scan workflow. The third-party `PackModeLogicExt` processes and sorts the results, but no separate customization was found creating additional calls.
+These calls are primarily part of Acumatica's standard scan workflow. The third-party `PackModeLogicExt` processes and sorts the results, but no separate customization was found creating additional calls.
 
 The behavior is functionally valid but inefficient for unusually large shipments. Acumatica loads and processes the same 1,808 splits independently for validation, state selection, and command enablement.
+
+The three evaluations are initiated by Acumatica's standard scan workflow to validate the item, select the next scan state, and determine command availability. The third-party `PackModeLogicExt` participates by processing and sorting the results, but it does not create the three consumers. This repeated work is generally insignificant for small shipments but becomes costly for shipment `0000787`, which contains approximately 1,808 splits. One evaluation also enables `PackAllIntoBoxCommand`, even though worksheet picking is not currently used.
 
 ## Proposed next optimization
 
@@ -150,8 +152,8 @@ Research confirmed that packing quantities are modified through:
 
 ```text
 Confirm()
-→ PackSplit()
-→ SOShipLineSplitPackage.PackedQty
+-> PackSplit()
+-> SOShipLineSplitPackage.PackedQty
 ```
 
 Therefore, the cache must be invalidated after confirmation or any packing mutation. Reusing a pre-update result after `PackSplit()` could cause stale quantities or incorrect command states.
