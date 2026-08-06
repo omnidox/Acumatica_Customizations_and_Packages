@@ -237,6 +237,21 @@ WMS.PackModeLogicExt.pickedForPack()
 
 `ProfilerLog_9` averaged 2.44 seconds per scan versus 1.79 seconds in `ProfilerLog_8`. CPU was slightly lower, but SQL time increased from 0.38 to 1.01 seconds, indicating database timing variation rather than a demonstrated benefit from the override. One scan also encountered an `SOShipment` lock violation handled by the existing retry logic.
 
+### Packed view optimization
+
+**Updated:** August 6, 2026 at 9:17 AM EDT
+
+The remaining fallback was traced to standard Acumatica's `PickPackShip.PackMode.Logic.packed()` delegate used by the Package Content grid. `PackModePackedViewOptimization.cs` replaced its full `PickedForPack` enumeration with a direct package-content join. `ProfilerLog_010` confirmed the override was active, returned only 1-3 package rows per scan, and eliminated all LINQ warnings and exceptions. Average scan time was 2.55 seconds versus 2.44 seconds in `ProfilerLog_9`; SQL remained unusually slow, so no timing improvement was demonstrated even though the targeted fallback was removed.
+
+| Metric | Log 9 | Log 010 |
+|---|---:|---:|
+| Average scan time | 2.44 sec | 2.55 sec |
+| CPU time | 1.48 sec | 1.57 sec |
+| SQL time | 1.01 sec | 1.03 sec |
+| SQL calls | 192 | 198 |
+| LINQ fallback | Present | Eliminated |
+| Exceptions | 1 | 0 |
+
 The following customizations were deactivated during the `ProfilerLog_5`, `ProfilerLog_6`, and `ProfilerLog_7` isolation tests and have been ruled out:
 
 - `ConsignmentOrdersBE`
@@ -269,8 +284,32 @@ The following customizations were deactivated during the `ProfilerLog_5`, `Profi
 
 The identical `SOShipLineSplit` LINQ fallback remained present during every measured scan after these customizations were deactivated. In `ProfilerLog_8`, deactivating `MasterPackExtension[07.22.2026][1]` removed some ancillary UI, event, note, item, customer, site, and package-related work, but it did not remove or change the fallback. The two safe full split loads also remained unchanged. These customizations are therefore not considered the source of the current scan-related LINQ fallback.
 
+## Current SQL priorities
+
+**Updated:** August 6, 2026 at 9:33 AM EDT
+
+| Rank | Query | Total SQL time | Executions | Meaning |
+|---:|---|---:|---:|---|
+| 1 | `FF246783` | 661 ms | 8 | Full assigned shipment-split loads |
+| **2 - Next target** | **`6519B47D`** | **439 ms** | **107** | **Per-split `GetQtyThreshold()` lookups** |
+| 3 | `B5446270` | 356 ms | 11 | Repeated full `SOShipLine` loads |
+| 4 | `E93AD83C` | 150 ms | 174 | Repeated package-split lookups during packing |
+| 5 | `11914AC2` | 100 ms | 6 | Master Pack actual package/style totals |
+
+`FF246783` originally loaded approximately 1,808 shipment splits three times per scan. The request-scoped `pickedForPack()` cache reduced this to two loads: one before `PackSplit()` changes package quantities and one afterward to refresh `CanPack` and command state with current data. The cache is explicitly invalidated after confirmation to prevent stale packed quantities. Reducing these two loads to one would require invasive synchronization of Acumatica's cached split results after every packing mutation and could produce incorrect quantities or command states. The first-ranked query is therefore considered optimized as far as practical without materially changing standard behavior.
+
+The investigation will now move to `6519B47D`. Its 107 executions indicate an N+1 pattern in `SOShipmentEntry.GetQtyThreshold(SOShipLineSplit)`, making it the next high-impact and comparatively safer optimization candidate.
+
+### `GetQtyThreshold()` finding and plan
+
+**Updated:** August 6, 2026 at 9:44 AM EDT
+
+dnSpy confirmed that `GetQtyThreshold()` queries the `SOLine` associated with each shipment split, reads `CompleteQtyMax`, divides it by 100, and defaults to `1.0`. `GetSplitsToPack()` invokes this calculation for every eligible split, producing 6, 45, and 56 separate queries across the three measured scans.
+
+The proposed `PackModeQtyThresholdOptimization.cs` will replace these individual lookups with one request-scoped batch query per shipment and scanned inventory. It will build a `SOShipLine.LineNbr -> CompleteQtyMax / 100` dictionary and reuse it during the scan. Missing entries will call the original method as a safe fallback. This preserves standard `TargetQty()`, `HasPick`, wave/batch picking, Master Pack ordering, and behavior outside Pick/Pack/Ship. The expected reduction is up to 56 threshold queries per scan to approximately one batch query.
+
 ## Overall result
 
 The completed, verified optimizations reduced average scan time from approximately **5.19 seconds to 2.08 seconds** in the comparable cache test, an improvement of approximately **60%**. SQL calls fell from approximately **1,850 to about 211 per comparable scan**, a reduction of approximately **89%**. The later `ProfilerLog_9` capture averaged 2.44 seconds because SQL execution was substantially slower during that test.
 
-The primary per-split Advanced Labels lookup and repeated Master Pack barcode lookups have both been eliminated. Request-scoped reuse has also removed one of the three repeated `pickedForPack` split loads while preserving a required reload after packing quantities change. The previously identified LINQ fallback remains a separate optimization opportunity.
+The primary per-split Advanced Labels lookup and repeated Master Pack barcode lookups have been eliminated. Request-scoped reuse removed one of the three repeated `pickedForPack` split loads while preserving a required reload after packing quantities change. The Package Content LINQ fallback has also been eliminated; the next visible candidates are repeated `GetQtyThreshold()` and `SOShipLineSplitPackage` lookups.
