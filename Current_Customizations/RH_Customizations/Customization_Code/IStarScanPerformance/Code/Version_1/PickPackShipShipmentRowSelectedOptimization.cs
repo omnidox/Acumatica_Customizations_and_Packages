@@ -96,7 +96,7 @@ namespace IStar.ScanPerformance
                         SOShipLine.shipmentNbr,
                         Equal<Required<SOShipLine.shipmentNbr>>>>
                 .SelectWindowed(Base, 0, 1, shipment.ShipmentNbr)
-                .Count == 0;
+                .TopFirst == null;
 
             bool canEditShipmentKeys = sender.AllowUpdate && shipmentHasNoLines;
 
