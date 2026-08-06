@@ -100,7 +100,7 @@ IStar.ScanPerformance.PackModeBarcodeLookupOptimization
     .FindShipmentItemByBarcode
 ```
 
-## Current remaining bottleneck
+## Repeated split consumers identified
 
 The profiler still shows three executions of the full 1,808-row shipment-split query during a scan.
 
@@ -132,11 +132,7 @@ PackAllIntoBoxCommand.IsEnabled
 -> GetSplits
 ```
 
-These calls are primarily part of Acumatica's standard scan workflow. The third-party `PackModeLogicExt` processes and sorts the results, but no separate customization was found creating additional calls.
-
-The behavior is functionally valid but inefficient for unusually large shipments. Acumatica loads and processes the same 1,808 splits independently for validation, state selection, and command enablement.
-
-The three evaluations are initiated by Acumatica's standard scan workflow to validate the item, select the next scan state, and determine command availability. The third-party `PackModeLogicExt` participates by processing and sorting the results, but it does not create the three consumers. This repeated work is generally insignificant for small shipments but becomes costly for shipment `0000787`, which contains approximately 1,808 splits. One evaluation also enables `PackAllIntoBoxCommand`, even though worksheet picking is not currently used.
+The three evaluations are initiated by Acumatica's standard scan workflow to validate the item, select the next scan state, and determine command availability. The third-party `PackModeLogicExt` processes and sorts the results but does not create the consumers, and no additional customization was found creating extra calls. This behavior is generally insignificant for small shipments but becomes costly for shipment `0000787`. One evaluation also enables `PackAllIntoBoxCommand`, even though worksheet picking is not currently used.
 
 ## Third problem: Repeated shipment-split processing
 
@@ -199,7 +195,7 @@ This preserves correct packed quantities and command states. Forcing a quantity-
 
 ## LINQ fallback investigation
 
-The profiler continues to report the following application-side LINQ fallback during scan and related grid callbacks:
+At this stage of the investigation, the profiler continued to report the following application-side LINQ fallback during scan and related grid callbacks:
 
 ```text
 SQLQueryable<PXResult<SOShipLineSplit>>
@@ -233,7 +229,7 @@ WMS.PackModeLogicExt.pickedForPack()
 -> PXResult.Convert<TResult>()
 ```
 
-`PickPackShipGetSplitsOptimization.cs` was created to replace this conversion in Pack mode while preserving joins, assigned/unassigned handling, processed separation, and warehouse ordering. `ProfilerLog_9` confirmed that the override executed, but the identical LINQ warning remained once per scan and during profiler shutdown. SQL calls, select operations, and the two 1,808-row split loads were effectively unchanged. This proves that another grid view delegate independently generates the reported fallback; the `_CustomMethod -> PXView.InvokeDelegate -> PXGrid.PerformSelect` path and the relevant ASPX `DataMember` are the next investigation targets.
+`PickPackShipGetSplitsOptimization.cs` was created experimentally to replace this conversion in Pack mode while preserving joins, assigned/unassigned handling, processed separation, and warehouse ordering. `ProfilerLog_9` confirmed that the override executed, but the identical LINQ warning remained once per scan and during profiler shutdown. SQL calls, select operations, and the two 1,808-row split loads were effectively unchanged. The experiment therefore did not address the active fallback and was removed from the deployed customization. Investigation then shifted to the `_CustomMethod -> PXView.InvokeDelegate -> PXGrid.PerformSelect` path and the relevant ASPX `DataMember`.
 
 `ProfilerLog_9` averaged 2.44 seconds per scan versus 1.79 seconds in `ProfilerLog_8`. CPU was slightly lower, but SQL time increased from 0.38 to 1.01 seconds, indicating database timing variation rather than a demonstrated benefit from the override. One scan also encountered an `SOShipment` lock violation handled by the existing retry logic.
 
@@ -282,9 +278,9 @@ The following customizations were deactivated during the `ProfilerLog_5`, `Profi
 - `iStarManufacturingCost[07.28.2026][1]`
 - `FlexManufacturing25R201v260422`
 
-The identical `SOShipLineSplit` LINQ fallback remained present during every measured scan after these customizations were deactivated. In `ProfilerLog_8`, deactivating `MasterPackExtension[07.22.2026][1]` removed some ancillary UI, event, note, item, customer, site, and package-related work, but it did not remove or change the fallback. The two safe full split loads also remained unchanged. These customizations are therefore not considered the source of the current scan-related LINQ fallback.
+The identical `SOShipLineSplit` LINQ fallback remained present during every measured scan after these customizations were deactivated. In `ProfilerLog_8`, deactivating `MasterPackExtension[07.22.2026][1]` removed some ancillary UI, event, note, item, customer, site, and package-related work, but it did not remove or change the fallback. The two safe full split loads also remained unchanged. These customizations were therefore ruled out as the source of the fallback later resolved by `PackModePackedViewOptimization.cs`.
 
-## Current SQL priorities
+## SQL priorities identified after `ProfilerLog_010`
 
 **Updated:** August 6, 2026 at 11:23 AM EDT
 
@@ -324,13 +320,13 @@ dnSpy confirmed that `GetQtyThreshold()` queries the `SOLine` associated with ea
 | LINQ fallback | Eliminated | Eliminated | Remains resolved |
 | Exceptions | 0 | 0 | No errors |
 
-The batch queries returned 6, 45, and 56 rows, matching the records previously retrieved separately. The next visible SQL candidate is `B5446270`, which repeatedly loads all `SOShipLine` records.
+The batch queries returned 6, 45, and 56 rows, matching the records previously retrieved separately. At that point, the next visible SQL candidate was `B5446270`, which repeatedly loaded all `SOShipLine` records.
 
-### Next active target: `B5446270`
+### `B5446270` investigation target
 
 **Updated:** August 6, 2026 at 11:32 AM EDT
 
-The next investigation will focus on `B5446270`, the repeated full `SOShipLine` load. In `ProfilerLog_011`, it executed nine times across three scans, returned 16,272 rows, and consumed approximately 213 ms of scan SQL time. It is the best remaining safe optimization opportunity because `FF246783` has already been reduced to the two state-correct loads required around packing mutations, while `E93AD83C` consumed only approximately 31 ms despite its high execution count.
+The investigation next focused on `B5446270`, the repeated full `SOShipLine` load. In `ProfilerLog_011`, it executed nine times across three scans, returned 16,272 rows, and consumed approximately 213 ms of scan SQL time. It was selected because `FF246783` had already been reduced to the two state-correct loads required around packing mutations, while `E93AD83C` consumed only approximately 31 ms despite its high execution count.
 
 ### `SOShipment_RowSelected` verified result
 
@@ -369,6 +365,8 @@ The replacement stack was confirmed at `PickPackShipShipmentRowSelectedOptimizat
 
 **Added:** August 6, 2026 at 1:53 PM EDT
 
+**Status:** Pending
+
 Profiler results confirm performance improvements but do not prove that every warehouse workflow remains functionally correct. The following scenarios must be tested before production deployment:
 
 - Scan a valid item and confirm that its packed quantity increases correctly.
@@ -391,6 +389,25 @@ Profiler results confirm performance improvements but do not prove that every wa
 - Have multiple users scan concurrently in Pick, Pack, and Ship. Test different shipments first, then test the same shipment only if that workflow is supported. Confirm correct locking, quantities, package assignments, labels, command states, and user-facing conflict messages.
 
 After every quantity-changing test, verify that the displayed packed quantity, package-content quantity, and persisted database quantity agree. Any stale quantity, incorrect command state, duplicate label, or unexplained concurrency error must be resolved before production deployment.
+
+## Current performance boundary
+
+**Updated:** August 6, 2026 at 2:02 PM EDT
+
+`ProfilerLog_013` averaged 1.37 seconds of server time, 1.16 seconds of application-server CPU, 331 ms of SQL time, approximately 8,433 cache/select operations, and approximately 779 ms of select-processing time per scan, with no reported wait time or exceptions. These counters overlap and must not be added together, but they show that the next investigation should target application CPU rather than general SQL tuning.
+
+The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct packages are each checked twice. It consumes only approximately 9.54 ms of SQL time per scan and returns very few package-content records. Package-state caching is therefore a low-priority micro-optimization unless CPU profiling proves that its non-SQL framework processing is material.
+
+## Deployed performance customization files
+
+- `PickPackShipTranQtyPerformanceExt.cs`
+- `PackModeBarcodeLookupOptimization.cs`
+- `PackModePickedForPackRequestCache.cs`
+- `PackModePackedViewOptimization.cs`
+- `PackModeQtyThresholdOptimization.cs`
+- `PickPackShipShipmentRowSelectedOptimization.cs`
+
+`PickPackShipGetSplitsOptimization.cs` was an unsuccessful diagnostic experiment and is not part of the deployed solution.
 
 ## Recommended next steps
 
