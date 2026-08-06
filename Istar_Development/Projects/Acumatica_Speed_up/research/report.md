@@ -292,7 +292,7 @@ The identical `SOShipLineSplit` LINQ fallback remained present during every meas
 |---:|---|---:|---:|---|
 | 1 | `FF246783` | 661 ms | 8 | Full assigned shipment-split loads |
 | **2 - Completed** | **`6519B47D`** | **439 ms** | **107** | **Per-split `GetQtyThreshold()` lookups** |
-| **3 - Next candidate** | **`B5446270`** | **356 ms** | **11** | **Repeated full `SOShipLine` loads** |
+| **3 - Completed** | **`B5446270`** | **356 ms** | **11** | **Repeated full `SOShipLine` loads** |
 | 4 | `E93AD83C` | 150 ms | 174 | Repeated package-split lookups during packing |
 | 5 | `11914AC2` | 100 ms | 6 | Master Pack actual package/style totals |
 
@@ -332,8 +332,68 @@ The batch queries returned 6, 45, and 56 rows, matching the records previously r
 
 The next investigation will focus on `B5446270`, the repeated full `SOShipLine` load. In `ProfilerLog_011`, it executed nine times across three scans, returned 16,272 rows, and consumed approximately 213 ms of scan SQL time. It is the best remaining safe optimization opportunity because `FF246783` has already been reduced to the two state-correct loads required around packing mutations, while `E93AD83C` consumed only approximately 31 ms despite its high execution count.
 
+### `SOShipment_RowSelected` verified result
+
+**Updated:** August 6, 2026 at 1:18 PM EDT
+
+`PickPackShipShipmentRowSelectedOptimization.cs` preserved the standard Pick/Pack/Ship `SOShipment_RowSelected` behavior while replacing the full `Transactions.Select().Count` load with a limited existence query. `ProfilerLog_012` confirmed that `B5446270` was eliminated without exceptions.
+
+| Metric | Log 011 | Log 012 | Change |
+|---|---:|---:|---:|
+| Average scan time | 1.72 sec | 1.55 sec | 10% faster |
+| Average CPU time | 1.37 sec | 1.29 sec | 6% lower |
+| Rows returned per scan | 11,125 | 5,705 | 49% fewer |
+| Exceptions | 0 | 0 | No regression |
+| `B5446270` executions | 9 | 0 | Eliminated |
+| Target-related rows | 16,272 | 9 | Nearly eliminated |
+| Target-related SQL time | 213 ms | 50 ms | 76% lower |
+
+The replacement stack was confirmed at `PickPackShipShipmentRowSelectedOptimization.SOShipment_RowSelected`. The existence check was subsequently changed from `.SelectWindowed(...).Count` to `.SelectWindowed(...).TopFirst == null` for clarity.
+
+### `TopFirst` verification
+
+**Updated:** August 6, 2026 at 1:53 PM EDT
+
+`ProfilerLog_013` confirmed that `B5446270` remains eliminated and no exceptions occurred. Average scan time improved from 1.55 to 1.37 seconds, although the targeted replacement pattern was unchanged: `6F2A12FA` still executed six times across three scans, returned nine rows, and consumed approximately 48 ms. The `TOP (2)` and `TOP (1)` statements therefore represent two separate `SOShipment_RowSelected` evaluations per scan, not duplicate queries caused by `.Count`. The additional timing improvement should be treated as capture variation rather than an effect proven to result from `TopFirst`.
+
+| Metric | Log 012 | Log 013 | Change |
+|---|---:|---:|---:|
+| Average scan time | 1.55 sec | 1.37 sec | 11% faster |
+| Average CPU time | 1.29 sec | 1.16 sec | 10% lower |
+| Average SQL calls | 163.7 | 159.0 | 3% fewer |
+| Average SQL time | 380 ms | 331 ms | 13% lower |
+| `B5446270` executions | 0 | 0 | Remains eliminated |
+| Exceptions | 0 | 0 | No regression |
+
+## Functional regression testing
+
+**Added:** August 6, 2026 at 1:53 PM EDT
+
+Profiler results confirm performance improvements but do not prove that every warehouse workflow remains functionally correct. The following scenarios must be tested before production deployment:
+
+- Scan a valid item and confirm that its packed quantity increases correctly.
+- Scan the same item repeatedly and verify each quantity increment.
+- Scan an item that is not on the shipment and confirm that it is rejected.
+- Scan an invalid barcode and confirm that the expected validation message appears.
+- Pack items using alternate barcodes or item cross-references.
+- Pack items into multiple boxes and verify the contents of each box.
+- Change the selected box and confirm subsequent scans use the correct package.
+- Confirm a package and verify its status and quantities.
+- Remove or unpack an item and verify that quantities decrease correctly.
+- Test lot-controlled and serial-controlled inventory.
+- Scan the final required item and verify that the shipment becomes fully packed.
+- Confirm that `CanPack`, package confirmation, and related commands enable or disable immediately and correctly.
+- Refresh or reopen the shipment and verify that displayed quantities match persisted quantities.
+- Test both shipment `0000787` and a normal-sized shipment.
+- Test standard shipments, transfer shipments, and any special picking modes used by the business.
+- Confirm that all expected Pick, Pack, and Ship labels still print with the correct shipment, package, item, quantity, and printer information.
+- Test label reprinting and verify that optimizations do not produce missing, duplicate, or stale labels.
+- Have multiple users scan concurrently in Pick, Pack, and Ship. Test different shipments first, then test the same shipment only if that workflow is supported. Confirm correct locking, quantities, package assignments, labels, command states, and user-facing conflict messages.
+
+After every quantity-changing test, verify that the displayed packed quantity, package-content quantity, and persisted database quantity agree. Any stale quantity, incorrect command state, duplicate label, or unexplained concurrency error must be resolved before production deployment.
+
 ## Overall result
 
-The completed optimizations reduced average scan time from approximately **5.19 seconds to 1.72 seconds** in the latest capture, an improvement of approximately **67%**. SQL calls fell from approximately **1,850 to 161 per scan**, a reduction of approximately **91%**.
+The completed optimizations reduced average scan time from approximately **5.19 seconds to 1.37 seconds** in the latest capture, an improvement of approximately **74%**. SQL calls fell from approximately **1,850 to 159 per scan**, a reduction of approximately **91%**.
 
-The Advanced Labels lookup, repeated Master Pack barcode lookups, Package Content LINQ fallback, and per-split `GetQtyThreshold()` queries have been eliminated or consolidated. Request-scoped reuse also removed one of the three repeated `pickedForPack` split loads while preserving the required post-mutation reload. The next visible candidate is the repeated full `SOShipLine` query `B5446270`.
+The Advanced Labels lookup, repeated Master Pack barcode lookups, Package Content LINQ fallback, per-split `GetQtyThreshold()` queries, and repeated full `SOShipLine` query `B5446270` have been eliminated or consolidated. Request-scoped reuse also removed one of the three repeated `pickedForPack` split loads while preserving the required post-mutation reload.
