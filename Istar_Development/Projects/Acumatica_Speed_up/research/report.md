@@ -392,6 +392,19 @@ Profiler results confirm performance improvements but do not prove that every wa
 
 After every quantity-changing test, verify that the displayed packed quantity, package-content quantity, and persisted database quantity agree. Any stale quantity, incorrect command state, duplicate label, or unexplained concurrency error must be resolved before production deployment.
 
+## Recommended next steps
+
+**Updated:** August 6, 2026 at 2:02 PM EDT
+
+1. Complete functional regression testing.
+2. Capture one controlled scan with dotTrace.
+3. Identify the methods consuming the remaining application-server CPU.
+4. If full split processing dominates, evaluate only state-safe ways to reduce its in-memory work.
+5. If `IsPackageEmpty` appears materially in the CPU call tree, design a bulk cache based on `SOShipLineSplitPackage` that preserves dirty cache records, parent-box behavior, and mutation invalidation.
+6. Do not convert packing queries to read-only or disable database event logging without measurements proving that the change is both safe and worthwhile.
+
+No additional performance customization should be implemented until CPU profiling identifies a specific method with meaningful optimization potential.
+
 ## Overall result
 
 The completed optimizations reduced average scan time from approximately **5.19 seconds to 1.37 seconds** in the latest capture, an improvement of approximately **74%**. SQL calls fell from approximately **1,850 to 159 per scan**, a reduction of approximately **91%**.
