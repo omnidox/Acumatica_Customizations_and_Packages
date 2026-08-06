@@ -286,19 +286,19 @@ The identical `SOShipLineSplit` LINQ fallback remained present during every meas
 
 ## Current SQL priorities
 
-**Updated:** August 6, 2026 at 9:33 AM EDT
+**Updated:** August 6, 2026 at 11:23 AM EDT
 
 | Rank | Query | Total SQL time | Executions | Meaning |
 |---:|---|---:|---:|---|
 | 1 | `FF246783` | 661 ms | 8 | Full assigned shipment-split loads |
-| **2 - Next target** | **`6519B47D`** | **439 ms** | **107** | **Per-split `GetQtyThreshold()` lookups** |
-| 3 | `B5446270` | 356 ms | 11 | Repeated full `SOShipLine` loads |
+| **2 - Completed** | **`6519B47D`** | **439 ms** | **107** | **Per-split `GetQtyThreshold()` lookups** |
+| **3 - Next candidate** | **`B5446270`** | **356 ms** | **11** | **Repeated full `SOShipLine` loads** |
 | 4 | `E93AD83C` | 150 ms | 174 | Repeated package-split lookups during packing |
 | 5 | `11914AC2` | 100 ms | 6 | Master Pack actual package/style totals |
 
 `FF246783` originally loaded approximately 1,808 shipment splits three times per scan. The request-scoped `pickedForPack()` cache reduced this to two loads: one before `PackSplit()` changes package quantities and one afterward to refresh `CanPack` and command state with current data. The cache is explicitly invalidated after confirmation to prevent stale packed quantities. Reducing these two loads to one would require invasive synchronization of Acumatica's cached split results after every packing mutation and could produce incorrect quantities or command states. The first-ranked query is therefore considered optimized as far as practical without materially changing standard behavior.
 
-The investigation will now move to `6519B47D`. Its 107 executions indicate an N+1 pattern in `SOShipmentEntry.GetQtyThreshold(SOShipLineSplit)`, making it the next high-impact and comparatively safer optimization candidate.
+`6519B47D` was selected because its 107 executions exposed an N+1 pattern in `SOShipmentEntry.GetQtyThreshold(SOShipLineSplit)`.
 
 ### `GetQtyThreshold()` finding and plan
 
@@ -306,10 +306,34 @@ The investigation will now move to `6519B47D`. Its 107 executions indicate an N+
 
 dnSpy confirmed that `GetQtyThreshold()` queries the `SOLine` associated with each shipment split, reads `CompleteQtyMax`, divides it by 100, and defaults to `1.0`. `GetSplitsToPack()` invokes this calculation for every eligible split, producing 6, 45, and 56 separate queries across the three measured scans.
 
-The proposed `PackModeQtyThresholdOptimization.cs` will replace these individual lookups with one request-scoped batch query per shipment and scanned inventory. It will build a `SOShipLine.LineNbr -> CompleteQtyMax / 100` dictionary and reuse it during the scan. Missing entries will call the original method as a safe fallback. This preserves standard `TargetQty()`, `HasPick`, wave/batch picking, Master Pack ordering, and behavior outside Pick/Pack/Ship. The expected reduction is up to 56 threshold queries per scan to approximately one batch query.
+`PackModeQtyThresholdOptimization.cs` replaced these individual lookups with one request-scoped batch query per shipment and scanned inventory. It builds a `SOShipLine.LineNbr -> CompleteQtyMax / 100` dictionary and reuses it during the scan; missing entries call the original method. This preserves standard `TargetQty()`, `HasPick`, wave/batch picking, Master Pack ordering, and behavior outside Pick/Pack/Ship.
+
+### `GetQtyThreshold()` verified result
+
+**Updated:** August 6, 2026 at 11:23 AM EDT
+
+`ProfilerLog_011` confirmed that `6519B47D` was eliminated. Its 107 individual calls and 439 ms of SQL time were replaced by three batched `B730E2F8` queries totaling 30 ms—one query per scan and a 93% reduction in threshold SQL time.
+
+| Metric | Log 010 | Log 011 | Result |
+|---|---:|---:|---:|
+| Threshold queries | 107 | 3 | 97% fewer |
+| Threshold SQL time | 439 ms | 30 ms | 93% lower |
+| Average scan time | 2.55 sec | 1.72 sec | 33% faster |
+| Average CPU time | 1.57 sec | 1.37 sec | 13% lower |
+| Average SQL calls | 198 | 161 | 19% fewer |
+| LINQ fallback | Eliminated | Eliminated | Remains resolved |
+| Exceptions | 0 | 0 | No errors |
+
+The batch queries returned 6, 45, and 56 rows, matching the records previously retrieved separately. The next visible SQL candidate is `B5446270`, which repeatedly loads all `SOShipLine` records.
+
+### Next active target: `B5446270`
+
+**Updated:** August 6, 2026 at 11:32 AM EDT
+
+The next investigation will focus on `B5446270`, the repeated full `SOShipLine` load. In `ProfilerLog_011`, it executed nine times across three scans, returned 16,272 rows, and consumed approximately 213 ms of scan SQL time. It is the best remaining safe optimization opportunity because `FF246783` has already been reduced to the two state-correct loads required around packing mutations, while `E93AD83C` consumed only approximately 31 ms despite its high execution count.
 
 ## Overall result
 
-The completed, verified optimizations reduced average scan time from approximately **5.19 seconds to 2.08 seconds** in the comparable cache test, an improvement of approximately **60%**. SQL calls fell from approximately **1,850 to about 211 per comparable scan**, a reduction of approximately **89%**. The later `ProfilerLog_9` capture averaged 2.44 seconds because SQL execution was substantially slower during that test.
+The completed optimizations reduced average scan time from approximately **5.19 seconds to 1.72 seconds** in the latest capture, an improvement of approximately **67%**. SQL calls fell from approximately **1,850 to 161 per scan**, a reduction of approximately **91%**.
 
-The primary per-split Advanced Labels lookup and repeated Master Pack barcode lookups have been eliminated. Request-scoped reuse removed one of the three repeated `pickedForPack` split loads while preserving a required reload after packing quantities change. The Package Content LINQ fallback has also been eliminated; the next visible candidates are repeated `GetQtyThreshold()` and `SOShipLineSplitPackage` lookups.
+The Advanced Labels lookup, repeated Master Pack barcode lookups, Package Content LINQ fallback, and per-split `GetQtyThreshold()` queries have been eliminated or consolidated. Request-scoped reuse also removed one of the three repeated `pickedForPack` split loads while preserving the required post-mutation reload. The next visible candidate is the repeated full `SOShipLine` query `B5446270`.
