@@ -211,9 +211,11 @@ SQLQueryable<PXResult<SOShipLineSplit>>
 
 The source filename is not retained in the dynamically compiled `_CustomMethod` stack. Controlled customization isolation was therefore used to narrow the possible source.
 
-### Confirmed source
+### `GetSplits()` investigation
 
-dnSpy confirmed that the fallback originates in standard Acumatica's `PickPackShip.GetSplits()` method. Its joined shipment-split query uses:
+**Updated:** August 6, 2026 at 8:46 AM EDT
+
+dnSpy identified a matching conversion path in standard Acumatica's `PickPackShip.GetSplits()` method:
 
 ```text
 AsEnumerable<PXResult<SOShipLineSplit>>()
@@ -222,7 +224,7 @@ AsEnumerable<PXResult<SOShipLineSplit>>()
 -> LINQ fallback
 ```
 
-The confirmed call path is:
+The related call path is:
 
 ```text
 WMS.PackModeLogicExt.pickedForPack()
@@ -231,7 +233,9 @@ WMS.PackModeLogicExt.pickedForPack()
 -> PXResult.Convert<TResult>()
 ```
 
-The SQL LINQ provider cannot translate the result-shape conversion, so Acumatica completes it in application memory. Master Pack invokes and sorts these results but does not create the unsupported LINQ expression. The request cache reduces how often the fallback runs; eliminating it would require a safe override of `GetSplits()` that preserves its joins, assigned/unassigned handling, processed separation, and warehouse ordering.
+`PickPackShipGetSplitsOptimization.cs` was created to replace this conversion in Pack mode while preserving joins, assigned/unassigned handling, processed separation, and warehouse ordering. `ProfilerLog_9` confirmed that the override executed, but the identical LINQ warning remained once per scan and during profiler shutdown. SQL calls, select operations, and the two 1,808-row split loads were effectively unchanged. This proves that another grid view delegate independently generates the reported fallback; the `_CustomMethod -> PXView.InvokeDelegate -> PXGrid.PerformSelect` path and the relevant ASPX `DataMember` are the next investigation targets.
+
+`ProfilerLog_9` averaged 2.44 seconds per scan versus 1.79 seconds in `ProfilerLog_8`. CPU was slightly lower, but SQL time increased from 0.38 to 1.01 seconds, indicating database timing variation rather than a demonstrated benefit from the override. One scan also encountered an `SOShipment` lock violation handled by the existing retry logic.
 
 The following customizations were deactivated during the `ProfilerLog_5`, `ProfilerLog_6`, and `ProfilerLog_7` isolation tests and have been ruled out:
 
@@ -267,6 +271,6 @@ The identical `SOShipLineSplit` LINQ fallback remained present during every meas
 
 ## Overall result
 
-The completed optimizations have reduced average scan time from approximately **5.19 seconds to 2.08 seconds**, a total improvement of approximately **60%**. SQL calls have fallen from approximately **1,850 to about 211 per comparable scan**, a reduction of approximately **89%**.
+The completed, verified optimizations reduced average scan time from approximately **5.19 seconds to 2.08 seconds** in the comparable cache test, an improvement of approximately **60%**. SQL calls fell from approximately **1,850 to about 211 per comparable scan**, a reduction of approximately **89%**. The later `ProfilerLog_9` capture averaged 2.44 seconds because SQL execution was substantially slower during that test.
 
 The primary per-split Advanced Labels lookup and repeated Master Pack barcode lookups have both been eliminated. Request-scoped reuse has also removed one of the three repeated `pickedForPack` split loads while preserving a required reload after packing quantities change. The previously identified LINQ fallback remains a separate optimization opportunity.
