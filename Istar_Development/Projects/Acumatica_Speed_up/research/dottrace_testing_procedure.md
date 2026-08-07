@@ -2,11 +2,57 @@
 
 **Created:** August 6, 2026
 
+**Updated:** August 7, 2026 at 10:16 AM EDT
+
 ## Objective
 
 Identify the methods consuming the remaining application-server CPU during a Pick, Pack, and Ship scan on shipment `0000787`. `ProfilerLog_013` averaged approximately 1.37 seconds of server time and 1.16 seconds of IIS CPU per scan.
 
 This procedure is intended for a development or staging server. Do not profile a shared production worker process without operational approval.
+
+## Verified environment
+
+The following configuration was confirmed on the test computer:
+
+- IIS server: `PCWC-LEGION`
+- IIS site: `Default Web Site`
+- Acumatica application: `AcumaticaERP`
+- Application pool: `DefaultAppPool`
+- Initial worker-process result: `WP "14592" (applicationPool:DefaultAppPool)`
+- dotTrace installation check: no existing installation was found
+
+The PID `14592` is only an initial observation. An IIS recycle, application restart, or computer restart can change it. Always rerun `appcmd.exe list wp` immediately before attaching dotTrace.
+
+## Install dotTrace
+
+dotTrace must run on the computer hosting the Acumatica IIS worker process. Installing it only on a workstation that opens Acumatica in a browser is not sufficient.
+
+1. Obtain IT approval before installing or attaching a profiler to a shared server.
+2. Open the official [JetBrains dotTrace download page](https://www.jetbrains.com/profiler/download/).
+3. Download the **Windows 64-bit standalone installer**. JetBrains Toolbox is also supported and recommended by JetBrains, but the standalone installer is simpler when only dotTrace is required.
+4. Do not select the SDK, self-profiling API, ReSharper, or the full dotUltimate suite unless those products are separately required.
+5. Right-click the installer and select **Run as administrator**.
+6. Install the standalone dotTrace application and Viewer using the standard installation location.
+7. Do not enable unrelated Visual Studio integrations unless they are needed.
+8. At first launch, start the 30-day evaluation or sign in with an existing licensed JetBrains account. JetBrains provides the full product during the evaluation period.
+9. Close dotTrace after verifying that its Home window contains options resembling:
+
+```text
+New Process Run
+Running Process
+Open Snapshot
+```
+
+## Confirm the IIS application pool
+
+In IIS Manager:
+
+1. Expand **Sites -> Default Web Site**.
+2. Select **AcumaticaERP**.
+3. Select **Basic Settings** or **Advanced Settings**.
+4. Confirm that **Application Pool** is `DefaultAppPool`.
+
+This has been confirmed for the current test environment. Repeat the check if the IIS application is moved or reconfigured.
 
 ## Important corrections to the original procedure
 
@@ -18,7 +64,7 @@ This procedure is intended for a development or staging server. Do not profile a
 
 ## Test preparation
 
-1. Use the same Acumatica build, customization set, shipment, user, browser, and scan workflow used for `ProfilerLog_013`.
+1. Use the same Acumatica build, all-enabled customization set, shipment, user, browser, and scan workflow used for the latest comparison testing.
 2. Confirm all six performance customization files are published.
 3. Complete one warm-up scan before collecting data. This reduces JIT compilation, first-use cache initialization, and page-load noise.
 4. Stop or avoid unrelated processing jobs and ensure no other user is exercising the same IIS worker during the capture.
@@ -43,23 +89,32 @@ The output maps each `w3wp.exe` process ID to its application pool. Record the P
 
 If no worker process is listed for the pool, open the Acumatica site once to start it and rerun the command.
 
+Expected output format for this environment:
+
+```text
+WP "<current PID>" (applicationPool:DefaultAppPool)
+```
+
+Confirm that the PID shown in dotTrace exactly matches the current command output. Do not rely on the previously observed PID `14592`.
+
 ## Pass 1: Sampling capture
 
 1. Run dotTrace as Administrator on the IIS server.
-2. Select **Attach to Process** or **Running Process**.
-3. If necessary, select **Show All Processes**.
-4. Select the recorded `w3wp.exe` PID and confirm the application-pool mapping again.
-5. Choose **Sampling**.
-6. If the option is available, clear **Collect profiling data from start**. Attach first, then manually start collection immediately before the scan.
-7. Start collecting.
-8. Perform exactly one controlled `scan` callback on `SO302020`.
-9. Wait until the browser response, quantity update, command-state update, and any expected label action complete.
-10. Immediately select **Get Snapshot and Wait** to stop collection and generate the snapshot.
-11. Detach from the process. Detaching should leave the worker process running.
-12. Save the `.dtp` snapshot outside dotTrace's temporary storage with a descriptive name, for example:
+2. On the Home screen, select **Running Process**. Some versions may label this **Attach to Process**.
+3. If `w3wp.exe` is not visible, select **Show All Processes** to grant the required administrative access.
+4. Select the `w3wp.exe` PID that exactly matches the latest `appcmd.exe list wp` result for `DefaultAppPool`.
+5. Choose **Sampling** as the profiling type.
+6. If the option is available, clear **Collect profiling data from start**. This allows attachment before the measurement interval begins.
+7. Stop at this configuration screen during the first attempt and verify the selected PID and options before starting.
+8. Attach the profiler. When ready to measure, click **Start** in the profiling controller if collection did not begin automatically.
+9. Perform exactly one controlled `scan` callback on `SO302020`.
+10. Wait until the browser response, quantity update, command-state update, and any expected label action complete.
+11. Immediately select **Get Snapshot and Wait** to stop collection and generate the snapshot.
+12. Detach from the process. Detaching should leave the worker process running.
+13. Save the `.dtp` snapshot outside dotTrace's temporary storage with a descriptive name, for example:
 
 ```text
-SO302020_0000787_scan_sampling_2026-08-06_01.dtp
+SO302020_0000787_scan_sampling_2026-08-07_01.dtp
 ```
 
 Repeat this process for three separate scans, producing three snapshots. Separate captures make it easier to distinguish repeatable hot spots from one-off JIT, garbage-collection, or operating-system noise.
@@ -152,6 +207,9 @@ Examples:
 
 ## Verified references
 
+- [JetBrains: Download dotTrace](https://www.jetbrains.com/profiler/download/)
+- [JetBrains: License and 30-Day Evaluation](https://www.jetbrains.com/help/profiler/Specifying_License_Information.html)
+- [JetBrains: Run dotTrace](https://www.jetbrains.com/help/profiler/Profiling_Guidelines__Starting_a_Profiling_Session.html)
 - [JetBrains: Start Profiling Session](https://www.jetbrains.com/help/profiler/Starting_Local_Profiling_Session.html)
 - [JetBrains: Profiling Types](https://www.jetbrains.com/help/profiler/Basic_Concepts.html)
 - [JetBrains: Profile a Web Application on IIS](https://www.jetbrains.com/help/profiler/Profile_ASP_Web_Site.html)
