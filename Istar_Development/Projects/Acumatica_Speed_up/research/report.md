@@ -453,7 +453,7 @@ This path consumed 31.9-34.2% of every warmed scan and averaged 242 ms. It initi
 
 ### Advanced Picking isolation and full-request Timeline
 
-**Updated:** August 7, 2026 at 2:36 PM EDT
+**Updated:** August 7, 2026 at 2:54 PM EDT
 
 Advanced Picking was enabled while Paperless Picking was disabled. Decompiled code confirmed that `WorksheetPicking.IsActive()` activates for Wave/Batch Picking or Paperless Picking, appends `PackAllIntoBoxCommand`, and evaluates `IsEnabled -> CanPack -> pickedForPack -> GetSplits` even though its action is hidden.
 
@@ -497,11 +497,13 @@ One Sampling attempt caused a native `w3wp.exe` access violation in `ntdll.dll` 
 
 ## Current performance boundary
 
-**Updated:** August 7, 2026 at 2:36 PM EDT
+**Updated:** August 7, 2026 at 2:54 PM EDT
 
 `ProfilerLog_013` averaged 1.37 seconds of server time, 1.16 seconds of application-server CPU, 331 ms of SQL time, approximately 8,433 cache/select operations, and approximately 779 ms of select-processing time per scan, with no reported wait time or exceptions. These counters overlap and must not be added together, but they show that the next investigation should target application CPU rather than general SQL tuning.
 
-The full Timeline request confirms that application processing, rather than SQL, is the principal remaining cost. The pre-scan grid synchronization is the safer next candidate because it occurs before barcode processing and appears to synchronize a UI grid. The post-mutation `SetNextState -> CanPack` reload must remain state-correct.
+The full Timeline request confirms that application processing, rather than SQL, is the principal remaining cost. ASPX review identified the pre-scan caller as `gridPacked`, whose `PickedForPack` level uses `SyncPosition="true"`. The barcode field performs a committed `Scan` callback, which causes Acumatica to synchronize the grid's current row and execute `PickedForPack` before barcode processing.
+
+`SyncPosition` does not itself guarantee database freshness; saving, cache invalidation, and query execution provide that. Its role is to keep the browser-selected grid row synchronized with Acumatica's server-side current record. The Pack grid contains the row-dependent `ReopenLineQty` command with `DependOnGrid="gridPacked"`, and other current-row behavior may also depend on this synchronization. The business requires this behavior, so `SyncPosition="true"` will remain and its approximately 484 ms pre-scan load will be treated as required. The post-mutation `SetNextState -> CanPack` evaluation must likewise remain state-correct.
 
 The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct packages are each checked twice. It consumes only approximately 9.54 ms of SQL time per scan and returns very few package-content records. Package-state caching remains a low-priority micro-optimization unless focused profiling proves otherwise.
 
@@ -518,17 +520,18 @@ The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct 
 
 ## Recommended next steps
 
-**Updated:** August 7, 2026 at 2:36 PM EDT
+**Updated:** August 7, 2026 at 2:54 PM EDT
 
 1. Continue functional regression testing with all customizations enabled and complete the planned concurrent multi-user test.
 2. Record label results during testing, but defer correction of the selected-package UCC defect to a later work item.
-3. Identify the ASPX grid bound to `PickedForPack` and inspect its complete declaration and scan callback. Search `SO302020.aspx` for `DataMember="PickedForPack"`, `SyncPosition`, `AutoCallBack`, `DependOnGrid`, `RepaintControls`, and `scan`.
-4. Determine whether `PXGrid.SyncCurrentPosition` can be avoided only during the scan callback without breaking selected rows, package selection, review screens, or other callbacks.
-5. If a narrow, supported change is available, test it with three warmed Sampling captures, one Timeline capture, and Acumatica Request Profiler.
-6. Preserve the post-mutation `SetNextState -> CanPack` reload unless a state-safe alternative is proven; do not reuse stale split data across `PackSplit` mutations.
-7. Do not alter standard `PackSplit`, convert packing queries to read-only, or disable database event logging without measurements proving the change safe and worthwhile.
+3. Retain `gridPacked` with `SyncPosition="true"`; the business requires reliable server-side current-row synchronization for row-dependent behavior such as `ReopenLineQty`.
+4. After regression testing, perform the final high-value research on `PickPackShip.PackMode.Logic.get_CanPack`. Determine whether it can return the identical result through a targeted existence or aggregate query without materializing all shipment splits.
+5. Preserve the post-mutation correctness boundary: `PackSplit` changes package quantities, so any replacement must evaluate current cache and database state and must not reuse stale split data.
+6. If `get_CanPack` cannot be replaced safely, treat the remaining time as necessary Acumatica framework and packing work and conclude the active scan-performance optimization phase.
+7. Only as an explicitly higher-risk fallback, reconsider reducing in-memory work inside `GetSplits`. The earlier replacement experiment was withdrawn because correct behavior requires assigned and unassigned splits, `SOShipLine` and `INLocation` joined records, `processedSeparator` handling, shipment-location ordering, formulas, cache state, and the exact result order expected by packing logic. Changing these semantics could produce incorrect row selection, quantities, lot/location priority, or packing state.
+8. Do not alter standard `PackSplit`, convert packing queries to read-only, disable database event logging, or bypass grid synchronization without measurements and complete functional validation.
 
-Disabling Advanced Picking successfully removed the unused command, but did not remove either remaining split load. The next investigation target is the approximately 484 ms pre-scan `PXGrid.SyncCurrentPosition` path.
+Disabling Advanced Picking successfully removed the unused command but did not remove either remaining split load. Because grid synchronization must remain, `get_CanPack` is the last comparatively high-value research target before concluding that the customization-level optimizations have reached their safe practical limit.
 
 ## Overall result
 

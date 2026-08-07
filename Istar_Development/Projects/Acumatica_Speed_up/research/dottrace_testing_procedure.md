@@ -2,15 +2,15 @@
 
 **Created:** August 6, 2026
 
-**Updated:** August 7, 2026 at 11:32 AM EDT
+**Updated:** August 7, 2026 at 3:01 PM EDT
 
 ## Objective
 
-Identify the methods consuming the remaining application-server CPU during a Pick, Pack, and Ship scan on shipment `0000787`. `ProfilerLog_013` averaged approximately 1.37 seconds of server time and 1.16 seconds of IIS CPU per scan.
+Provide a repeatable procedure for profiling an Acumatica IIS request with JetBrains dotTrace, including process identification, controlled capture, request isolation, call-tree analysis, and safe recovery.
 
 This procedure is intended for a development or staging server. Do not profile a shared production worker process without operational approval.
 
-## Verified environment
+## Test environment
 
 The following configuration was confirmed on the test computer:
 
@@ -18,10 +18,7 @@ The following configuration was confirmed on the test computer:
 - IIS site: `Default Web Site`
 - Acumatica application: `AcumaticaERP`
 - Application pool: `DefaultAppPool`
-- Initial worker-process result: `WP "14592" (applicationPool:DefaultAppPool)`
-- dotTrace installation check: no existing installation was found
-
-The PID `14592` is only an initial observation. An IIS recycle, application restart, or computer restart can change it. Always rerun `appcmd.exe list wp` immediately before attaching dotTrace.
+Worker-process IDs change after IIS recycling, application restarts, customization publication, and computer restarts. Always rerun `appcmd.exe list wp` immediately before attaching dotTrace.
 
 ## Install dotTrace
 
@@ -66,7 +63,7 @@ This has been confirmed for the current test environment. Repeat the check if th
 ## Test preparation
 
 1. Use the same Acumatica build, all-enabled customization set, shipment, user, browser, and scan workflow used for the latest comparison testing.
-2. Confirm all six performance customization files are published.
+2. Record the published customization set and keep it unchanged throughout a comparison series.
 3. Complete at least one warm-up scan before collecting data. After an IIS recycle, worker termination, application restart, or customization publication, complete two warm-up scans because schema, query, formula, and JIT initialization can dominate the first request.
 4. Stop or avoid unrelated processing jobs and ensure no other user is exercising the same IIS worker during the capture.
 5. Record:
@@ -76,6 +73,8 @@ This has been confirmed for the current test environment. Repeat the check if th
    - Shipment and package used
    - Barcode and operation tested
    - Test time and observed browser duration
+   - Relevant Acumatica feature settings
+   - Whether Acumatica Request Profiler is running
 6. Keep the functional result of the scan: packed quantity, selected package, message, and label outcome.
 
 ## Identify the correct IIS worker process
@@ -126,7 +125,7 @@ Never use **End Process**, **Kill Process**, or Task Manager to finish a profili
 12. Wait for the dotTrace Controller window, then click its **Start** control to begin collecting data.
 13. Perform exactly one controlled `scan` callback on `SO302020`.
 14. Wait until the browser response, quantity update, command-state update, and any expected label action complete.
-15. Immediately select **Get Snapshot and Wait** to stop collection and generate the snapshot.
+15. Immediately stop recording and generate the snapshot. Depending on the dotTrace version, this control may appear as **Get Snapshot and Wait**, **Stop Recording**, or **Drop** followed by snapshot creation. Do not press **Kill**.
 16. Select **Detach** in dotTrace. Do not close or kill `w3wp.exe`.
 17. Save the `.dtp` snapshot outside dotTrace's temporary storage with a descriptive name, for example:
 
@@ -179,52 +178,98 @@ WMS.PackModeLogicExt
 12. If none of the scan search terms appears, repeat the capture with collection started immediately before the barcode submission and stopped immediately after all screen and label activity finishes.
 13. Consider a method actionable only when it appears materially in multiple snapshots or clearly dominates a single isolated scan subtree.
 
-## Completed baseline and interpretation
+## Pass 2: Full-request Timeline capture
 
-The initial capture after `w3wp.exe` was accidentally terminated measured `ProcessSingleBarcode` at 7.324 seconds. Approximately 2.79 seconds appeared under `DbSchemaCache.TryGetLockedTableHeader`. This path disappeared after application warm-up, confirming that a post-restart capture must not be treated as steady-state evidence by itself.
+Timeline is required when the objective is to reconcile browser/server time with work outside `ProcessSingleBarcode`, including ASP.NET request handling, page lifecycle, grid synchronization, callback rendering, waiting, garbage collection, and SQL intervals.
 
-Three individual warmed Sampling snapshots were then collected, one scan per snapshot:
+### Configure and capture
 
-| Area | Scan 1 | Scan 2 | Scan 3 | Average |
-|---|---:|---:|---:|---:|
-| `ProcessSingleBarcode` | 834 ms | 388 ms | 1,026 ms | 749 ms |
-| `CompleteFlow` | 425 ms | 175 ms | 470 ms | 357 ms |
-| Confirmation chain | 342 ms | 176 ms | 416 ms | 311 ms |
-| `PackSplit` | 252 ms | 144 ms | 337 ms | 244 ms |
-| `PackAllIntoBoxCommand -> CanPack -> GetSplits` | 267 ms | 133 ms | 327 ms | 242 ms |
-| `GetSplitsToPack` | 50 ms | 24 ms | 40 ms | 38 ms |
-
-The repeatable CPU target is the post-scan command refresh:
+1. Rerun `appcmd.exe list wp` and verify the current `DefaultAppPool` PID.
+2. Run dotTrace as Administrator and select that exact running `w3wp.exe` process.
+3. Choose **Timeline**.
+4. Set **Control profiling** to **Manually** and clear **Collect profiling data from start**.
+5. Leave native-allocation collection disabled. For the first pass, also disable optional debug-output, background symbol-download, and TPL-event collection unless specifically needed; these increase snapshot size and may add overhead.
+6. Use the default Timeline sampling rate. Some versions display `1000 samples/sec`; retain the default unless a controlled comparison requires otherwise.
+7. Attach, wait for the controller, and prepare Acumatica on the Pack screen before recording.
+8. Click **Start recording** immediately before one scan.
+9. Perform exactly one barcode scan and wait for the complete callback, displayed quantities, command states, sounds, and label activity.
+10. Stop recording immediately and create the snapshot. Detach from IIS; never press **Kill**.
+11. Save the dotTrace performance snapshot (`.dtp`) outside temporary storage using a descriptive filename, for example:
 
 ```text
-ActualizeCommandActions
--> WorksheetPicking.PackAllIntoBoxCommand.get_IsEnabled
--> PickPackShip.PackMode.Logic.get_CanPack
--> pickedForPack
--> GetSplits
+SO302020_0000787_scan_timeline_2026-08-07_01.dtp
 ```
 
-This path represented approximately 32-34% of all three warmed scans. `GetSplitsToPack` was small, and the optimized barcode handler required only 15-16 ms in the final two captures. The request-cache extension appears above the full split load in the inclusive call chain; that does not mean the cache wrapper itself consumes the displayed time. Its post-confirmation invalidation is required to prevent stale packed quantities.
+### Isolate the incoming scan request
 
-Before changing code, inspect the registration, visibility, and enabled-state behavior of `PackAllIntoBoxCommand` and identify a supported extension point that affects only this unused worksheet-picking command. Preserve ordinary packing, `CanPack`, package confirmation, and post-mutation quantity refresh.
+1. Open the snapshot in Timeline Viewer.
+2. In the left **Filters** panel, expand **Interval Filters** and select **Incoming HTTP Requests**.
+3. In **Incoming HTTP Requests: URL**, select the `SO302020.aspx` request. It may appear similar to:
 
-## Pass 2: Timeline capture, only if needed
+```text
+/AcumaticaERP/(W(5))/Pages/SO/SO302020.aspx?unum=0&HideScript=On
+```
 
-Use Timeline only when Sampling does not explain the elapsed time or when garbage collection, locking, I/O, task scheduling, or thread waits are suspected.
+The `(W(n))` value may differ between sessions.
+4. In **Incoming HTTP Requests: Method**, select `POST`.
+5. Confirm the filtered duration represents one scan callback and that the Timeline shows one relevant CLR worker interval.
+6. Select the highlighted request interval or its CLR worker thread. The selected request should become the root scope in **Call Tree**.
 
-1. Attach to the same verified `w3wp.exe` PID using **Timeline**.
-2. Timeline uses ETW on Windows and requires the JetBrains ETW host service with administrative privileges.
-3. Collect one controlled scan and generate a `.dtt` snapshot.
-4. In Timeline Viewer, apply the **Incoming HTTP Requests** interval filter and select the request corresponding to the `SO302020` scan.
-5. Select the exact request interval and relevant thread-pool thread.
-6. Review:
-   - Running, waiting, and ready thread states
-   - Garbage-collection pauses and allocation activity
-   - SQL request intervals
-   - File I/O
-   - Lock contention
-   - Tasks and asynchronous continuations
-7. Scope Call Tree and Hot Spots to that interval rather than analyzing the entire worker-process lifetime.
+The **Thread State** filter is in the left Filters panel directly below **Interval Filters**. It contains choices such as **Not Selected**, **Running**, and **Waiting**. Record the totals first without applying a thread-state subfilter; then select Running or Waiting only when investigating that state.
+
+### Analyze the full request
+
+1. In Call Tree, expand the request from:
+
+```text
+PX.Web.UI.PXPage.ProcessRequest
+```
+
+2. Follow the callback-rendering path and record material branches. A typical Acumatica callback may include:
+
+```text
+GetCallbackResult
+-> RenderClientData
+-> CollectDataControls
+-> DataBind
+-> ExecuteSelect
+-> scan
+```
+
+3. Expand `ProcessSingleBarcode`, but do not make it the root yet. This preserves the work occurring before and after barcode processing.
+4. Search for and record these paths:
+
+```text
+OnPreLoad
+PXGrid.LoadPostData
+PXGrid.SyncCurrentPosition
+SynchronizeGrid
+pickedForPack
+GetSplits
+ProcessSingleBarcode
+CompleteFlow
+PackSplit
+ShipmentState.SetNextState
+CanPack
+```
+
+5. Record the entire incoming-request time, `PXPage.ProcessRequest`, Running, Waiting, `ProcessSingleBarcode`, SQL event time, and material work outside the barcode subtree.
+6. Treat subsystem categories cautiously: System code, User code, GC Wait, Collections, and SQL can overlap and must not be added together.
+7. Timeline instrumentation has different overhead from Sampling. Compare paths and percentages within the same Timeline capture; do not compare its absolute method times directly with Sampling values.
+8. Export or transcribe both the full request tree and the `ProcessSingleBarcode` subtree. Retain a screenshot showing the active Incoming HTTP Requests, URL, Method, thread, and interval filters.
+
+## Profiler instability and crash recovery
+
+If `w3wp.exe` terminates or Windows displays a Just-In-Time debugger dialog while dotTrace is attached:
+
+1. In the Visual Studio Just-In-Time dialog, choose **No, cancel debugging** unless a deliberate dump investigation has been approved. Do not attach Visual Studio casually to the production-style worker.
+2. Retain Windows Application log Events 1000 and 1001 and the referenced WER dump path.
+3. Browse to Acumatica to let IIS start a replacement worker, then rerun `appcmd.exe list wp` and record the new PID.
+4. Warm the application with at least two scans before capturing again.
+5. Retry with **Use safer sampling** enabled, or use Timeline with optional TPL/debug/native-allocation collection disabled.
+6. If the crash repeats, stop profiling that worker and investigate dotTrace, Windows, and runtime compatibility before continuing.
+
+Do not attribute a profiler-attached native crash to a customization or feature toggle without reproducing it when the profiler is not attached. A fault reported in `ntdll.dll` identifies where the exception surfaced; it does not by itself identify the root cause.
 
 ## Symbols and source code
 
@@ -239,7 +284,7 @@ Managed method names should normally be visible without changing the Acumatica s
 
 For each capture, retain:
 
-- The `.dtp` or `.dtt` snapshot
+- The `.dtp` snapshot
 - IIS application-pool name and worker PID
 - Capture timestamp
 - Shipment, package, barcode, and operation
@@ -255,12 +300,15 @@ Profiling snapshots may expose internal assembly, method, server, and file-path 
 
 Do not create another performance customization solely because a method executes frequently. Proceed only when the scoped dotTrace snapshots show that the method consumes meaningful CPU or elapsed time and a state-safe optimization exists.
 
-Examples:
+General interpretation rules:
 
-- If the two full split loads dominate CPU, investigate only approaches that preserve dirty cached quantities before and after `PackSplit()`.
-- If `IsPackageEmpty` is negligible, do not implement package-state caching.
+- Confirm a hot path in multiple warmed captures before changing code.
+- Use back traces to distinguish an expensive method from a lightweight wrapper whose descendant performs the work.
+- Preserve Acumatica cache, event, transaction, and current-record semantics when evaluating an optimization.
 - If garbage collection dominates, investigate allocation sources before changing GC settings.
-- If SQL intervals dominate, use Query Store and execution plans rather than changing application caching blindly.
+- If waiting dominates, identify the lock, I/O, SQL, or synchronization source before changing application logic.
+- If SQL intervals dominate, use Acumatica Request Profiler, Query Store, and execution plans rather than changing application caching blindly.
+- Retest the identical workflow after every change and compare captures made with the same profiler type and settings.
 
 ## Verified references
 
