@@ -2,7 +2,7 @@
 
 **Created:** August 6, 2026
 
-**Updated:** August 7, 2026 at 10:16 AM EDT
+**Updated:** August 7, 2026 at 10:53 AM EDT
 
 ## Objective
 
@@ -29,13 +29,14 @@ dotTrace must run on the computer hosting the Acumatica IIS worker process. Inst
 
 1. Obtain IT approval before installing or attaching a profiler to a shared server.
 2. Open the official [JetBrains dotTrace download page](https://www.jetbrains.com/profiler/download/).
-3. Download the **Windows 64-bit standalone installer**. JetBrains Toolbox is also supported and recommended by JetBrains, but the standalone installer is simpler when only dotTrace is required.
-4. Do not select the SDK, self-profiling API, ReSharper, or the full dotUltimate suite unless those products are separately required.
-5. Right-click the installer and select **Run as administrator**.
-6. Install the standalone dotTrace application and Viewer using the standard installation location.
+3. Download either the **Windows x64 Portable** package or the Windows 64-bit standalone installer. The portable package is suitable for this test and requires no installation. JetBrains Toolbox is also supported, but is unnecessary when only dotTrace is required.
+4. If using the portable package, extract the ZIP to a permanent folder such as `C:\Tools\JetBrains\dotTrace`. Do not run dotTrace from inside the ZIP.
+5. Do not select or download the SDK, self-profiling API, ReSharper, command-line tools, or full dotUltimate suite unless those products are separately required.
+6. Run dotTrace as administrator. For the installer edition, right-click the installer and select **Run as administrator** first.
 7. Do not enable unrelated Visual Studio integrations unless they are needed.
-8. At first launch, start the 30-day evaluation or sign in with an existing licensed JetBrains account. JetBrains provides the full product during the evaluation period.
-9. Close dotTrace after verifying that its Home window contains options resembling:
+8. At first launch, click **Start trial** to begin the 30-day evaluation, or sign in with an existing licensed JetBrains account. A license key or license server is not required for the trial.
+9. Choose the **General** preset. Unity and Unreal Engine presets are not applicable.
+10. Verify that the Home window exposes **New Process Run** and **Running Process** options.
 
 ```text
 New Process Run
@@ -97,6 +98,18 @@ WP "<current PID>" (applicationPool:DefaultAppPool)
 
 Confirm that the PID shown in dotTrace exactly matches the current command output. Do not rely on the previously observed PID `14592`.
 
+### Recover an accidentally terminated IIS worker
+
+If `w3wp.exe` is accidentally terminated, IIS normally creates a replacement when Acumatica receives another request:
+
+1. Browse to the `AcumaticaERP` application and wait several seconds.
+2. Rerun `appcmd.exe list wp` and record the new PID.
+3. If the worker does not return, open **IIS Manager -> Application Pools**, select `DefaultAppPool`, and click **Start**.
+4. If the pool is already started but no worker appears, recycle it once, browse to Acumatica, and rerun `appcmd`.
+5. Log back in and perform another warm-up scan before profiling. Terminating the worker loses its in-memory application state and any unsaved work.
+
+Never use **End Process**, **Kill Process**, or Task Manager to finish a profiling session. Use dotTrace **Detach** so the IIS worker remains running.
+
 ## Pass 1: Sampling capture
 
 1. Run dotTrace as Administrator on the IIS server.
@@ -104,14 +117,18 @@ Confirm that the PID shown in dotTrace exactly matches the current command outpu
 3. If `w3wp.exe` is not visible, select **Show All Processes** to grant the required administrative access.
 4. Select the `w3wp.exe` PID that exactly matches the latest `appcmd.exe list wp` result for `DefaultAppPool`.
 5. Choose **Sampling** as the profiling type.
-6. If the option is available, clear **Collect profiling data from start**. This allows attachment before the measurement interval begins.
-7. Stop at this configuration screen during the first attempt and verify the selected PID and options before starting.
-8. Attach the profiler. When ready to measure, click **Start** in the profiling controller if collection did not begin automatically.
-9. Perform exactly one controlled `scan` callback on `SO302020`.
-10. Wait until the browser response, quantity update, command-state update, and any expected label action complete.
-11. Immediately select **Get Snapshot and Wait** to stop collection and generate the snapshot.
-12. Detach from the process. Detaching should leave the worker process running.
-13. Save the `.dtp` snapshot outside dotTrace's temporary storage with a descriptive name, for example:
+6. Set **Control profiling** to **Manually**.
+7. Set **Time measurement** to **Real time (performance counter)** when available. JetBrains identifies it as the recommended real-time measurement. **Real time (CPU instruction)** is an acceptable fallback.
+8. Leave **Use safer sampling** cleared for the baseline. Enable it only if normal Sampling causes instability, because it can reduce sampling detail.
+9. Clear **Collect profiling data from start**. This allows attachment and warm-up before the measurement interval begins.
+10. Stop at this configuration screen during the first attempt and verify the PID and all settings before attaching.
+11. Click the main **Start** button to attach to the selected process. The green plus beside a process selects or attaches to it; it is not a terminate control.
+12. Wait for the dotTrace Controller window, then click its **Start** control to begin collecting data.
+13. Perform exactly one controlled `scan` callback on `SO302020`.
+14. Wait until the browser response, quantity update, command-state update, and any expected label action complete.
+15. Immediately select **Get Snapshot and Wait** to stop collection and generate the snapshot.
+16. Select **Detach** in dotTrace. Do not close or kill `w3wp.exe`.
+17. Save the `.dtp` snapshot outside dotTrace's temporary storage with a descriptive name, for example:
 
 ```text
 SO302020_0000787_scan_sampling_2026-08-07_01.dtp
@@ -121,9 +138,18 @@ Repeat this process for three separate scans, producing three snapshots. Separat
 
 ## Analyze each Sampling snapshot
 
-1. Open the snapshot in dotTrace Viewer.
-2. Use **Call Tree** and **Hot Spots**.
-3. Locate the request path under methods such as:
+1. Open the snapshot in dotTrace Viewer and immediately use **File -> Save Snapshot As** to retain it outside temporary storage.
+2. Use **Call Tree** and **Hot Spots**. The initial display covers the entire IIS worker, including unrelated Acumatica background threads; it is not yet scoped to the scan.
+3. In **Search Functions**, search for these terms individually, beginning with `ProcessSingleBarcode`:
+
+```text
+ProcessSingleBarcode
+BarcodeDrivenStateMachine
+PickPackShip
+```
+
+4. Select the matching scan method and use the available command resembling **Show in Call Tree**, **Focus on Method**, or **Set as Root**. Expand its descendants to isolate the scan subtree.
+5. Locate the request path under methods such as:
 
 ```text
 PX.BarcodeProcessing.BarcodeDrivenStateMachine.scan
@@ -131,9 +157,8 @@ PX.BarcodeProcessing.BarcodeDrivenStateMachine.ProcessSingleBarcode
 PX.Data.PXAction.Press
 ```
 
-4. Scope the Call Tree to the scan subtree.
-5. Record both total time and own time for the most expensive methods.
-6. Search for and record material time under:
+6. Display **Total time** as well as **Own time** and record both for the most expensive descendants.
+7. Search for and record material time under:
 
 ```text
 PX.Data.PXView.Select
@@ -147,9 +172,12 @@ IStar.ScanPerformance
 WMS.PackModeLogicExt
 ```
 
-7. Use back traces or an inverted call tree to determine which caller caused each expensive framework method.
-8. Do not treat Sampling output as an exact method-call count; Sampling estimates where CPU time is spent.
-9. Consider a method actionable only when it appears materially in multiple snapshots or clearly dominates a single isolated scan subtree.
+8. Use back traces or an inverted call tree to determine which caller caused each expensive framework method.
+9. Do not interpret the initial all-process time as the duration of one scan. dotTrace can display accumulated activity across many IIS threads, so the value may greatly exceed the browser-observed scan time.
+10. Do not treat Sampling output as an exact method-call count; Sampling estimates where CPU time is spent.
+11. Capture a screenshot of the isolated scan method and its most expensive descendants.
+12. If none of the scan search terms appears, repeat the capture with collection started immediately before the barcode submission and stopped immediately after all screen and label activity finishes.
+13. Consider a method actionable only when it appears materially in multiple snapshots or clearly dominates a single isolated scan subtree.
 
 ## Pass 2: Timeline capture, only if needed
 
