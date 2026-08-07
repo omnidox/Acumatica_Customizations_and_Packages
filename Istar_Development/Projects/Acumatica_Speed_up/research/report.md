@@ -365,7 +365,7 @@ The replacement stack was confirmed at `PickPackShipShipmentRowSelectedOptimizat
 
 **Added:** August 6, 2026 at 1:53 PM EDT
 
-**Status:** Pending
+**Status:** In progress
 
 Profiler results confirm performance improvements but do not prove that every warehouse workflow remains functionally correct. The following scenarios must be tested before production deployment:
 
@@ -390,6 +390,36 @@ Profiler results confirm performance improvements but do not prove that every wa
 
 After every quantity-changing test, verify that the displayed packed quantity, package-content quantity, and persisted database quantity agree. Any stale quantity, incorrect command state, duplicate label, or unexplained concurrency error must be resolved before production deployment.
 
+### Deferred label-context defect
+
+**Added:** August 6, 2026 at 4:28 PM EDT
+
+Label testing identified an existing package-context defect on shipment `0000787`. When package line 30 was selected, the package contained the expected `UsrTCUCC128` value `00007168380000001132`, but the printed label used `00007168380000000845`, which belongs to the first package in the shipment.
+
+Profiler messages confirmed that the intended package reached the printing entry point:
+
+```text
+[PKG-CHECK] LineNbr=30, UsrTCUCC128=00007168380000001132
+[PRINT] Using selected package: 30
+[QUEUE] QueuePrintForPackage called: Shipment=0000787, Package=30
+```
+
+The same incorrect label behavior was reproduced after disabling `IStarScanPerformance[08042026][1]`. This is strong evidence that the performance customization does not cause the defect. The current suspected failure occurs later, when Advanced Labels resolves `Packages.UsrTCUCC128` and appears to lose the selected-package context or fall back to the first package.
+
+The all-customizations profiler capture also recorded warnings for missing `RHLineToggleLabelPrint` and `RHPackageToggleLabelPrint` wrappers under `ALLabelFolder`. These warnings are not exceptions but may be relevant to the label customization chain.
+
+The label defect will not be investigated further during the current performance-testing phase. A later investigation should trace:
+
+```text
+QueuePrintForPackage
+-> queued label parameters
+-> Advanced Labels data-source creation
+-> Packages.Current and package-line filtering
+-> Packages.UsrTCUCC128 evaluation
+```
+
+The future fix must ensure that the selected `PackageLineNbr` remains explicit through queueing and rendering. Until resolved, label output must be checked carefully during regression testing.
+
 ## Current performance boundary
 
 **Updated:** August 6, 2026 at 2:02 PM EDT
@@ -411,14 +441,16 @@ The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct 
 
 ## Recommended next steps
 
-**Updated:** August 6, 2026 at 2:02 PM EDT
+**Updated:** August 6, 2026 at 4:28 PM EDT
 
-1. Complete functional regression testing.
-2. Capture one controlled scan with dotTrace.
-3. Identify the methods consuming the remaining application-server CPU.
-4. If full split processing dominates, evaluate only state-safe ways to reduce its in-memory work.
-5. If `IsPackageEmpty` appears materially in the CPU call tree, design a bulk cache based on `SOShipLineSplitPackage` that preserves dirty cache records, parent-box behavior, and mutation invalidation.
-6. Do not convert packing queries to read-only or disable database event logging without measurements proving that the change is both safe and worthwhile.
+1. Continue functional regression testing with all customizations enabled.
+2. Complete the planned concurrent multi-user Pick, Pack, and Ship test.
+3. Record label results during testing, but defer correction of the selected-package UCC defect to a later work item.
+4. After functional testing, capture one controlled scan with dotTrace.
+5. Identify the methods consuming the remaining application-server CPU.
+6. If full split processing dominates, evaluate only state-safe ways to reduce its in-memory work.
+7. If `IsPackageEmpty` appears materially in the CPU call tree, design a bulk cache based on `SOShipLineSplitPackage` that preserves dirty cache records, parent-box behavior, and mutation invalidation.
+8. Do not convert packing queries to read-only or disable database event logging without measurements proving that the change is both safe and worthwhile.
 
 No additional performance customization should be implemented until CPU profiling identifies a specific method with meaningful optimization potential.
 
