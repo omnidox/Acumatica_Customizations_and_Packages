@@ -449,15 +449,61 @@ ActualizeCommandActions
 -> GetSplits
 ```
 
-This path consumed 31.9-34.2% of every warmed scan and averaged 242 ms. It performs the state-correct post-mutation split reload currently preserved by the request cache, but its immediate consumer is `PackAllIntoBoxCommand`, even though worksheet picking is not used by the business. The next investigation will determine how the command is registered and whether only its enabled-state evaluation can be safely suppressed through a customization. No command behavior will be changed until its registration, visibility conditions, extension points, and dependencies are confirmed.
+This path consumed 31.9-34.2% of every warmed scan and averaged 242 ms. It initially made `PackAllIntoBoxCommand` the leading suspected avoidable consumer. The feature-isolation and Timeline results below supersede that initial interpretation.
+
+### Advanced Picking isolation and full-request Timeline
+
+**Updated:** August 7, 2026 at 2:36 PM EDT
+
+Advanced Picking was enabled while Paperless Picking was disabled. Decompiled code confirmed that `WorksheetPicking.IsActive()` activates for Wave/Batch Picking or Paperless Picking, appends `PackAllIntoBoxCommand`, and evaluates `IsEnabled -> CanPack -> pickedForPack -> GetSplits` even though its action is hidden.
+
+Disabling Advanced Picking removed that command stack, but did not reduce full assigned-split query `FF246783`: it remained at six executions across three scans and returned 10,848 rows. Total SQL time changed only from 462.7 ms to 450.4 ms. Clean Request Profiler scans, excluding one unrelated `SOShipment` lock-conflict request, changed as follows:
+
+| Metric | Enabled | Disabled | Change |
+|---|---:|---:|---:|
+| Average server time | 1.437 sec | 1.413 sec | 1.7% faster |
+| Average CPU time | 1.305 sec | 1.195 sec | 8.4% lower |
+| Select-processing time | 843 ms | 749 ms | 11.2% lower |
+| SQL time | 312 ms | 309 ms | Essentially unchanged |
+| SQL calls | 162.5 | 163.5 | Essentially unchanged |
+
+Three warmed Sampling captures with Advanced Picking disabled averaged 743 ms in `ProcessSingleBarcode`, compared with 749 ms while enabled. The command disappeared, but `SetNextState -> CanPack -> GetSplits` averaged 245 ms, effectively replacing the previously attributed 242 ms command path. Disabling the unused feature therefore produced no material steady-state barcode-processing improvement. A separate 7.316-second cold capture containing approximately 2.531 seconds of schema-cache initialization was excluded.
+
+**Timeline captured:** August 7, 2026 at 2:16 PM EDT  
+**Timeline analyzed:** August 7, 2026 at 2:36 PM EDT
+
+A Timeline capture filtered to the single incoming `POST` request accounted for the full callback rather than only `ProcessSingleBarcode`:
+
+| Area | Time | Share |
+|---|---:|---:|
+| Incoming HTTP request | 2,609 ms | 100% |
+| `PXPage.ProcessRequest` | 2,573 ms | 98.6% |
+| Running | 2,317 ms | 88.8% |
+| Waiting | 292 ms | 11.2% |
+| `ProcessSingleBarcode` | 1,642 ms | 62.9% |
+| Work outside `ProcessSingleBarcode` | approximately 967 ms | 37.1% |
+| SQL Queries event time | 75 ms | 2.9% |
+
+Timeline and Sampling instrumentation differ, so their absolute method times should not be compared directly. Within the Timeline capture, the two remaining full split loads are fully accounted for:
+
+| Phase | Path | Time |
+|---|---|---:|
+| Before barcode processing | `OnPreLoad -> PXGrid.LoadPostData -> SyncCurrentPosition -> SynchronizeGrid -> ExecuteSelect -> pickedForPack -> GetSplits` | approximately 484 ms |
+| After packing mutation | `CompleteFlow -> ShipmentState.SetNextState -> CanPack -> pickedForPack -> GetSplits` | approximately 619 ms |
+
+Other measured barcode work included `CompleteFlow` at 836 ms, `PackSplit` at 483 ms, `GetSplitsToPack` at 56 ms, and barcode resolution at 22 ms. `SOShipment_RowSelected` required only about 4.5 ms. The request path ran through `GetCallbackResult -> RenderClientData -> CollectDataControls -> DataBind -> ExecuteSelect -> scan`. SQL is no longer the dominant cost; most remaining time is framework processing, split materialization, formula/event handling, grid synchronization, and callback rendering.
+
+One Sampling attempt caused a native `w3wp.exe` access violation in `ntdll.dll` (`0xc0000005`) while dotTrace was attached. This is recorded as a profiling incident, not an Acumatica customization failure or an Advanced Picking result. IIS recovered and the later Timeline capture completed successfully.
 
 ## Current performance boundary
 
-**Updated:** August 7, 2026 at 11:32 AM EDT
+**Updated:** August 7, 2026 at 2:36 PM EDT
 
 `ProfilerLog_013` averaged 1.37 seconds of server time, 1.16 seconds of application-server CPU, 331 ms of SQL time, approximately 8,433 cache/select operations, and approximately 779 ms of select-processing time per scan, with no reported wait time or exceptions. These counters overlap and must not be added together, but they show that the next investigation should target application CPU rather than general SQL tuning.
 
-The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct packages are each checked twice. It consumes only approximately 9.54 ms of SQL time per scan and returns very few package-content records. Package-state caching is therefore a low-priority micro-optimization unless CPU profiling proves that its non-SQL framework processing is material.
+The full Timeline request confirms that application processing, rather than SQL, is the principal remaining cost. The pre-scan grid synchronization is the safer next candidate because it occurs before barcode processing and appears to synchronize a UI grid. The post-mutation `SetNextState -> CanPack` reload must remain state-correct.
+
+The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct packages are each checked twice. It consumes only approximately 9.54 ms of SQL time per scan and returns very few package-content records. Package-state caching remains a low-priority micro-optimization unless focused profiling proves otherwise.
 
 ## Deployed performance customization files
 
@@ -472,19 +518,20 @@ The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct 
 
 ## Recommended next steps
 
-**Updated:** August 7, 2026 at 11:32 AM EDT
+**Updated:** August 7, 2026 at 2:36 PM EDT
 
 1. Continue functional regression testing with all customizations enabled and complete the planned concurrent multi-user test.
 2. Record label results during testing, but defer correction of the selected-package UCC defect to a later work item.
-3. Use dnSpy to inspect `WorksheetPicking.PackAllIntoBoxCommand`, its registration and visibility conditions, `get_IsEnabled`, and the supported extension points that could suppress only its unused evaluation.
-4. Confirm that disabling this command is safe when worksheet picking is not configured and does not affect ordinary packing, package confirmation, or command-state refresh.
-5. If a narrow override is supported, implement it separately and compare three warmed Sampling captures plus Acumatica Request Profiler results.
-6. Do not alter standard `PackSplit`, convert packing queries to read-only, or disable database event logging without additional measurements proving the change safe and worthwhile.
+3. Identify the ASPX grid bound to `PickedForPack` and inspect its complete declaration and scan callback. Search `SO302020.aspx` for `DataMember="PickedForPack"`, `SyncPosition`, `AutoCallBack`, `DependOnGrid`, `RepaintControls`, and `scan`.
+4. Determine whether `PXGrid.SyncCurrentPosition` can be avoided only during the scan callback without breaking selected rows, package selection, review screens, or other callbacks.
+5. If a narrow, supported change is available, test it with three warmed Sampling captures, one Timeline capture, and Acumatica Request Profiler.
+6. Preserve the post-mutation `SetNextState -> CanPack` reload unless a state-safe alternative is proven; do not reuse stale split data across `PackSplit` mutations.
+7. Do not alter standard `PackSplit`, convert packing queries to read-only, or disable database event logging without measurements proving the change safe and worthwhile.
 
-The dotTrace captures now identify `PackAllIntoBoxCommand` enablement as the next investigation target. Implementation still depends on confirming a narrow, supported extension mechanism.
+Disabling Advanced Picking successfully removed the unused command, but did not remove either remaining split load. The next investigation target is the approximately 484 ms pre-scan `PXGrid.SyncCurrentPosition` path.
 
 ## Overall result
 
-The completed optimizations reduced average scan time from approximately **5.19 seconds to 1.37 seconds** in the latest capture, an improvement of approximately **74%**. SQL calls fell from approximately **1,850 to 159 per scan**, a reduction of approximately **91%**.
+The completed optimizations reduced average scan time from approximately **5.19 seconds to the 1.37-1.44 second range** in steady Request Profiler captures, an improvement of approximately **72-74%**. SQL calls fell from approximately **1,850 to about 159-164 per scan**, a reduction of approximately **91%**.
 
-The Advanced Labels lookup, repeated Master Pack barcode lookups, Package Content LINQ fallback, per-split `GetQtyThreshold()` queries, and repeated full `SOShipLine` query `B5446270` have been eliminated or consolidated. Request-scoped reuse also removed one of the three repeated `pickedForPack` split loads while preserving the required post-mutation reload.
+The Advanced Labels lookup, repeated Master Pack barcode lookups, Package Content LINQ fallback, per-split `GetQtyThreshold()` queries, and repeated full `SOShipLine` query `B5446270` have been eliminated or consolidated. Request-scoped reuse removed one of the original three repeated `pickedForPack` split loads while preserving state correctness. Timeline profiling now attributes the two remaining loads to pre-scan grid synchronization and the required post-mutation state refresh.
