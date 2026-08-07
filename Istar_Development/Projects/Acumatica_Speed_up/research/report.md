@@ -420,9 +420,40 @@ QueuePrintForPackage
 
 The future fix must ensure that the selected `PackageLineNbr` remains explicit through queueing and rendering. Until resolved, label output must be checked carefully during regression testing.
 
+## dotTrace CPU profiling results
+
+**Added:** August 7, 2026 at 11:32 AM EDT
+
+Sampling captures were attached to the `DefaultAppPool` IIS worker and scoped to `BarcodeDrivenStateMachine.ProcessSingleBarcode`. The first capture after an accidental worker termination took 7.324 seconds and included approximately 2.79 seconds in schema/query construction under `DbSchemaCache.TryGetLockedTableHeader`. That delay disappeared after warming the restarted application and is treated as cold-start initialization rather than a steady-state optimization target.
+
+Three separate warmed scans produced the following results:
+
+| Area | Scan 1 | Scan 2 | Scan 3 | Average |
+|---|---:|---:|---:|---:|
+| `ProcessSingleBarcode` | 834 ms | 388 ms | 1,026 ms | 749 ms |
+| `CompleteFlow` | 425 ms | 175 ms | 470 ms | 357 ms |
+| Confirmation chain | 342 ms | 176 ms | 416 ms | 311 ms |
+| `PackSplit` | 252 ms | 144 ms | 337 ms | 244 ms |
+| `PackAllIntoBoxCommand -> CanPack -> GetSplits` | 267 ms | 133 ms | 327 ms | 242 ms |
+| `GetSplitsToPack` | 50 ms | 24 ms | 40 ms | 38 ms |
+
+The warmed captures confirm that the optimized barcode resolver is no longer material: it required only 15-16 ms in scans two and three. `GetSplitsToPack` averaged 38 ms and is also not a worthwhile target. `PackSplit` averaged 244 ms, but it performs required package, shipment-line, formula, and parent-quantity maintenance and would be comparatively invasive to alter.
+
+The clearest repeatable avoidable path was standard command-state evaluation:
+
+```text
+ActualizeCommandActions
+-> WorksheetPicking.PackAllIntoBoxCommand.get_IsEnabled
+-> PickPackShip.PackMode.Logic.get_CanPack
+-> pickedForPack
+-> GetSplits
+```
+
+This path consumed 31.9-34.2% of every warmed scan and averaged 242 ms. It performs the state-correct post-mutation split reload currently preserved by the request cache, but its immediate consumer is `PackAllIntoBoxCommand`, even though worksheet picking is not used by the business. The next investigation will determine how the command is registered and whether only its enabled-state evaluation can be safely suppressed through a customization. No command behavior will be changed until its registration, visibility conditions, extension points, and dependencies are confirmed.
+
 ## Current performance boundary
 
-**Updated:** August 6, 2026 at 2:02 PM EDT
+**Updated:** August 7, 2026 at 11:32 AM EDT
 
 `ProfilerLog_013` averaged 1.37 seconds of server time, 1.16 seconds of application-server CPU, 331 ms of SQL time, approximately 8,433 cache/select operations, and approximately 779 ms of select-processing time per scan, with no reported wait time or exceptions. These counters overlap and must not be added together, but they show that the next investigation should target application CPU rather than general SQL tuning.
 
@@ -441,18 +472,16 @@ The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct 
 
 ## Recommended next steps
 
-**Updated:** August 6, 2026 at 4:28 PM EDT
+**Updated:** August 7, 2026 at 11:32 AM EDT
 
-1. Continue functional regression testing with all customizations enabled.
-2. Complete the planned concurrent multi-user Pick, Pack, and Ship test.
-3. Record label results during testing, but defer correction of the selected-package UCC defect to a later work item.
-4. After functional testing, capture one controlled scan with dotTrace.
-5. Identify the methods consuming the remaining application-server CPU.
-6. If full split processing dominates, evaluate only state-safe ways to reduce its in-memory work.
-7. If `IsPackageEmpty` appears materially in the CPU call tree, design a bulk cache based on `SOShipLineSplitPackage` that preserves dirty cache records, parent-box behavior, and mutation invalidation.
-8. Do not convert packing queries to read-only or disable database event logging without measurements proving that the change is both safe and worthwhile.
+1. Continue functional regression testing with all customizations enabled and complete the planned concurrent multi-user test.
+2. Record label results during testing, but defer correction of the selected-package UCC defect to a later work item.
+3. Use dnSpy to inspect `WorksheetPicking.PackAllIntoBoxCommand`, its registration and visibility conditions, `get_IsEnabled`, and the supported extension points that could suppress only its unused evaluation.
+4. Confirm that disabling this command is safe when worksheet picking is not configured and does not affect ordinary packing, package confirmation, or command-state refresh.
+5. If a narrow override is supported, implement it separately and compare three warmed Sampling captures plus Acumatica Request Profiler results.
+6. Do not alter standard `PackSplit`, convert packing queries to read-only, or disable database event logging without additional measurements proving the change safe and worthwhile.
 
-No additional performance customization should be implemented until CPU profiling identifies a specific method with meaningful optimization potential.
+The dotTrace captures now identify `PackAllIntoBoxCommand` enablement as the next investigation target. Implementation still depends on confirming a narrow, supported extension mechanism.
 
 ## Overall result
 

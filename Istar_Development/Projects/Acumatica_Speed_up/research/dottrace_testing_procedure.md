@@ -2,7 +2,7 @@
 
 **Created:** August 6, 2026
 
-**Updated:** August 7, 2026 at 10:53 AM EDT
+**Updated:** August 7, 2026 at 11:32 AM EDT
 
 ## Objective
 
@@ -67,7 +67,7 @@ This has been confirmed for the current test environment. Repeat the check if th
 
 1. Use the same Acumatica build, all-enabled customization set, shipment, user, browser, and scan workflow used for the latest comparison testing.
 2. Confirm all six performance customization files are published.
-3. Complete one warm-up scan before collecting data. This reduces JIT compilation, first-use cache initialization, and page-load noise.
+3. Complete at least one warm-up scan before collecting data. After an IIS recycle, worker termination, application restart, or customization publication, complete two warm-up scans because schema, query, formula, and JIT initialization can dominate the first request.
 4. Stop or avoid unrelated processing jobs and ensure no other user is exercising the same IIS worker during the capture.
 5. Record:
    - Acumatica build and tenant
@@ -178,6 +178,35 @@ WMS.PackModeLogicExt
 11. Capture a screenshot of the isolated scan method and its most expensive descendants.
 12. If none of the scan search terms appears, repeat the capture with collection started immediately before the barcode submission and stopped immediately after all screen and label activity finishes.
 13. Consider a method actionable only when it appears materially in multiple snapshots or clearly dominates a single isolated scan subtree.
+
+## Completed baseline and interpretation
+
+The initial capture after `w3wp.exe` was accidentally terminated measured `ProcessSingleBarcode` at 7.324 seconds. Approximately 2.79 seconds appeared under `DbSchemaCache.TryGetLockedTableHeader`. This path disappeared after application warm-up, confirming that a post-restart capture must not be treated as steady-state evidence by itself.
+
+Three individual warmed Sampling snapshots were then collected, one scan per snapshot:
+
+| Area | Scan 1 | Scan 2 | Scan 3 | Average |
+|---|---:|---:|---:|---:|
+| `ProcessSingleBarcode` | 834 ms | 388 ms | 1,026 ms | 749 ms |
+| `CompleteFlow` | 425 ms | 175 ms | 470 ms | 357 ms |
+| Confirmation chain | 342 ms | 176 ms | 416 ms | 311 ms |
+| `PackSplit` | 252 ms | 144 ms | 337 ms | 244 ms |
+| `PackAllIntoBoxCommand -> CanPack -> GetSplits` | 267 ms | 133 ms | 327 ms | 242 ms |
+| `GetSplitsToPack` | 50 ms | 24 ms | 40 ms | 38 ms |
+
+The repeatable CPU target is the post-scan command refresh:
+
+```text
+ActualizeCommandActions
+-> WorksheetPicking.PackAllIntoBoxCommand.get_IsEnabled
+-> PickPackShip.PackMode.Logic.get_CanPack
+-> pickedForPack
+-> GetSplits
+```
+
+This path represented approximately 32-34% of all three warmed scans. `GetSplitsToPack` was small, and the optimized barcode handler required only 15-16 ms in the final two captures. The request-cache extension appears above the full split load in the inclusive call chain; that does not mean the cache wrapper itself consumes the displayed time. Its post-confirmation invalidation is required to prevent stale packed quantities.
+
+Before changing code, inspect the registration, visibility, and enabled-state behavior of `PackAllIntoBoxCommand` and identify a supported extension point that affects only this unused worksheet-picking command. Preserve ordinary packing, `CanPack`, package confirmation, and post-mutation quantity refresh.
 
 ## Pass 2: Timeline capture, only if needed
 
