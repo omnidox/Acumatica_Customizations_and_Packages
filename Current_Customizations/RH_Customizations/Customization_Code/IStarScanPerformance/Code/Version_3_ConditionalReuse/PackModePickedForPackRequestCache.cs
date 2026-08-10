@@ -95,15 +95,12 @@ namespace IStar.ScanPerformance
         }
 
         /// <summary>
-        /// Diagnostic only. Determines whether the materialized
-        /// pickedForPack rows still reference the canonical PXCache rows
-        /// after Confirm/PackSplit has updated package quantities.
-        ///
-        /// This method never retains the cached result. The slot is cleared
-        /// unconditionally so this diagnostic build preserves the behavior
-        /// of the validated Version 1 customization.
+        /// Retains the request-scoped result only when Confirm changed one or
+        /// more assigned splits in place and every retained split is still
+        /// the canonical PXCache object with the current PackedQty value.
+        /// Any unsupported or uncertain condition falls back to invalidation.
         /// </summary>
-        public static void AuditAndInvalidate(PickPackShip basis)
+        public static void ValidateAfterConfirm(PickPackShip basis)
         {
             State state = PXContext.GetSlot<State>(SlotKey);
 
@@ -111,8 +108,7 @@ namespace IStar.ScanPerformance
             {
                 if (state == null || !state.HasResult || state.Rows == null)
                 {
-                    PXTrace.WriteInformation(
-                        "[PFP-CACHE-AUDIT] No cached result was available after Confirm; SafeCandidate=False.");
+                    Invalidate();
                     return;
                 }
 
@@ -121,10 +117,7 @@ namespace IStar.ScanPerformance
 
                 if (splitCache == null)
                 {
-                    PXTrace.WriteInformation(
-                        "[PFP-CACHE-AUDIT] Shipment={0}; Mode={1}; SplitCacheMissing=True; SafeCandidate=False.",
-                        state.ShipmentNbr,
-                        state.Mode);
+                    Invalidate();
                     return;
                 }
 
@@ -220,9 +213,30 @@ namespace IStar.ScanPerformance
                     basis?.RefNbr,
                     StringComparison.OrdinalIgnoreCase);
 
+                PickPackShip.PackMode.Logic currentMode =
+                    basis?.Get<PickPackShip.PackMode.Logic>();
+
+                bool sameContext =
+                    string.Equals(
+                        state.Mode,
+                        basis?.Header?.Mode,
+                        StringComparison.Ordinal) &&
+                    state.PackageLineNbr == currentMode?.PackageLineNbr &&
+                    state.PackageLineNbrUI == currentMode?.PackageLineNbrUI &&
+                    state.Remove ==
+                        (basis?.Remove.GetValueOrDefault() ?? false);
+
+                // Only the ordinary Pack mode has been proven safe. Special
+                // worksheet/paperless modes use their own CanPack semantics.
+                bool supportedMode =
+                    string.Equals(state.Mode, "PACK", StringComparison.Ordinal);
+
                 bool safeCandidate =
                     sameBasis &&
                     sameShipment &&
+                    sameContext &&
+                    supportedMode &&
+                    state.PackageLineNbr != null &&
                     total > 0 &&
                     unwrapFailed == 0 &&
                     unassigned == 0 &&
@@ -230,42 +244,54 @@ namespace IStar.ScanPerformance
                     sameReference == assigned &&
                     differentReference == 0 &&
                     canonicalMissing == 0 &&
+                    retainedQtyChanged > 0 &&
                     packedQtyMismatch == 0 &&
                     inserted == 0 &&
                     deleted == 0;
 
+                if (safeCandidate)
+                {
+                    PXTrace.WriteInformation(
+                        "[PFP-CACHE-REUSE] Retained=True; Shipment={0}; Mode={1}; Remove={2}; Rows={3}; Changed={4}.",
+                        state.ShipmentNbr,
+                        state.Mode,
+                        state.Remove,
+                        total,
+                        retainedQtyChanged);
+
+                    return;
+                }
+
+                Invalidate();
+
                 PXTrace.WriteInformation(
-                    "[PFP-CACHE-AUDIT] Shipment={0}; Mode={1}; Remove={2}; Rows={3}; Assigned={4}; Unassigned={5}; UnwrapFailed={6}; CanonicalFound={7}; SameReference={8}; DifferentReference={9}; CanonicalMissing={10}; RetainedQtyChanged={11}; PackedQtyMismatch={12}; SplitInserted={13}; SplitDeleted={14}; SameBasis={15}; SameShipment={16}; SafeCandidate={17}.",
+                    "[PFP-CACHE-REUSE] Retained=False; Shipment={0}; Mode={1}; Remove={2}; Rows={3}; Changed={4}; Unassigned={5}; UnwrapFailed={6}; DifferentReference={7}; CanonicalMissing={8}; PackedQtyMismatch={9}; SplitInserted={10}; SplitDeleted={11}; SameBasis={12}; SameShipment={13}; SameContext={14}; SupportedMode={15}.",
                     state.ShipmentNbr,
                     state.Mode,
                     state.Remove,
                     total,
-                    assigned,
+                    retainedQtyChanged,
                     unassigned,
                     unwrapFailed,
-                    canonicalFound,
-                    sameReference,
                     differentReference,
                     canonicalMissing,
-                    retainedQtyChanged,
                     packedQtyMismatch,
                     inserted,
                     deleted,
                     sameBasis,
                     sameShipment,
-                    safeCandidate);
+                    sameContext,
+                    supportedMode);
             }
             catch (Exception exception)
             {
-                // Diagnostics must never replace or hide the scan result.
+                // Validation must never replace or hide the scan result.
+                Invalidate();
+
                 PXTrace.WriteInformation(
-                    "[PFP-CACHE-AUDIT] AuditError={0}; Message={1}; SafeCandidate=False.",
+                    "[PFP-CACHE-REUSE] Retained=False; ValidationError={0}; Message={1}.",
                     exception.GetType().FullName,
                     exception.Message);
-            }
-            finally
-            {
-                Invalidate();
             }
         }
 
@@ -357,12 +383,11 @@ namespace IStar.ScanPerformance
 
     /// <summary>
     /// Extends the third-party confirmation logic. Confirm can call PackSplit,
-    /// which changes SOShipLineSplitPackage.PackedQty. Always invalidate so a
-    /// later CanPack evaluation cannot reuse pre-confirmation quantities.
-    /// The Version 2 diagnostic audits reference identity before clearing
-    /// the request slot, but does not alter invalidation behavior.
+    /// which changes SOShipLineSplitPackage.PackedQty and synchronously updates
+    /// canonical SOShipLineSplit rows. Reuse is allowed only after the strict
+    /// post-confirmation validation succeeds; all other paths invalidate.
     /// </summary>
-    public class ConfirmStatePickedForPackCacheInvalidationExt
+    public class ConfirmStatePickedForPackConditionalReuseExt
         : BarcodeDrivenStateMachine<
             PickPackShip,
             PickPackShip.Host>
@@ -378,14 +403,21 @@ namespace IStar.ScanPerformance
         public virtual FlowStatus Confirm(
             WMS.ConfirmStateLogicExt.ConfirmDelegate baseMethod)
         {
+            FlowStatus result;
+
             try
             {
-                return baseMethod();
+                result = baseMethod();
             }
-            finally
+            catch
             {
-                PickedForPackRequestCache.AuditAndInvalidate(Basis);
+                PickedForPackRequestCache.Invalidate();
+                throw;
             }
+
+            PickedForPackRequestCache.ValidateAfterConfirm(Basis);
+
+            return result;
         }
     }
 }
