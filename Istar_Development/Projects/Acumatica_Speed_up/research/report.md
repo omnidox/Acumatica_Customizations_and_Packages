@@ -193,6 +193,16 @@ Post-confirmation state and command evaluation
 
 This preserves correct packed quantities and command states. Forcing a quantity-changing request to use only one load could reuse pre-confirmation data after `PackSplit()`.
 
+### Conditional-reuse experiment and final cache decision
+
+**Final decision:** August 10, 2026 at 3:06 PM EDT
+
+Version 2 diagnostics tested whether `UpdateShipmentLine()` updated the same assigned-split objects held by the request cache. Four representative ordinary Pack-mode scans each reported 1,808 assigned splits, 1,808 identical object references, zero different or missing references, no split insertions or deletions, no packed-quantity mismatches, and `SafeCandidate=True`. This supported a guarded Version 3 experiment that reused the first materialized collection only when every diagnostic condition remained valid and otherwise fell back to the standard invalidation behavior.
+
+After restoring a clean snapshot, `ProfilerLog_017` confirmed that Version 3 reduced full `FF246783` loads from two to one per scan and lowered rows and select operations by approximately 31% and 20%, respectively. However, average server time remained essentially unchanged at 1.40 seconds versus approximately 1.41 seconds before Version 3; CPU and SQL time did not improve, and the change depended on undocumented object-reference and cache-membership behavior requiring substantially broader regression coverage.
+
+The production design will therefore remain **Version 1**, which unconditionally invalidates the request cache after confirmation and performs a fresh post-mutation load. Versions 2 and 3 are retained as diagnostic research only. Version 1 provides the safer state-consistency boundary, has already received broader functional testing, and delivers virtually the same user-visible performance. This is the final active scan optimization because further changes now offer diminishing returns while increasing correctness and maintenance risk.
+
 ## LINQ fallback investigation
 
 At this stage of the investigation, the profiler continued to report the following application-side LINQ fallback during scan and related grid callbacks:
@@ -292,11 +302,13 @@ The identical `SOShipLineSplit` LINQ fallback remained present during every meas
 | 4 | `E93AD83C` | 150 ms | 174 | Repeated package-split lookups during packing |
 | 5 | `11914AC2` | 100 ms | 6 | Master Pack actual package/style totals |
 
-`FF246783` originally loaded approximately 1,808 shipment splits three times per scan. The request-scoped `pickedForPack()` cache reduced this to two loads: one before `PackSplit()` changes package quantities and one afterward to refresh `CanPack` and command state with current data. The cache is explicitly invalidated after confirmation to prevent stale packed quantities. Based on the evidence available at that stage, reducing the two loads to one was considered too invasive because it appeared to require manually synchronizing split results after every packing mutation. The later finding below reopens this possibility but does not yet change the deployed two-load design.
+`FF246783` originally loaded approximately 1,808 shipment splits three times per scan. Production Version 1 reduces this to two loads: one before `PackSplit()` and one after explicit invalidation to refresh `CanPack` and command state. Version 3 proved that a guarded one-load path was structurally possible for the tested ordinary scans, but it produced no meaningful wall-clock improvement and carried a larger state-correctness and regression burden. Version 1 is therefore the final deployed design.
 
-### Reopened `FF246783` and `CanPack` research
+### Concluded `FF246783` and `CanPack` research
 
 **Added:** August 10, 2026 at 9:24 AM EDT
+
+**Concluded:** August 10, 2026 at 3:06 PM EDT
 
 dnSpy confirmed that `PickPackShip.PackMode.Logic.CanPack` is a virtual property and can be intercepted through Acumatica's supported getter override pattern:
 
@@ -311,15 +323,9 @@ The `SOShipLineSplitPackage.PackedQty` and `BasePackedQty` fields are database-b
 
 More importantly, `SOShipmentEntry.PackageDetail.UpdateShipmentLine()` was found to explicitly adjust the cached `SOShipLineSplit.PackedQty` after package content changes, then recalculate the parent `SOShipLine.PackedQty` and `SOShipment.PackedQty`. This means Acumatica may already synchronize the exact split objects retained by the first `pickedForPack()` load. If reference identity and collection membership are preserved, `CanPack` may be able to evaluate the already-loaded, newly updated objects and avoid the second full query without manually recreating Acumatica's quantity calculations.
 
-This is not yet confirmed. Assigned splits likely use the graph's cached objects, while unassigned splits can be converted into new objects by `GetSplits()` and may become stale. Inserted, deleted, reassigned, or mode-specific records may also change collection membership. The current explicit invalidation therefore remains the safe production behavior until the following are verified:
+Version 2 diagnostics subsequently confirmed identical reference identity for all 1,808 assigned splits across four representative ordinary scans. Version 3 then conditionally reused those objects only when the shipment, mode, membership, reference identity, and packed quantities passed a fail-closed validation. `ProfilerLog_016` and the post-snapshot `ProfilerLog_017` confirmed one `FF246783` load per scan, no exceptions, approximately 31% fewer returned rows, and approximately 20% fewer select operations.
 
-- `UpdateShipmentLine()` updates the same `SOShipLineSplit` instances retained by the request cache.
-- Its helper performs the expected cache update and field-event processing.
-- All callers execute for package-link insert, update, and delete operations.
-- Assigned and unassigned splits remain correct.
-- Paperless Pack Only and other specialized modes continue through the existing `CanPack` chain.
-
-The next research should inspect `<UpdateShipmentLine>g__UpdatePickPackInfoOf|0`, all callers of `UpdateShipmentLine()`, and the current `PackModePickedForPackRequestCache.cs` implementation. Until those checks succeed, the report must not claim that one load is safely achievable.
+Despite this structural reduction, Version 3 did not materially improve scan latency: post-snapshot scans averaged approximately 1.40 seconds, essentially matching the approximately 1.41-second pre-Version-3 baseline. CPU and SQL time also varied without a demonstrated improvement. Because unassigned, inserted, deleted, reassigned, and specialized-mode behavior would require extensive additional validation, the conditional design is not justified by its measured benefit. Version 1's explicit invalidation remains the production behavior.
 
 `6519B47D` was selected because its 107 executions exposed an N+1 pattern in `SOShipmentEntry.GetQtyThreshold(SOShipLineSplit)`.
 
@@ -524,13 +530,13 @@ One Sampling attempt caused a native `w3wp.exe` access violation in `ntdll.dll` 
 
 ## Current performance boundary
 
-**Updated:** August 10, 2026 at 9:24 AM EDT
+**Updated:** August 10, 2026 at 3:06 PM EDT
 
 `ProfilerLog_013` averaged 1.37 seconds of server time, 1.16 seconds of application-server CPU, 331 ms of SQL time, approximately 8,433 cache/select operations, and approximately 779 ms of select-processing time per scan, with no reported wait time or exceptions. These counters overlap and must not be added together, but they show that the next investigation should target application CPU rather than general SQL tuning.
 
 The full Timeline request confirms that application processing, rather than SQL, is the principal remaining cost. ASPX review identified the pre-scan caller as `gridPacked`, whose `PickedForPack` level uses `SyncPosition="true"`. The barcode field performs a committed `Scan` callback, which causes Acumatica to synchronize the grid's current row and execute `PickedForPack` before barcode processing.
 
-`SyncPosition` does not itself guarantee database freshness; saving, cache invalidation, and query execution provide that. Its role is to keep the browser-selected grid row synchronized with Acumatica's server-side current record. The Pack grid contains the row-dependent `ReopenLineQty` command with `DependOnGrid="gridPacked"`, and other current-row behavior may also depend on this synchronization. The business requires this behavior, so `SyncPosition="true"` will remain and its approximately 484 ms pre-scan load will be treated as required. The post-mutation `SetNextState -> CanPack` result must also remain state-correct, although newly identified cache synchronization may allow that result to reuse the first materialized collection.
+`SyncPosition` does not itself guarantee database freshness; saving, cache invalidation, and query execution provide that. Its role is to keep the browser-selected grid row synchronized with Acumatica's server-side current record. The Pack grid contains the row-dependent `ReopenLineQty` command with `DependOnGrid="gridPacked"`, and other current-row behavior may also depend on this synchronization. The business requires this behavior, so `SyncPosition="true"` will remain and its approximately 484 ms pre-scan load will be treated as required. Version 1 also retains the post-mutation `SetNextState -> CanPack` refresh because Version 3's conditional reuse did not improve user-visible scan time enough to justify its additional risk.
 
 The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct packages are each checked twice. It consumes only approximately 9.54 ms of SQL time per scan and returns very few package-content records. Package-state caching remains a low-priority micro-optimization unless focused profiling proves otherwise.
 
@@ -538,32 +544,32 @@ The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct 
 
 - `PickPackShipTranQtyPerformanceExt.cs`
 - `PackModeBarcodeLookupOptimization.cs`
-- `PackModePickedForPackRequestCache.cs`
+- `PackModePickedForPackRequestCache.cs` - Version 1 production implementation with explicit post-confirmation invalidation
 - `PackModePackedViewOptimization.cs`
 - `PackModeQtyThresholdOptimization.cs`
 - `PickPackShipShipmentRowSelectedOptimization.cs`
 
-`PickPackShipGetSplitsOptimization.cs` was an unsuccessful diagnostic experiment and is not part of the deployed solution.
+`PickPackShipGetSplitsOptimization.cs` was an unsuccessful diagnostic experiment and is not part of the deployed solution. Version 2 diagnostic and Version 3 conditional-reuse variants of `PackModePickedForPackRequestCache.cs` are also research artifacts only and must not be included in the production package.
 
-## Recommended next steps
+## Final deployment and closeout steps
 
-**Updated:** August 10, 2026 at 9:24 AM EDT
+**Updated:** August 10, 2026 at 3:06 PM EDT
 
-1. Continue functional regression testing with all customizations enabled and complete the planned concurrent multi-user test.
-2. Record label results during testing, but defer correction of the selected-package UCC defect to a later work item.
-3. Retain `gridPacked` with `SyncPosition="true"`; the business requires reliable server-side current-row synchronization for row-dependent behavior such as `ReopenLineQty`.
-4. Complete the reopened `get_CanPack` research by inspecting `<UpdateShipmentLine>g__UpdatePickPackInfoOf|0`, every caller of `UpdateShipmentLine()`, and the current request-cache source.
-5. Determine whether the first materialized `PickedForPack` collection holds the same assigned-split objects updated after `PackSplit`, and separately validate unassigned, inserted, deleted, and reassigned records.
-6. Preserve the standard Paperless Pack Only override and fall back to `base_CanPack()` for specialized or unproven modes.
-7. Keep the current explicit post-confirmation invalidation until object identity, collection membership, and state correctness are proven. Do not substitute a database-only existence query while unsaved cache values may be newer than the database.
-8. If safe in-memory reuse cannot be demonstrated, retain the two-load design, treat the remaining time as necessary Acumatica framework and packing work, and conclude the active scan-performance optimization phase.
-9. Only as an explicitly higher-risk fallback, reconsider reducing in-memory work inside `GetSplits`. The earlier replacement experiment was withdrawn because correct behavior requires assigned and unassigned splits, `SOShipLine` and `INLocation` joined records, `processedSeparator` handling, shipment-location ordering, formulas, cache state, and the exact result order expected by packing logic. Changing these semantics could produce incorrect row selection, quantities, lot/location priority, or packing state.
-10. Do not alter standard `PackSplit`, convert packing queries to read-only, disable database event logging, or bypass grid synchronization without measurements and complete functional validation.
+1. Deploy only the Version 1 `PackModePickedForPackRequestCache.cs` together with the other proven performance files listed above.
+2. Exclude the Version 2 diagnostic and Version 3 conditional-reuse files from the published customization package.
+3. Complete final regression signoff with all customizations enabled, including ordinary and large shipments, repeated scans, removal/unpacking, multiple boxes, package confirmation, concurrent users, and label generation.
+4. Record the selected-package UCC label defect as a separate Advanced Labels work item; testing showed it also occurs without `IStarScanPerformance`.
+5. Retain `gridPacked` with `SyncPosition="true"` and retain Version 1's post-confirmation invalidation to preserve current-row and packed-quantity correctness.
+6. Archive Version 3 results as evidence that one-load conditional reuse was evaluated and rejected because it reduced internal work without materially reducing elapsed scan time.
 
-Disabling Advanced Picking successfully removed the unused command but did not remove either remaining split load. Because grid synchronization must remain, safe reuse of Acumatica's already-updated cached splits in `get_CanPack` is the last comparatively high-value research target before concluding that the customization-level optimizations have reached their practical limit.
+Active scan-performance optimization is now complete. Further attempts to reduce `GetSplits`, bypass cache synchronization, alter `PackSplit`, or rely on undocumented object-reference behavior would be materially more invasive. With scan time already reduced by approximately 72-74%, the remaining opportunities exhibit diminishing returns and are not justified at the current risk level.
 
 ## Overall result
 
+**Finalized:** August 10, 2026 at 3:06 PM EDT
+
 The completed optimizations reduced average scan time from approximately **5.19 seconds to the 1.37-1.44 second range** in steady Request Profiler captures, an improvement of approximately **72-74%**. SQL calls fell from approximately **1,850 to about 159-164 per scan**, a reduction of approximately **91%**.
 
-The Advanced Labels lookup, repeated Master Pack barcode lookups, Package Content LINQ fallback, per-split `GetQtyThreshold()` queries, and repeated full `SOShipLine` query `B5446270` have been eliminated or consolidated. Request-scoped reuse removed one of the original three repeated `pickedForPack` split loads while preserving state correctness. Timeline profiling now attributes the two remaining loads to pre-scan grid synchronization and the required post-mutation state refresh.
+The Advanced Labels lookup, repeated Master Pack barcode lookups, Package Content LINQ fallback, per-split `GetQtyThreshold()` queries, and repeated full `SOShipLine` query `B5446270` have been eliminated or consolidated. Production Version 1 request-scoped reuse removes one of the original three repeated `pickedForPack` split loads while preserving state correctness. Timeline profiling attributes its two remaining loads to required pre-scan grid synchronization and the explicit post-mutation refresh.
+
+Version 3 reduced the two loads to one under guarded conditions, but post-snapshot profiling showed essentially unchanged average server time. The project will therefore retain Version 1 as the final implementation. This closes the active optimization phase at the safest practical boundary: additional changes would add disproportionate regression and maintenance risk for little or no demonstrated user-visible benefit.
