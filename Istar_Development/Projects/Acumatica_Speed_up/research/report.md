@@ -292,7 +292,34 @@ The identical `SOShipLineSplit` LINQ fallback remained present during every meas
 | 4 | `E93AD83C` | 150 ms | 174 | Repeated package-split lookups during packing |
 | 5 | `11914AC2` | 100 ms | 6 | Master Pack actual package/style totals |
 
-`FF246783` originally loaded approximately 1,808 shipment splits three times per scan. The request-scoped `pickedForPack()` cache reduced this to two loads: one before `PackSplit()` changes package quantities and one afterward to refresh `CanPack` and command state with current data. The cache is explicitly invalidated after confirmation to prevent stale packed quantities. Reducing these two loads to one would require invasive synchronization of Acumatica's cached split results after every packing mutation and could produce incorrect quantities or command states. The first-ranked query is therefore considered optimized as far as practical without materially changing standard behavior.
+`FF246783` originally loaded approximately 1,808 shipment splits three times per scan. The request-scoped `pickedForPack()` cache reduced this to two loads: one before `PackSplit()` changes package quantities and one afterward to refresh `CanPack` and command state with current data. The cache is explicitly invalidated after confirmation to prevent stale packed quantities. Based on the evidence available at that stage, reducing the two loads to one was considered too invasive because it appeared to require manually synchronizing split results after every packing mutation. The later finding below reopens this possibility but does not yet change the deployed two-load design.
+
+### Reopened `FF246783` and `CanPack` research
+
+**Added:** August 10, 2026 at 9:24 AM EDT
+
+dnSpy confirmed that `PickPackShip.PackMode.Logic.CanPack` is a virtual property and can be intercepted through Acumatica's supported getter override pattern:
+
+```csharp
+[PXOverride]
+public bool get_CanPack(Func<bool> base_CanPack)
+```
+
+The standard implementation materializes `PickedForPack` and performs a simple existence test: when the shipment has not been picked, it checks whether any split has `PackedQty < Qty`; otherwise, it checks `PackedQty < PickedQty`. Standard `PaperlessOnlyPacking` also overrides the getter and, in Paperless Pack Only mode, excludes splits marked `RelatedPickListSplitForceCompleted`. Any optimization must preserve that override by calling the existing delegate for special or unsupported modes.
+
+The `SOShipLineSplitPackage.PackedQty` and `BasePackedQty` fields are database-backed but do not contain a `PXFormula` or `SumCalc` that automatically updates the parent split. A database-only `TOP (1)` query is therefore not automatically state-correct during an active packing callback.
+
+More importantly, `SOShipmentEntry.PackageDetail.UpdateShipmentLine()` was found to explicitly adjust the cached `SOShipLineSplit.PackedQty` after package content changes, then recalculate the parent `SOShipLine.PackedQty` and `SOShipment.PackedQty`. This means Acumatica may already synchronize the exact split objects retained by the first `pickedForPack()` load. If reference identity and collection membership are preserved, `CanPack` may be able to evaluate the already-loaded, newly updated objects and avoid the second full query without manually recreating Acumatica's quantity calculations.
+
+This is not yet confirmed. Assigned splits likely use the graph's cached objects, while unassigned splits can be converted into new objects by `GetSplits()` and may become stale. Inserted, deleted, reassigned, or mode-specific records may also change collection membership. The current explicit invalidation therefore remains the safe production behavior until the following are verified:
+
+- `UpdateShipmentLine()` updates the same `SOShipLineSplit` instances retained by the request cache.
+- Its helper performs the expected cache update and field-event processing.
+- All callers execute for package-link insert, update, and delete operations.
+- Assigned and unassigned splits remain correct.
+- Paperless Pack Only and other specialized modes continue through the existing `CanPack` chain.
+
+The next research should inspect `<UpdateShipmentLine>g__UpdatePickPackInfoOf|0`, all callers of `UpdateShipmentLine()`, and the current `PackModePickedForPackRequestCache.cs` implementation. Until those checks succeed, the report must not claim that one load is safely achievable.
 
 `6519B47D` was selected because its 107 executions exposed an N+1 pattern in `SOShipmentEntry.GetQtyThreshold(SOShipLineSplit)`.
 
@@ -497,13 +524,13 @@ One Sampling attempt caused a native `w3wp.exe` access violation in `ntdll.dll` 
 
 ## Current performance boundary
 
-**Updated:** August 7, 2026 at 2:54 PM EDT
+**Updated:** August 10, 2026 at 9:24 AM EDT
 
 `ProfilerLog_013` averaged 1.37 seconds of server time, 1.16 seconds of application-server CPU, 331 ms of SQL time, approximately 8,433 cache/select operations, and approximately 779 ms of select-processing time per scan, with no reported wait time or exceptions. These counters overlap and must not be added together, but they show that the next investigation should target application CPU rather than general SQL tuning.
 
 The full Timeline request confirms that application processing, rather than SQL, is the principal remaining cost. ASPX review identified the pre-scan caller as `gridPacked`, whose `PickedForPack` level uses `SyncPosition="true"`. The barcode field performs a committed `Scan` callback, which causes Acumatica to synchronize the grid's current row and execute `PickedForPack` before barcode processing.
 
-`SyncPosition` does not itself guarantee database freshness; saving, cache invalidation, and query execution provide that. Its role is to keep the browser-selected grid row synchronized with Acumatica's server-side current record. The Pack grid contains the row-dependent `ReopenLineQty` command with `DependOnGrid="gridPacked"`, and other current-row behavior may also depend on this synchronization. The business requires this behavior, so `SyncPosition="true"` will remain and its approximately 484 ms pre-scan load will be treated as required. The post-mutation `SetNextState -> CanPack` evaluation must likewise remain state-correct.
+`SyncPosition` does not itself guarantee database freshness; saving, cache invalidation, and query execution provide that. Its role is to keep the browser-selected grid row synchronized with Acumatica's server-side current record. The Pack grid contains the row-dependent `ReopenLineQty` command with `DependOnGrid="gridPacked"`, and other current-row behavior may also depend on this synchronization. The business requires this behavior, so `SyncPosition="true"` will remain and its approximately 484 ms pre-scan load will be treated as required. The post-mutation `SetNextState -> CanPack` result must also remain state-correct, although newly identified cache synchronization may allow that result to reuse the first materialized collection.
 
 The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct packages are each checked twice. It consumes only approximately 9.54 ms of SQL time per scan and returns very few package-content records. Package-state caching remains a low-priority micro-optimization unless focused profiling proves otherwise.
 
@@ -520,18 +547,20 @@ The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct 
 
 ## Recommended next steps
 
-**Updated:** August 7, 2026 at 2:54 PM EDT
+**Updated:** August 10, 2026 at 9:24 AM EDT
 
 1. Continue functional regression testing with all customizations enabled and complete the planned concurrent multi-user test.
 2. Record label results during testing, but defer correction of the selected-package UCC defect to a later work item.
 3. Retain `gridPacked` with `SyncPosition="true"`; the business requires reliable server-side current-row synchronization for row-dependent behavior such as `ReopenLineQty`.
-4. After regression testing, perform the final high-value research on `PickPackShip.PackMode.Logic.get_CanPack`. Determine whether it can return the identical result through a targeted existence or aggregate query without materializing all shipment splits.
-5. Preserve the post-mutation correctness boundary: `PackSplit` changes package quantities, so any replacement must evaluate current cache and database state and must not reuse stale split data.
-6. If `get_CanPack` cannot be replaced safely, treat the remaining time as necessary Acumatica framework and packing work and conclude the active scan-performance optimization phase.
-7. Only as an explicitly higher-risk fallback, reconsider reducing in-memory work inside `GetSplits`. The earlier replacement experiment was withdrawn because correct behavior requires assigned and unassigned splits, `SOShipLine` and `INLocation` joined records, `processedSeparator` handling, shipment-location ordering, formulas, cache state, and the exact result order expected by packing logic. Changing these semantics could produce incorrect row selection, quantities, lot/location priority, or packing state.
-8. Do not alter standard `PackSplit`, convert packing queries to read-only, disable database event logging, or bypass grid synchronization without measurements and complete functional validation.
+4. Complete the reopened `get_CanPack` research by inspecting `<UpdateShipmentLine>g__UpdatePickPackInfoOf|0`, every caller of `UpdateShipmentLine()`, and the current request-cache source.
+5. Determine whether the first materialized `PickedForPack` collection holds the same assigned-split objects updated after `PackSplit`, and separately validate unassigned, inserted, deleted, and reassigned records.
+6. Preserve the standard Paperless Pack Only override and fall back to `base_CanPack()` for specialized or unproven modes.
+7. Keep the current explicit post-confirmation invalidation until object identity, collection membership, and state correctness are proven. Do not substitute a database-only existence query while unsaved cache values may be newer than the database.
+8. If safe in-memory reuse cannot be demonstrated, retain the two-load design, treat the remaining time as necessary Acumatica framework and packing work, and conclude the active scan-performance optimization phase.
+9. Only as an explicitly higher-risk fallback, reconsider reducing in-memory work inside `GetSplits`. The earlier replacement experiment was withdrawn because correct behavior requires assigned and unassigned splits, `SOShipLine` and `INLocation` joined records, `processedSeparator` handling, shipment-location ordering, formulas, cache state, and the exact result order expected by packing logic. Changing these semantics could produce incorrect row selection, quantities, lot/location priority, or packing state.
+10. Do not alter standard `PackSplit`, convert packing queries to read-only, disable database event logging, or bypass grid synchronization without measurements and complete functional validation.
 
-Disabling Advanced Picking successfully removed the unused command but did not remove either remaining split load. Because grid synchronization must remain, `get_CanPack` is the last comparatively high-value research target before concluding that the customization-level optimizations have reached their safe practical limit.
+Disabling Advanced Picking successfully removed the unused command but did not remove either remaining split load. Because grid synchronization must remain, safe reuse of Acumatica's already-updated cached splits in `get_CanPack` is the last comparatively high-value research target before concluding that the customization-level optimizations have reached their practical limit.
 
 ## Overall result
 
