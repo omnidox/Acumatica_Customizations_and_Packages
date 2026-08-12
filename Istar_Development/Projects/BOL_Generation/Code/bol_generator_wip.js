@@ -196,7 +196,7 @@ async function fetchAcumaticaShipmentData(customerOrderNbr, sessionCookie) {
     PostalCode: detail.PostalCode?.value ?? null,
     Packages: detail.Packages?.value ?? null,
     ShippedWeight: detail.ShippedWeight?.value ?? null,
-    ShipVia: detail.ShipVia?.value ?? null,
+    ShipViaDescription: detail.ShipViaDescription?.value ?? null,
     Status: detail.Status?.value ?? null,
   };
 }
@@ -236,7 +236,7 @@ function enrichOrderData(csvRow, apiData) {
     loadNumber: csvRow["Load Number"],
     scac: csvRow["Assigned SCAC"],
     proNumber: csvRow["PRO"],
-    shipVia: apiData.ShipVia || csvRow["Vendor Name"],
+    shipVia: apiData.ShipViaDescription || csvRow["Vendor Name"],
     destination: csvRow["Destination"],
     shipToName: apiData.LocationName,
     shipToAddress: apiData.AddressLine1,
