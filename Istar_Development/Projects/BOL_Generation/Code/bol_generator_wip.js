@@ -230,7 +230,7 @@ function enrichOrderData(csvRow, apiData) {
     csvRow,
     apiData,
     customerOrderNbr,
-    bolNumber: apiData.BOLNumber || "No BOL # found",
+    bolNumber: apiData.BOLNumber || "NO_BOL_NUM_FOUND",
     cartons: parseInt(csvRow["Cartons"], 10),
     weight: Math.round(apiData.ShippedWeight ?? parseFloat(csvRow["Weight"])),
     loadNumber: csvRow["Load Number"],
@@ -518,8 +518,24 @@ function populateSupplementalBOLs(workbook, orders) {
     newSheet.getCell("J10").value = order.scac;
     newSheet.getCell("K11").value = order.proNumber;
 
-    // Bill of Lading Number
-    newSheet.getCell("I4").value = order.bolNumber;
+    // Bill of Lading Number (rendered as a Code 39 barcode via the
+    // IDAutomationHC39M Free Version font, which also shows the
+    // human-readable number below the bars; parentheses hide the
+    // start/stop asterisks from the readable text)
+    newSheet.getCell("I4").value = `(${order.bolNumber})`;
+    newSheet.getCell("I4").font = { name: "IDAutomationHC39M Free Version", size: 14 };
+    // I4 is merged across rows 4-6 (template default totals only ~39pt:
+    // 12.75 + 12.75 + 13.5). A 24pt HC-variant Code 39 glyph draws bars
+    // AND a human-readable text line stacked in one glyph, which needs
+    // noticeably more vertical room than plain 24pt text — bump the merged
+    // region's total height so LibreOffice's PDF export doesn't spill the
+    // glyph into row 7. Font size reduced from 24 to 14 so the smaller
+    // human-readable text line (drawn beneath the bars, at a fixed
+    // proportion of the barcode's overall glyph height) isn't squeezed out
+    // of the available vertical space.
+    newSheet.getRow(4).height = 22;
+    newSheet.getRow(5).height = 22;
+    newSheet.getRow(6).height = 22;
 
     // Single customer order row (row 22)
     newSheet.getCell("A22").value = order.customerOrderNbr;
