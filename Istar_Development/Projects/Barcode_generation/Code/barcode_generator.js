@@ -179,7 +179,20 @@ function cloneWorksheet(workbook, sourceSheetName, newSheetName) {
 
   const newSheet = workbook.addWorksheet(newSheetName, {
     properties: { ...sourceSheet.properties },
-    pageSetup: { ...sourceSheet.pageSetup },
+    pageSetup: {
+      ...sourceSheet.pageSetup,
+      // Override the template's saved fit-to-page scale, which was
+      // computed for the original 3-sample-ID layout. Cartons with more
+      // IDs need more vertical space than that scale allows \u2014 forcing
+      // everything onto one page would shrink the barcodes small enough
+      // to become unscannable. fitToHeight: 0 lets a carton's sheet spill
+      // onto additional pages instead, keeping every barcode at a fixed,
+      // reliably scannable size regardless of how many IDs a carton has.
+      // fitToWidth: 1 stays, since 3 columns always fits one page wide.
+      fitToWidth: 1,
+      fitToHeight: 0,
+      scale: undefined,
+    },
     views: sourceSheet.views,
   });
 
@@ -234,15 +247,36 @@ function populateCartonSheet(sheet, cartonGroup, shipmentNbr) {
     ? `*${String(cartonGroup.ucc).trim()}*`
     : "*UCC_NOT_FOUND*";
 
-  // Row 3 ("Inventory #'s" header) is already correct from the template.
+  // Row 3 ("Inventory #'s" header): add a bit of breathing room between the
+  // Shipment#/Carton#/UCC# barcode block above and this label. Row 3 has
+  // no explicit vertical alignment in the template (defaults to bottom),
+  // so increasing the row's height and pinning vertical:"bottom" adds the
+  // extra space above the text (next to row 2's barcodes) rather than
+  // pushing the label away from the ID grid it's labeling below it.
+  sheet.getRow(3).height = 165;
+  sheet.getCell("A3").alignment = { horizontal: "center", vertical: "bottom" };
 
   // Row 4+: Inventory ID barcodes, 3 columns, row-major fill (\u00a75.3).
+  // Row height must be set explicitly for every ID row, not inherited from
+  // the template clone \u2014 cloneWorksheet() only copies rows that physically
+  // existed in the template (rows 4-6, sized for 9 sample IDs). Any carton
+  // needing more than 9 IDs spills into brand-new rows with no explicit
+  // height, defaulting to the sheet's tiny default height \u2014 far too short
+  // for a 26pt barcode glyph, causing rows to visually overlap. Setting the
+  // height on every row as it's populated (regardless of whether it was
+  // cloned or newly created) guarantees consistent spacing at any ID count.
+  // Height scaled up proportionally with the 10% font-size increase below,
+  // to avoid re-triggering that same overlap.
+  const BARCODE_FONT_SIZE = 28.6; // 26 * 1.1
+  const BARCODE_ROW_HEIGHT = 167.475; // 152.25 * 1.1
+
   cartonGroup.inventoryIds.forEach((id, index) => {
     const row = ID_START_ROW + Math.floor(index / COLUMNS);
     const col = (index % COLUMNS) + 1; // 1=A, 2=B, 3=C
     const cell = sheet.getCell(row, col);
     cell.value = `*${String(id).trim()}*`;
-    cell.font = { name: BARCODE_FONT_NAME, size: 26 };
+    cell.font = { name: BARCODE_FONT_NAME, size: BARCODE_FONT_SIZE };
+    sheet.getRow(row).height = BARCODE_ROW_HEIGHT;
   });
 }
 
