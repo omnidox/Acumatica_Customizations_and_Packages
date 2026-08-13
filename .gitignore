@@ -16,3 +16,6 @@ Current_Customizations/Customization_Export_Script/.env
 *.dtp
 /Current_Customizations/Customization_Export_Script/8888_Customizations_08102026
 /.codex_spreadsheet_review
+Istar_Development/Projects/Barcode_generation/Research/0000787_total_barcodes.xlsx
+Istar_Development/Projects/Barcode_generation/Research/Design_Document.md
+Istar_Development/Projects/Barcode_generation/Code/.env
