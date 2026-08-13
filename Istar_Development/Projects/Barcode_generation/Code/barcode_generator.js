@@ -239,13 +239,25 @@ function generateUniqueSheetName(workbook, baseLabel) {
 // Populates one carton's cloned sheet with real barcode values
 // ============================================================================
 function populateCartonSheet(sheet, cartonGroup, shipmentNbr) {
+  // Barcode sizing, shared by both the header row and the ID grid so the
+  // whole page stays visually consistent. Row height scaled proportionally
+  // with the font size to avoid the row-overlap bug fixed earlier.
+  const BARCODE_FONT_SIZE = 31.46; // 28.6 * 1.1 (compounded: 26 -> 28.6 -> 31.46)
+  const BARCODE_ROW_HEIGHT = 184.2225; // 167.475 * 1.1
+
   // Row 1 (labels) is already correct from the template \u2014 no changes needed.
-  // Row 2: Shipment # / Carton # / UCC # barcode values.
+  // Row 2: Shipment # / Carton # / UCC # barcode values. Font size and row
+  // height set explicitly (rather than left inherited from the template's
+  // original 26pt) so the header matches the ID grid's enlarged size below.
   sheet.getCell("A2").value = `*${String(shipmentNbr).trim()}*`;
   sheet.getCell("B2").value = `*${String(cartonGroup.carton).trim()}*`;
   sheet.getCell("C2").value = cartonGroup.ucc
     ? `*${String(cartonGroup.ucc).trim()}*`
     : "*UCC_NOT_FOUND*";
+  ["A2", "B2", "C2"].forEach((addr) => {
+    sheet.getCell(addr).font = { name: BARCODE_FONT_NAME, size: BARCODE_FONT_SIZE };
+  });
+  sheet.getRow(2).height = BARCODE_ROW_HEIGHT;
 
   // Row 3 ("Inventory #'s" header): add a bit of breathing room between the
   // Shipment#/Carton#/UCC# barcode block above and this label. Row 3 has
@@ -265,10 +277,8 @@ function populateCartonSheet(sheet, cartonGroup, shipmentNbr) {
   // for a 26pt barcode glyph, causing rows to visually overlap. Setting the
   // height on every row as it's populated (regardless of whether it was
   // cloned or newly created) guarantees consistent spacing at any ID count.
-  // Height scaled up proportionally with the 10% font-size increase below,
-  // to avoid re-triggering that same overlap.
-  const BARCODE_FONT_SIZE = 28.6; // 26 * 1.1
-  const BARCODE_ROW_HEIGHT = 167.475; // 152.25 * 1.1
+  // Height/size constants declared once at the top of this function, shared
+  // with the header row above.
 
   cartonGroup.inventoryIds.forEach((id, index) => {
     const row = ID_START_ROW + Math.floor(index / COLUMNS);
