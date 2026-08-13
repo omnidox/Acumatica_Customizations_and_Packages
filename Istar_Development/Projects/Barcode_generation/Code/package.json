@@ -1,0 +1,14 @@
+{
+  "name": "barcode_generator",
+  "version": "1.0.0",
+  "description": "Generates one printable Code 39 barcode PDF per carton for a given Shipment #.",
+  "main": "barcode_generator.js",
+  "type": "module",
+  "scripts": {
+    "start": "node barcode_generator.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0"
+  }
+}
