@@ -523,7 +523,7 @@ function populateSupplementalBOLs(workbook, orders) {
     // human-readable number below the bars; parentheses hide the
     // start/stop asterisks from the readable text)
     newSheet.getCell("I4").value = `(${order.bolNumber})`;
-    newSheet.getCell("I4").font = { name: "IDAutomationHC39M Free Version", size: 14 };
+    newSheet.getCell("I4").font = { name: "IDAutomationHC39M Free Version", size: 13 };
     // I4 is merged across rows 4-6 (template default totals only ~39pt:
     // 12.75 + 12.75 + 13.5). A 24pt HC-variant Code 39 glyph draws bars
     // AND a human-readable text line stacked in one glyph, which needs
