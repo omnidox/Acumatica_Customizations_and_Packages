@@ -21,3 +21,5 @@ Istar_Development/Projects/Barcode_generation/Research/Design_Document.md
 Istar_Development/Projects/Barcode_generation/Code/.env
 /Istar_Development/Projects/Barcode_generation/Code/node_modules
 /Istar_Development/Projects/Barcode_generation/Code/output
+/.codex_tmp/node_modules
+/.codex_tmp
