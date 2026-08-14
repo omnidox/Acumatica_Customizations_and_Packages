@@ -391,7 +391,7 @@ function populateMasterBOL(worksheet, orders, grandTotalCartons, grandTotalWeigh
     worksheet.getCell("K7").value = firstOrder.shipVia;      // Carrier name
     worksheet.getCell("J10").value = firstOrder.scac;         // SCAC
     worksheet.getCell("K11").value = firstOrder.proNumber;    // Pro number
-    worksheet.getCell("F16").value = firstOrder.loadNumber;   // Target Load ID
+    worksheet.getCell("F17").value = firstOrder.loadNumber;   // Target Load ID
   }
 
   // Customer orders (rows 22-29)
@@ -404,10 +404,8 @@ function populateMasterBOL(worksheet, orders, grandTotalCartons, grandTotalWeigh
     worksheet.getCell(`H${rowNum}`).value = "Y";             // Pallet indicator
   });
 
-  // Grand totals (row 30) - combined across MasterBOL + Supplemental_Master_BOL
-  worksheet.getCell("E30").value = grandTotalCartons;
-  worksheet.getCell("F30").value = grandTotalWeight;
-  worksheet.getCell("G30").value = grandTotalWeight;
+  // Grand totals (row 30) - no longer populated; business use case no
+  // longer requires this row on MasterBOL.
 
   // Carrier detail section (row 34) - reflects the same combined grand total
   worksheet.getCell("C34").value = grandTotalCartons;
@@ -511,7 +509,7 @@ function populateSupplementalBOLs(workbook, orders) {
     newSheet.getCell("C10").value = `${order.shipToCity}, ${order.shipToState} ${order.shipToZip}`;
 
     // Target Load ID
-    newSheet.getCell("F16").value = order.loadNumber;
+    newSheet.getCell("F17").value = order.loadNumber;
 
     // Carrier information
     newSheet.getCell("K7").value = order.shipVia;
@@ -529,7 +527,7 @@ function populateSupplementalBOLs(workbook, orders) {
     // AND a human-readable text line stacked in one glyph, which needs
     // noticeably more vertical room than plain 24pt text — bump the merged
     // region's total height so LibreOffice's PDF export doesn't spill the
-    // glyph into row 7. Font size reduced from 24 to 14 so the smaller
+    // glyph into row 7. Font size reduced from 24 to 13 so the smaller
     // human-readable text line (drawn beneath the bars, at a fixed
     // proportion of the barcode's overall glyph height) isn't squeezed out
     // of the available vertical space.
