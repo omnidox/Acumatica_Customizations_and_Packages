@@ -327,6 +327,8 @@
           <px:PXGridLevel DataMember="SelectedPackageContentsView">
             <Columns>
               <px:PXGridColumn DataField="InventoryID" Width="70" />
+              <px:PXGridColumn DataField="LegacyItemNbr" Width="280" />
+              <px:PXGridColumn DataField="UPC" Width="280" />
               <px:PXGridColumn DataField="UOM" Width="72" />
               <px:PXGridColumn DataField="StoreNbr" Width="140" />
               <px:PXGridColumn DataField="ShipmentSplitLineNbr" Width="70" CommitChanges="True" />
