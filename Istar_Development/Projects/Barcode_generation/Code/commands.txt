@@ -1,3 +1,4 @@
-cd "C:\Users\Procomm\Documents\GitHub\Acumatica_Customizations_and_Packages\Istar_Development\Projects\Barcode_generation\Code"
+wsl
+cd "/mnt/c/Users/Procomm/Documents/GitHub/Acumatica_Customizations_and_Packages/Istar_Development/Projects/Barcode_generation/Code"
 npm install
-node barcode_generator.js --shipment 0000787
+node barcode_generator.js --shipment 0000001
