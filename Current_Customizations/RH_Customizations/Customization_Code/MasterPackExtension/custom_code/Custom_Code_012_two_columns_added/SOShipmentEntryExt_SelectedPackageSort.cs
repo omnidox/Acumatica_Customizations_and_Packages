@@ -194,6 +194,36 @@ namespace CustomWMS
         public int? UsrSkipSortOrder { get; set; }
 
         #endregion
+
+        #region LegacyItemNbr
+
+        public abstract class legacyItemNbr
+            : PX.Data.BQL.BqlString.Field<legacyItemNbr>
+        {
+        }
+
+        [PXString(30, IsUnicode = true)]
+        [PXUIField(
+            DisplayName = "Legacy Item Number",
+            Enabled = false)]
+        public string LegacyItemNbr { get; set; }
+
+        #endregion
+
+        #region UPC
+
+        public abstract class uPC
+            : PX.Data.BQL.BqlString.Field<uPC>
+        {
+        }
+
+        [PXString(50, IsUnicode = true)]
+        [PXUIField(
+            DisplayName = "UPC",
+            Enabled = false)]
+        public string UPC { get; set; }
+
+        #endregion
     }
 
     /*
@@ -221,7 +251,7 @@ namespace CustomWMS
             "SelectedPackageContentsView";
 
         private const string Version =
-            "2026-07-21-PK-INVENTORY-CACHE-01";
+            "2026-08-18-LEGACY-UPC-01";
 
         /*
          * Graph-instance lookup cache.
@@ -234,6 +264,14 @@ namespace CustomWMS
          */
         private readonly Dictionary<int?, string>
             _inventoryCodeCache =
+                new Dictionary<int?, string>();
+
+        private readonly Dictionary<int?, string>
+            _legacyItemNbrCache =
+                new Dictionary<int?, string>();
+
+        private readonly Dictionary<int?, string>
+            _upcCache =
                 new Dictionary<int?, string>();
 
         public static bool IsActive()
@@ -460,7 +498,7 @@ namespace CustomWMS
                 }
 
                 /*
-                 * Populate the four unbound extension fields directly on
+                 * Populate the unbound extension fields directly on
                  * the cached WmsPlan row.
                  *
                  * These fields are not database-bound, so this does not
@@ -538,6 +576,20 @@ namespace CustomWMS
                     .usrSkipSortOrder>(
                     item.Row,
                     item.SkipSortOrder);
+
+            cache.SetValueExt<
+                SelectedPackageContentsExt.legacyItemNbr>(
+                    item.Row,
+                    GetCachedValue(
+                        _legacyItemNbrCache,
+                        item.Row.InventoryID));
+
+            cache.SetValueExt<
+                SelectedPackageContentsExt.uPC>(
+                    item.Row,
+                    GetCachedValue(
+                        _upcCache,
+                        item.Row.InventoryID));
 
             WmsDebugTrace.Info(
                 $"{TracePrefix} Applied unbound values. " +
@@ -800,25 +852,69 @@ namespace CustomWMS
 
                 string existingInventoryCD;
 
-                if (_inventoryCodeCache.TryGetValue(
+                if (!_inventoryCodeCache.TryGetValue(
                     inventoryID,
                     out existingInventoryCD))
                 {
-                    cacheHitCount++;
+                    InventoryItem inventoryItem =
+                        InventoryItem.PK.Find(
+                            Base,
+                            inventoryID);
 
-                    continue;
+                    _inventoryCodeCache[inventoryID] =
+                        inventoryItem?.InventoryCD?.Trim()
+                        ?? string.Empty;
+
+                    if (!_legacyItemNbrCache.ContainsKey(
+                        inventoryID))
+                    {
+                        object legacyValue =
+                            inventoryItem == null
+                                ? null
+                                : Base.Caches<InventoryItem>()
+                                    .GetValue(
+                                        inventoryItem,
+                                        "UsrLegacyID");
+
+                        _legacyItemNbrCache[inventoryID] =
+                            legacyValue?.ToString()?.Trim()
+                            ?? string.Empty;
+                    }
+
+                    lookupCount++;
+                }
+                else
+                {
+                    cacheHitCount++;
                 }
 
-                InventoryItem inventoryItem =
-                    InventoryItem.PK.Find(
-                        Base,
-                        inventoryID);
+                if (!_upcCache.ContainsKey(inventoryID))
+                {
+                    INItemXRef upcReference =
+                        PXSelectReadonly<
+                            INItemXRef,
+                            Where<
+                                INItemXRef.inventoryID,
+                                Equal<
+                                    Required<
+                                        INItemXRef.inventoryID>>,
+                                And<
+                                    INItemXRef.alternateType,
+                                    Equal<
+                                        Required<
+                                            INItemXRef
+                                                .alternateType>>>>>
+                        .SelectWindowed(
+                            Base,
+                            0,
+                            1,
+                            inventoryID,
+                            "GIN");
 
-                _inventoryCodeCache[inventoryID] =
-                    inventoryItem?.InventoryCD?.Trim()
-                    ?? string.Empty;
-
-                lookupCount++;
+                    _upcCache[inventoryID] =
+                        upcReference?.AlternateID?.Trim()
+                        ?? string.Empty;
+                }
             }
 
             WmsDebugTrace.Info(
@@ -847,6 +943,24 @@ namespace CustomWMS
                 inventoryID,
                 out inventoryCD)
                     ? inventoryCD ?? string.Empty
+                    : string.Empty;
+        }
+
+        private string GetCachedValue(
+            Dictionary<int?, string> values,
+            int? inventoryID)
+        {
+            if (inventoryID == null || values == null)
+            {
+                return string.Empty;
+            }
+
+            string value;
+
+            return values.TryGetValue(
+                inventoryID,
+                out value)
+                    ? value ?? string.Empty
                     : string.Empty;
         }
 
