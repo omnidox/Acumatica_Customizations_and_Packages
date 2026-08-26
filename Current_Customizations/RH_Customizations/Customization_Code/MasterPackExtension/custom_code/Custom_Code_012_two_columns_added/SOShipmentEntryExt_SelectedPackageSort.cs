@@ -267,6 +267,10 @@ namespace CustomWMS
                 new Dictionary<int?, string>();
 
         private readonly Dictionary<int?, string>
+            _locationCodeCache =
+                new Dictionary<int?, string>();
+
+        private readonly Dictionary<int?, string>
             _legacyItemNbrCache =
                 new Dictionary<int?, string>();
 
@@ -451,7 +455,8 @@ namespace CustomWMS
                         .Where(item =>
                             item.RemainingQty > 0m)
                         .OrderBy(item =>
-                            item.Row.DefaultIssueFrom)
+                            GetLocationCD(
+                                item.Row.DefaultIssueFrom))
                         .ThenBy(item =>
                             item.Row.OrderNbr)
                         .ThenBy(item =>
@@ -473,7 +478,8 @@ namespace CustomWMS
                         .OrderBy(item =>
                             item.SkipSortOrder)
                         .ThenBy(item =>
-                            item.Row.DefaultIssueFrom)
+                            GetLocationCD(
+                                item.Row.DefaultIssueFrom))
                         .ThenBy(item =>
                             item.Row.OrderNbr)
                         .ThenBy(item =>
@@ -944,6 +950,38 @@ namespace CustomWMS
                 out inventoryCD)
                     ? inventoryCD ?? string.Empty
                     : string.Empty;
+        }
+
+        private string GetLocationCD(
+            int? locationID)
+        {
+            if (locationID == null)
+            {
+                return string.Empty;
+            }
+
+            string locationCD;
+
+            if (_locationCodeCache.TryGetValue(
+                locationID,
+                out locationCD))
+            {
+                return locationCD ?? string.Empty;
+            }
+
+            INLocation location =
+                INLocation.PK.Find(
+                    Base,
+                    locationID);
+
+            locationCD =
+                location?.LocationCD?.Trim()
+                ?? string.Empty;
+
+            _locationCodeCache[locationID] =
+                locationCD;
+
+            return locationCD;
         }
 
         private string GetCachedValue(

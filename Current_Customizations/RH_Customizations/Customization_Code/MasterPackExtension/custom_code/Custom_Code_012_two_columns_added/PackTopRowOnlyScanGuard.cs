@@ -36,6 +36,10 @@ namespace CustomWMS
             _inventoryCodeCache =
                 new Dictionary<int?, string>();
 
+        private readonly Dictionary<int?, string>
+            _locationCodeCache =
+                new Dictionary<int?, string>();
+
         public static bool IsActive()
         {
             WmsDebugTrace.Info(
@@ -443,6 +447,10 @@ namespace CustomWMS
                     GetInventoryCD(
                         row.InventoryID);
 
+                string locationCD =
+                    GetLocationCD(
+                        row.DefaultIssueFrom);
+
                 WmsDebugTrace.Info(
                     $"{TracePrefix} Candidate row. " +
                     $"RecordID={row.RecordID}, " +
@@ -474,6 +482,9 @@ namespace CustomWMS
                         SkipSortOrder =
                             skipped ? 1 : 0,
 
+                        LocationCD =
+                            locationCD,
+
                         InventoryCD =
                             inventoryCD
                     });
@@ -495,7 +506,7 @@ namespace CustomWMS
                     .OrderBy(candidate =>
                         candidate.SkipSortOrder)
                     .ThenBy(candidate =>
-                        candidate.Row.DefaultIssueFrom)
+                        candidate.LocationCD)
                     .ThenBy(candidate =>
                         candidate.Row.OrderNbr)
                     .ThenBy(candidate =>
@@ -551,6 +562,38 @@ namespace CustomWMS
                 inventoryCD;
 
             return inventoryCD;
+        }
+
+        private string GetLocationCD(
+            int? locationID)
+        {
+            if (locationID == null)
+            {
+                return string.Empty;
+            }
+
+            string locationCD;
+
+            if (_locationCodeCache.TryGetValue(
+                locationID,
+                out locationCD))
+            {
+                return locationCD ?? string.Empty;
+            }
+
+            INLocation location =
+                INLocation.PK.Find(
+                    Basis.Graph,
+                    locationID);
+
+            locationCD =
+                location?.LocationCD?.Trim()
+                ?? string.Empty;
+
+            _locationCodeCache[locationID] =
+                locationCD;
+
+            return locationCD;
         }
 
         private void TraceExpectedVsScanned(
@@ -628,6 +671,8 @@ namespace CustomWMS
             public WmsPlan Row { get; set; }
 
             public int SkipSortOrder { get; set; }
+
+            public string LocationCD { get; set; }
 
             public string InventoryCD { get; set; }
         }

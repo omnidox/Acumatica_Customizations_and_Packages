@@ -46,6 +46,10 @@ namespace CustomWMS
                 _inventoryCodeCache =
                     new Dictionary<int?, string>();
 
+            private readonly Dictionary<int?, string>
+                _locationCodeCache =
+                    new Dictionary<int?, string>();
+
             public override string Code =>
                 "SKIPCONTENT";
 
@@ -296,7 +300,8 @@ namespace CustomWMS
                 WmsPlan topRow =
                     candidateRows
                         .OrderBy(row =>
-                            row.DefaultIssueFrom)
+                            GetLocationCD(
+                                row.DefaultIssueFrom))
                         .ThenBy(row =>
                             row.OrderNbr)
                         .ThenBy(row =>
@@ -359,6 +364,38 @@ namespace CustomWMS
                     inventoryCD;
 
                 return inventoryCD;
+            }
+
+            private string GetLocationCD(
+                int? locationID)
+            {
+                if (locationID == null)
+                {
+                    return string.Empty;
+                }
+
+                string locationCD;
+
+                if (_locationCodeCache.TryGetValue(
+                    locationID,
+                    out locationCD))
+                {
+                    return locationCD ?? string.Empty;
+                }
+
+                INLocation location =
+                    INLocation.PK.Find(
+                        Basis.Graph,
+                        locationID);
+
+                locationCD =
+                    location?.LocationCD?.Trim()
+                    ?? string.Empty;
+
+                _locationCodeCache[locationID] =
+                    locationCD;
+
+                return locationCD;
             }
 
             /*
