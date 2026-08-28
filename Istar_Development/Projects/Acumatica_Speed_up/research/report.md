@@ -540,6 +540,18 @@ The full Timeline request confirms that application processing, rather than SQL,
 
 The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct packages are each checked twice. It consumes only approximately 9.54 ms of SQL time per scan and returns very few package-content records. Package-state caching remains a low-priority micro-optimization unless focused profiling proves otherwise.
 
+### Renewed grid-synchronization investigation
+
+**Updated:** August 28, 2026 at 10:09 AM EDT
+
+The gap from the previous August 10 entry reflects the earlier safe closeout and a later decision to resume research into one final narrowly scoped opportunity identified through full-request dotTrace analysis. No production optimization is implied by this new investigation.
+
+A Timeline capture taken after Advanced Picking was disabled confirmed that `PackAllIntoBoxCommand` was removed, but the request still contained two full `pickedForPack -> GetSplits` evaluations: approximately 476 ms during pre-scan grid synchronization and approximately 491 ms during the required post-mutation `CanPack` refresh. The complete request measured 3,009 ms in this individual capture, so disabling Advanced Picking did not demonstrate a reliable elapsed-time improvement and does not remove the underlying two-load pattern.
+
+Decompiled framework code now explains the pre-scan load more precisely. `PXBaseDataSource.SynchronizeGrid()` passes the selected grid key values to `ExecuteSelect()` with `startRow = 0` and `maximumRows = 1`. Acumatica therefore asks the `PickedForPack` view for one selected row. However, `PXView.Select()` invokes the custom `pickedForPack()` delegate before applying `SearchResult()` and the one-row limit. The existing delegate materializes its complete result, causing all approximately 1,808 splits to be loaded, joined, transformed, and ordered before Acumatica narrows the result to the requested row.
+
+The remaining candidate is a guarded selected-row fast path inside `pickedForPack()`. It would be considered only when runtime diagnostics prove that the synchronization request supplies a complete, unambiguous split key, requests one row, and uses no unsupported filters or ordering. In every other case, execution must fall back to the existing Version 1 cache/base behavior. Required diagnostics are `PXView.StartRow`, `PXView.MaximumRows`, `PXView.Searches`, `PXView.SortColumns`, `PXView.Descendings`, and `PXView.Filters` for both the synchronization and `CanPack` calls. No implementation should proceed until representative scans confirm these conditions, because an incorrect shortcut could restore the wrong grid row or expose stale quantities.
+
 ## Deployed performance customization files
 
 - `PickPackShipTranQtyPerformanceExt.cs`
