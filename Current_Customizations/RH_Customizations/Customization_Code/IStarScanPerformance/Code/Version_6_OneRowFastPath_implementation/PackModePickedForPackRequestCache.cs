@@ -19,12 +19,22 @@ namespace IStar.ScanPerformance
     /// </summary>
     internal static class PickedForPackViewDiagnostic
     {
+        // Detailed PXView tracing was needed by Versions 4 and 5. Keep it
+        // disabled in the implementation build so performance measurements
+        // are not distorted by repeated diagnostic file writes.
+        public const bool Enabled = false;
+
         public static void Write(
             PickPackShip basis,
             PickPackShip.PackMode.Logic mode,
             string resultSource,
             int? resultRows)
         {
+            if (!Enabled)
+            {
+                return;
+            }
+
             try
             {
                 SOShipLineSplit currentSplit = null;
@@ -133,15 +143,13 @@ namespace IStar.ScanPerformance
     }
 
     /// <summary>
-    /// Comparison-first prototype for the grid SyncPosition request. The
-    /// fast return is deliberately disabled until representative traces show
-    /// that the targeted row is equivalent to the standard delegated result.
+    /// One-row implementation for qualified grid SyncPosition requests.
+    /// Qualified requests return the exact assigned split directly without
+    /// executing or materializing the standard full PickedForPack result.
     /// </summary>
     internal static class PickedForPackOneRowFastPath
     {
-        // Change to true only after comparison testing succeeds for all
-        // supported workflows. When false, standard results are returned.
-        public const bool EnableFastPath = false;
+        public const bool EnableFastPath = true;
 
         internal sealed class Request
         {
@@ -325,55 +333,6 @@ namespace IStar.ScanPerformance
             return result;
         }
 
-        public static void WriteComparison(
-            PickPackShip basis,
-            Request request,
-            IList<object> targetedRows,
-            IList<object> standardRows,
-            string standardSource)
-        {
-            try
-            {
-                List<object> standardMatches = standardRows
-                    .Where(
-                        row => MatchesRequest(
-                            PXResult.Unwrap<SOShipLineSplit>(row),
-                            request))
-                    .ToList();
-
-                bool equivalent =
-                    targetedRows.Count == 1 &&
-                    standardMatches.Count == 1 &&
-                    AreEquivalent(
-                        targetedRows[0],
-                        standardMatches[0]);
-
-                PXTrace.WriteInformation(
-                    "[PFP-FASTPATH] Mode=CompareOnly; Decision={0}; Shipment={1}; LineNbr={2}; SplitLineNbr={3}; TargetRows={4}; StandardMatches={5}; StandardRows={6}; StandardSource={7}; Equivalent={8}; FastPathEnabled={9}.",
-                    equivalent ? "Match" : "Mismatch",
-                    request.ShipmentNbr,
-                    request.LineNbr,
-                    request.SplitLineNbr,
-                    targetedRows.Count,
-                    standardMatches.Count,
-                    standardRows.Count,
-                    standardSource,
-                    equivalent,
-                    EnableFastPath);
-            }
-            catch (Exception exception)
-            {
-                PXTrace.WriteInformation(
-                    "[PFP-FASTPATH] Mode=CompareOnly; Decision=ComparisonError; Shipment={0}; LineNbr={1}; SplitLineNbr={2}; Error={3}; Message={4}; FastPathEnabled={5}.",
-                    request?.ShipmentNbr,
-                    request?.LineNbr,
-                    request?.SplitLineNbr,
-                    exception.GetType().FullName,
-                    exception.Message,
-                    EnableFastPath);
-            }
-        }
-
         public static void WriteDecision(
             Request request,
             string decision,
@@ -382,7 +341,7 @@ namespace IStar.ScanPerformance
         {
             PXTrace.WriteInformation(
                 "[PFP-FASTPATH] Mode={0}; Decision={1}; Reason={2}; Shipment={3}; LineNbr={4}; SplitLineNbr={5}; TargetRows={6}; FastPathEnabled={7}.",
-                EnableFastPath ? "Enabled" : "CompareOnly",
+                "Enabled",
                 decision,
                 reason,
                 request?.ShipmentNbr,
@@ -390,70 +349,6 @@ namespace IStar.ScanPerformance
                 request?.SplitLineNbr,
                 targetedRows,
                 EnableFastPath);
-        }
-
-        private static bool MatchesRequest(
-            SOShipLineSplit split,
-            Request request)
-        {
-            return split != null &&
-                split.IsUnassigned != true &&
-                string.Equals(
-                    split.ShipmentNbr,
-                    request.ShipmentNbr,
-                    StringComparison.OrdinalIgnoreCase) &&
-                split.LineNbr == request.LineNbr &&
-                split.SplitLineNbr == request.SplitLineNbr;
-        }
-
-        private static bool AreEquivalent(
-            object targetedRow,
-            object standardRow)
-        {
-            SOShipLineSplit targetedSplit =
-                PXResult.Unwrap<SOShipLineSplit>(targetedRow);
-            SOShipLineSplit standardSplit =
-                PXResult.Unwrap<SOShipLineSplit>(standardRow);
-            SOShipLine targetedLine =
-                PXResult.Unwrap<SOShipLine>(targetedRow);
-            SOShipLine standardLine =
-                PXResult.Unwrap<SOShipLine>(standardRow);
-            INLocation targetedLocation =
-                PXResult.Unwrap<INLocation>(targetedRow);
-            INLocation standardLocation =
-                PXResult.Unwrap<INLocation>(standardRow);
-
-            return targetedSplit != null &&
-                standardSplit != null &&
-                targetedLine != null &&
-                standardLine != null &&
-                targetedLocation != null &&
-                standardLocation != null &&
-                string.Equals(
-                    targetedSplit.ShipmentNbr,
-                    standardSplit.ShipmentNbr,
-                    StringComparison.OrdinalIgnoreCase) &&
-                targetedSplit.LineNbr == standardSplit.LineNbr &&
-                targetedSplit.SplitLineNbr == standardSplit.SplitLineNbr &&
-                targetedSplit.IsUnassigned == standardSplit.IsUnassigned &&
-                targetedSplit.InventoryID == standardSplit.InventoryID &&
-                targetedSplit.SubItemID == standardSplit.SubItemID &&
-                targetedSplit.SiteID == standardSplit.SiteID &&
-                targetedSplit.LocationID == standardSplit.LocationID &&
-                string.Equals(
-                    targetedSplit.LotSerialNbr,
-                    standardSplit.LotSerialNbr,
-                    StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(
-                    targetedSplit.UOM,
-                    standardSplit.UOM,
-                    StringComparison.OrdinalIgnoreCase) &&
-                targetedSplit.Qty == standardSplit.Qty &&
-                targetedSplit.PickedQty == standardSplit.PickedQty &&
-                targetedSplit.PackedQty == standardSplit.PackedQty &&
-                targetedLine.LineNbr == standardLine.LineNbr &&
-                targetedLine.InventoryID == standardLine.InventoryID &&
-                targetedLocation.LocationID == standardLocation.LocationID;
         }
 
         private static string NormalizeFieldName(
@@ -638,7 +533,7 @@ namespace IStar.ScanPerformance
 
                     fastPathCandidate = false;
                 }
-                else if (PickedForPackOneRowFastPath.EnableFastPath)
+                else
                 {
                     // Never put this one-row result in the full-result cache.
                     // A later MaximumRows=0 CanPack consumer requires all
@@ -666,16 +561,6 @@ namespace IStar.ScanPerformance
                     mode,
                     "RequestCache",
                     cachedRows?.Count);
-
-                if (fastPathCandidate)
-                {
-                    PickedForPackOneRowFastPath.WriteComparison(
-                        Basis,
-                        fastPathRequest,
-                        targetedRows,
-                        cachedRows,
-                        "RequestCache");
-                }
 
                 return PickedForPackRequestCache.CreateResult(
                     cachedRows);
@@ -708,16 +593,7 @@ namespace IStar.ScanPerformance
                 "BaseMaterialized",
                 rows.Count);
 
-            if (fastPathCandidate)
-            {
-                PickedForPackOneRowFastPath.WriteComparison(
-                    Basis,
-                    fastPathRequest,
-                    targetedRows,
-                    rows,
-                    "BaseMaterialized");
-            }
-            else if (PXView.MaximumRows == 1)
+            if (PXView.MaximumRows == 1)
             {
                 PickedForPackOneRowFastPath.WriteDecision(
                     fastPathRequest,

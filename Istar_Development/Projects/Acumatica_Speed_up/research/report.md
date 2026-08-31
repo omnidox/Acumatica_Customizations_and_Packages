@@ -536,7 +536,7 @@ One Sampling attempt caused a native `w3wp.exe` access violation in `ntdll.dll` 
 
 The full Timeline request confirms that application processing, rather than SQL, is the principal remaining cost. ASPX review identified the pre-scan caller as `gridPacked`, whose `PickedForPack` level uses `SyncPosition="true"`. The barcode field performs a committed `Scan` callback, which causes Acumatica to synchronize the grid's current row and execute `PickedForPack` before barcode processing.
 
-`SyncPosition` does not itself guarantee database freshness; saving, cache invalidation, and query execution provide that. Its role is to keep the browser-selected grid row synchronized with Acumatica's server-side current record. The Pack grid contains the row-dependent `ReopenLineQty` command with `DependOnGrid="gridPacked"`, and other current-row behavior may also depend on this synchronization. The business requires this behavior, so `SyncPosition="true"` will remain and its approximately 484 ms pre-scan load will be treated as required. Version 1 also retains the post-mutation `SetNextState -> CanPack` refresh because Version 3's conditional reuse did not improve user-visible scan time enough to justify its additional risk.
+`SyncPosition` does not itself guarantee database freshness; saving, cache invalidation, and query execution provide that. Its role is to keep the browser-selected grid row synchronized with Acumatica's server-side current record. The Pack grid contains the row-dependent `ReopenLineQty` command with `DependOnGrid="gridPacked"`, and other current-row behavior may also depend on this synchronization. The business requires `SyncPosition="true"`, but later investigation established that its approximately 484 ms pre-scan full-result load may be replaceable with an exact one-row lookup without disabling synchronization. Version 1 continues to retain the post-mutation `SetNextState -> CanPack` refresh because Version 3's conditional reuse did not improve user-visible scan time enough to justify its additional risk.
 
 The remaining `E93AD83C` pattern executes 58 times per scan because 29 distinct packages are each checked twice. It consumes only approximately 9.54 ms of SQL time per scan and returns very few package-content records. Package-state caching remains a low-priority micro-optimization unless focused profiling proves otherwise.
 
@@ -554,7 +554,88 @@ In practical terms, the grid asks Acumatica to restore one selected row, but the
 
 The pre-scan synchronization load and post-scan `CanPack` load cannot simply share the same result. Grid synchronization occurs before the scan changes packed quantities, while `CanPack` executes afterward and must evaluate the updated state. Reusing the earlier result could expose stale quantities or incorrect command states. The investigation is therefore limited to reducing the size of the pre-scan selected-row lookup rather than reusing stale data across the packing mutation.
 
-The remaining candidate is a guarded selected-row fast path inside `pickedForPack()`. It would be considered only when runtime diagnostics prove that the synchronization request supplies a complete, unambiguous split key, requests one row, and uses no unsupported filters or ordering. In every other case, execution must fall back to the existing Version 1 cache/base behavior. Required diagnostics are `PXView.StartRow`, `PXView.MaximumRows`, `PXView.Searches`, `PXView.SortColumns`, `PXView.Descendings`, and `PXView.Filters` for both the synchronization and `CanPack` calls. No implementation should proceed until representative scans confirm these conditions, because an incorrect shortcut could restore the wrong grid row or expose stale quantities.
+The remaining candidate was a guarded selected-row fast path inside `pickedForPack()`. It would be considered only when runtime diagnostics proved that the synchronization request supplied a complete, unambiguous split key, requested one row, and used no unsupported filters. In every other case, execution would fall back to the existing Version 1 cache/base behavior. Version 4 therefore captured `PXView.StartRow`, `PXView.MaximumRows`, `PXView.Searches`, `PXView.SortColumns`, `PXView.Descendings`, and `PXView.Filters` for synchronization and full-result calls.
+
+### Version 5 one-row comparison validation
+
+**Validated:** August 31, 2026 at 9:46 AM EDT  
+**Recorded:** August 31, 2026 at 10:14 AM EDT
+
+Version 4 traces confirmed that grid synchronization consistently used `StartRow=0`, `MaximumRows=1`, no filters, and exact `ShipmentNbr`, `LineNbr`, and `SplitLineNbr` search values. Full-result business consumers continued to use `MaximumRows=0` or `MaximumRows=201` and therefore remained outside the proposed fast path. The traces also showed that `PXView.Searches`, rather than `PXCache.Current`, identifies the row Acumatica is restoring; during item scans the current split changed while the synchronization search correctly remained on the browser-selected grid row.
+
+Version 5 executed the proposed exact one-row joined query and the standard 1,808-row path, compared the relevant `SOShipLineSplit`, `SOShipLine`, and `INLocation` values, and continued returning the standard result. Six comparisons on package line 32 and six comparisons after changing to package line 33 all produced:
+
+```text
+Decision=Match
+TargetRows=1
+StandardMatches=1
+StandardRows=1808
+Equivalent=True
+FastPathEnabled=False
+```
+
+The successful tests covered synchronization targets `1337/1338` and `1371/1372`, different scanned items, two cartons, initial database materialization, and subsequent request-cache reads. There were zero mismatches, ambiguous results, or unexpected fallbacks. These results establish functional equivalence for the tested ordinary assigned-split workflow; they do not by themselves prove every lot/serial, unassigned, transfer, removal, or specialized picking scenario.
+
+### Version 6 one-row implementation test
+
+**Prepared:** August 31, 2026 at 10:14 AM EDT
+
+Version 6 enables the guarded fast path for performance testing. An eligible `MaximumRows=1` synchronization request now performs the exact assigned-split query and returns its one-row `PXResult<SOShipLineSplit, SOShipLine, INLocation>` before invoking the standard delegate. It does not execute the full 1,808-row query, perform Version 5 comparison work, or store the one-row result in the full-result request cache. Requests with incomplete keys, filters, nonzero start rows, unsupported unassigned state, missing rows, ambiguous rows, or any non-one-row shape continue through the Version 1 cache/base path. Full-result `CanPack` and grid consumers are unchanged.
+
+Verbose Version 4 view diagnostics were disabled in Version 6 to avoid distorting performance measurements. A lightweight `[PFP-FASTPATH] Decision=Applied` or `Decision=Fallback` trace remained for controlled verification. Version 6 was prepared as a test candidate rather than a production decision; the following section records its measured outcome.
+
+### Version 6 measured result and displaced-load finding
+
+**Profiler captured:** August 31, 2026 at 10:29 AM EDT  
+**Analyzed:** August 31, 2026 at 10:40 AM EDT
+
+`ProfilerLog_018` confirmed that the fast path itself worked. Exact query `B79C6577` executed once per scan, returned one row, and averaged approximately 0.6 ms. Its stack originated from `PXBaseDataSource.SynchronizeGrid() -> pickedForPack() -> SelectTargetedRows()`, proving that the formerly full grid-synchronization lookup was successfully replaced without disabling `SyncPosition`.
+
+However, the expected elapsed-time improvement did not occur:
+
+| Metric | Version 1 baseline (`ProfilerLog_013`) | Version 6 (`ProfilerLog_018`) | Result |
+|---|---:|---:|---:|
+| Average server time | 1,371.7 ms | 1,535.2 ms | 11.9% slower |
+| Average server CPU | 1,156.2 ms | 1,322.9 ms | 14.4% higher |
+| Average SQL time | 330.8 ms | 353.4 ms | 6.8% higher |
+| SQL calls per scan | 159.0 | 192.0 | 20.8% higher |
+| SQL rows per scan | 5,702 | 5,775 | 1.3% higher |
+| Select time per scan | 778.6 ms | 862.7 ms | 10.8% higher |
+| Exceptions | 0 | 0 | No observed regression |
+
+The three Version 6 scans measured 1,487.1, 1,551.0, and 1,567.4 ms, averaging 1,535.2 ms. These measurements do not establish a performance benefit. Comparison with other all-customization captures also remains within normal run-to-run variation rather than demonstrating a repeatable improvement.
+
+SQL stacks explain the outcome. Full assigned-split query `FF246783` still executed twice per scan and returned 1,808 rows each time. The first call now originated from barcode item-presence validation:
+
+```text
+ProcessSingleBarcode
+-> InjectItemPresenceValidation
+-> IsItemMissing
+-> pickedForPack
+-> GetSplits
+-> FF246783 (1,808 rows)
+```
+
+The second call remained the required post-mutation refresh:
+
+```text
+PackSplit changes quantities
+-> CompleteFlow
+-> ShipmentState.SetNextState
+-> CanPack
+-> pickedForPack
+-> GetSplits
+-> FF246783 (1,808 rows)
+```
+
+Under Version 1, synchronization materializes the full pre-mutation result and stores it in the request cache; `IsItemMissing()` subsequently reuses that collection. Version 6 correctly reduces synchronization to one row and deliberately avoids storing that partial result as the complete cache. `IsItemMissing()` therefore encounters no full collection and performs its own 1,808-row load. The fast path displaced the first full load rather than eliminating it:
+
+| Implementation | Synchronization | Item-presence validation | Post-pack `CanPack` |
+|---|---:|---:|---:|
+| Version 1 | 1,808 rows, then cached | Reuses full cache | Reloads 1,808 current rows |
+| Version 6 | One targeted row | Loads 1,808 rows | Reloads 1,808 current rows |
+
+Version 6 therefore should not be retained as a standalone performance change. The next narrowly scoped research question is whether `IsItemMissing()` can safely use a targeted existence query that preserves inventory, alternate-ID, subitem, location, lot/serial, assigned/unassigned, and specialized picking behavior. Only if that full pre-mutation consumer can also be removed would the one-row synchronization path be expected to reduce the scan's full-load count. Until then, Version 1 remains the safer and at least equally fast implementation.
 
 ## Deployed performance customization files
 
@@ -565,27 +646,30 @@ The remaining candidate is a guarded selected-row fast path inside `pickedForPac
 - `PackModeQtyThresholdOptimization.cs`
 - `PickPackShipShipmentRowSelectedOptimization.cs`
 
-`PickPackShipGetSplitsOptimization.cs` was an unsuccessful diagnostic experiment and is not part of the deployed solution. Version 2 diagnostic and Version 3 conditional-reuse variants of `PackModePickedForPackRequestCache.cs` are also research artifacts only and must not be included in the production package.
+`PickPackShipGetSplitsOptimization.cs` was an unsuccessful diagnostic experiment and is not part of the deployed solution. Versions 2 and 3 remain research artifacts. Version 4 is the PXView diagnostic build, Version 5 is the comparison-only validation build, and Version 6 is a structurally successful but performance-neutral implementation experiment. Only one version of `PackModePickedForPackRequestCache.cs` may be published at a time; Version 1 remains the production-safe selection unless a later combined `IsItemMissing()` optimization is independently validated.
 
-## Final deployment and closeout steps
+## Current deployment and validation steps
 
-**Updated:** August 10, 2026 at 3:06 PM EDT
+**Updated:** August 31, 2026 at 10:40 AM EDT
 
-1. Deploy only the Version 1 `PackModePickedForPackRequestCache.cs` together with the other proven performance files listed above.
-2. Exclude the Version 2 diagnostic and Version 3 conditional-reuse files from the published customization package.
-3. Complete final regression signoff with all customizations enabled, including ordinary and large shipments, repeated scans, removal/unpacking, multiple boxes, package confirmation, concurrent users, and label generation.
-4. Record the selected-package UCC label defect as a separate Advanced Labels work item; testing showed it also occurs without `IStarScanPerformance`.
-5. Retain `gridPacked` with `SyncPosition="true"` and retain Version 1's post-confirmation invalidation to preserve current-row and packed-quantity correctness.
-6. Archive Version 3 results as evidence that one-load conditional reuse was evaluated and rejected because it reduced internal work without materially reducing elapsed scan time.
+1. Return to Version 1 as the proven production-safe baseline; Version 6 alone did not improve measured performance.
+2. Retain Versions 4-6 as research evidence that the one-row synchronization path is structurally valid but cannot eliminate the pre-mutation full load while `IsItemMissing()` still requires it.
+3. If research continues, inspect and diagnose `IsItemMissing()` before writing another implementation. Confirm every input and business rule that determines shipment-item presence.
+4. Preserve standard behavior as the fallback for alternate IDs, subitems, locations, lot/serial inventory, unassigned splits, removal, and specialized picking modes.
+5. Retain `gridPacked` with `SyncPosition="true"`; the synchronization requirement itself was not removed or bypassed.
+6. Retain Version 1's post-confirmation invalidation and standard full-result path for `CanPack` so post-`PackSplit` quantities and command states remain current.
+7. Require controlled Request Profiler improvement and full regression testing before retaining any combined one-row and item-presence optimization.
 
-Active scan-performance optimization is now complete. Further attempts to reduce `GetSplits`, bypass cache synchronization, alter `PackSplit`, or rely on undocumented object-reference behavior would be materially more invasive. With scan time already reduced by approximately 72-74%, the remaining opportunities exhibit diminishing returns and are not justified at the current risk level.
+The one-row synchronization experiment is concluded as insufficient by itself. A targeted `IsItemMissing()` existence check is the only newly identified narrow follow-up candidate. More invasive alternatives—maintaining a mutable authoritative split snapshot, bypassing cache synchronization, altering `PackSplit`, or deferring database persistence across scans—remain outside the current implementation because of disproportionate stale-state, concurrency, validation, label, and maintenance risks.
 
 ## Overall result
 
-**Finalized:** August 10, 2026 at 3:06 PM EDT
+**Baseline finalized:** August 10, 2026 at 3:06 PM EDT  
+**Investigation reopened:** August 31, 2026 at 10:14 AM EDT  
+**Version 6 result recorded:** August 31, 2026 at 10:40 AM EDT
 
 The completed optimizations reduced average scan time from approximately **5.19 seconds to the 1.37-1.44 second range** in steady Request Profiler captures, an improvement of approximately **72-74%**. SQL calls fell from approximately **1,850 to about 159-164 per scan**, a reduction of approximately **91%**.
 
-The Advanced Labels lookup, repeated Master Pack barcode lookups, Package Content LINQ fallback, per-split `GetQtyThreshold()` queries, and repeated full `SOShipLine` query `B5446270` have been eliminated or consolidated. Production Version 1 request-scoped reuse removes one of the original three repeated `pickedForPack` split loads while preserving state correctness. Timeline profiling attributes its two remaining loads to required pre-scan grid synchronization and the explicit post-mutation refresh.
+The Advanced Labels lookup, repeated Master Pack barcode lookups, Package Content LINQ fallback, per-split `GetQtyThreshold()` queries, and repeated full `SOShipLine` query `B5446270` have been eliminated or consolidated. Production Version 1 request-scoped reuse removes one of the original three repeated `pickedForPack` split loads while preserving state correctness. Its first full pre-mutation result serves both grid synchronization and later `IsItemMissing()` validation through the request cache; the second load refreshes `CanPack` after packing changes quantities.
 
-Version 3 reduced the two loads to one under guarded conditions, but post-snapshot profiling showed essentially unchanged average server time. The project will therefore retain Version 1 as the final implementation. This closes the active optimization phase at the safest practical boundary: additional changes would add disproportionate regression and maintenance risk for little or no demonstrated user-visible benefit.
+Version 3 reduced the two loads to one under guarded conditions, but post-snapshot profiling showed essentially unchanged average server time. Version 6 successfully replaced synchronization with one exact row, but `IsItemMissing()` then performed the displaced full load and overall scan time did not improve. Version 1 therefore remains the production-safe baseline. Further work is justified only if a separate targeted item-presence check can remove that full load without weakening Acumatica's validation rules.
