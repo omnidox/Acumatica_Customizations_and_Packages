@@ -673,6 +673,43 @@ CanPack               -> one required full post-mutation refresh
 
 If the caller and override analysis proves that a targeted query cannot reproduce the supplied view and active cache semantics, this candidate will be rejected rather than broadening it into an invasive replacement. No production change has yet been approved or implemented for `IsItemMissing()`.
 
+### Rolling shipment-line cache proposal for `8659BCA6`
+
+**Research proposal recorded:** August 31, 2026 at 3:37 PM EDT
+
+The current Scan 12 timeline exposed three major 1,808-row executions: the first `FF246783` pre-pack split load, `8659BCA6` during `PackSplit`, and the second `FF246783` post-pack refresh. Query stack analysis established that `8659BCA6` is triggered when insertion of an `SOShipLineSplitPackage` record invokes `SOShipmentEntry.PackageDetail.UpdateParentShipmentLine() -> UpdateShipmentLine() -> UpdatePickPackInfoOf() -> PXParentAttribute.SelectChildren()`. It retrieves all 1,808 `SOShipLine` records into the Acumatica application server while Acumatica updates parent shipment packing information. In Scan 12 it executed once, consumed 42.6629 ms of SQL time, and represented approximately 13.2% of measured scan SQL time before accounting for DAC creation, cache merging, formulas, and event processing.
+
+A possible future architecture is a rolling shipment-line cache initialized when the carton is scanned, provided that carton processing can be proven to retrieve the complete shipment's `SOShipLine` population rather than only package-specific contents. The proposed flow would be:
+
+```text
+Carton scan
+-> load and validate the complete SOShipLine collection once
+-> initialize shipment-line cache
+
+Item scan
+-> one-row grid synchronization
+-> targeted IsItemMissing existence check
+-> PackSplit
+-> use validated cached SOShipLine records instead of executing 8659BCA6
+-> retain the required second FF246783 post-mutation refresh
+-> use its updated joined SOShipLine records to refresh the cache for the next scan
+```
+
+This would not populate or accelerate `8659BCA6`; it would bypass that database query when a valid cache is available and immediately fall back to standard behavior otherwise. If safe, the carton scan would pay the initial full-line cost once and the existing post-pack `FF246783` result would maintain a rolling snapshot for subsequent item scans. Combined with a targeted `IsItemMissing()` check, the theoretical steady-state result would reduce the current three major 1,808-row executions to the one post-mutation refresh that remains necessary for current quantities and command state.
+
+The proposal has significant correctness requirements and is not approved for implementation. Cached records from the preceding request are pre-mutation state; the current `PackSplit` adjustment must update the same live `PXCache` instances or be applied explicitly before parent totals are calculated. The design must also validate complete line coverage, expected DAC identity and cache context, company, shipment, shipment type, row versions, and mutation state. It must invalidate or fall back on shipment/carton changes, pack, unpack, deletion, confirmation, exceptions, missing or duplicate keys, and any external or concurrent update. A user/session-local memory cache is also insufficient by itself in a multi-user or multi-IIS-node SaaS deployment because another user or node can change the shipment without updating the local snapshot.
+
+Before any diagnostic implementation, the following evidence is required:
+
+1. Confirm whether carton scanning actually loads all 1,808 `SOShipLine` records and identify the responsible query and method.
+2. Confirm every field and aggregation consumed by `UpdatePickPackInfoOf()` and whether the calculation can accept an existing collection without changing event behavior.
+3. Compare object identity and keys between the proposed cached records and the current graph's `PXCache<SOShipLine>` records.
+4. Prove that the second `FF246783` contains the completed post-`PackSplit` values required to refresh the next-scan cache.
+5. Define a lightweight version/timestamp validation and fail-safe fallback for concurrent changes.
+6. Validate packing, unpacking, carton changes, errors, persistence, labels, and concurrent users before measuring performance.
+
+This rolling-cache concept is more coherent than preserving the first full `FF246783` solely for reuse, because the planned `IsItemMissing()` optimization is intended to eliminate that pre-pack full load. It nevertheless remains a higher-risk architectural candidate than the current request-scoped Version 1 optimization and will be rejected if Acumatica cache identity, mutation ordering, concurrency, or multi-node correctness cannot be proven.
+
 ## Deployed performance customization files
 
 - `PickPackShipTranQtyPerformanceExt.cs`
