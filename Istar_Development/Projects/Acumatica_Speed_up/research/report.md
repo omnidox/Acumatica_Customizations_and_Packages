@@ -637,6 +637,42 @@ Under Version 1, synchronization materializes the full pre-mutation result and s
 
 Version 6 therefore should not be retained as a standalone performance change. The next narrowly scoped research question is whether `IsItemMissing()` can safely use a targeted existence query that preserves inventory, alternate-ID, subitem, location, lot/serial, assigned/unassigned, and specialized picking behavior. Only if that full pre-mutation consumer can also be removed would the one-row synchronization path be expected to reduce the scan's full-load count. Until then, Version 1 remains the safer and at least equally fast implementation.
 
+### `IsItemMissing()` investigation path
+
+**Investigation path recorded:** August 31, 2026 at 11:05 AM EDT
+
+dnSpy review confirmed that standard `PickPackShip.IsItemMissing()` answers a yes-or-no question by enumerating the complete supplied split view:
+
+```text
+splitView.SelectMain()
+-> materialize every eligible shipment split
+-> compare each split's InventoryID with the resolved InventoryItem
+-> report whether the item is absent
+```
+
+For shipment `0000787`, this validation is responsible for the first remaining `FF246783` execution and processes approximately 1,808 assigned splits merely to determine whether at least one eligible matching item exists. This makes a targeted existence check a plausible optimization, but the method accepts a `PXSelectBase<SOShipLineSplit>` supplied by its caller. A replacement cannot safely assume that `ShipmentNbr + InventoryID` alone reproduces that view's complete meaning.
+
+The next dnSpy investigation will therefore establish the effective contract before any implementation is written:
+
+1. Use **Analyze -> Used By** on `PickPackShip.IsItemMissing()` and inspect the complete `InjectItemPresenceValidation` implementation, including the exact `splitView` passed at each call site.
+2. Use **Analyze -> Overridden By** on `IsItemMissing()` to identify Acumatica feature extensions or installed customizations that alter item-presence behavior.
+3. Inspect **Used By** and **Overridden By** for `InjectItemPresenceValidation` to determine which scan modes and validation chains invoke it.
+4. Confirm that the validation executes strictly before `PackSplit()` and therefore does not require post-mutation packed quantities.
+5. Search for other Acumatica implementations of `IsItemMissing()` or equivalent targeted-presence checks that provide a framework-supported query pattern.
+6. Document all eligibility rules represented by the supplied view, including assigned and transformed unassigned splits, valid `SOShipLine` and `INLocation` joins, alternate-ID resolution, subitem, location, lot/serial, removal mode, cache state, and specialized picking modes.
+7. Only after those rules are known, build a comparison-only diagnostic that evaluates the proposed targeted result alongside the standard result across representative workflows. The standard result must remain authoritative during this phase.
+
+The desired safe sequence is:
+
+```text
+Grid synchronization -> one-row selected-split query
+IsItemMissing         -> targeted eligible-item existence query
+PackSplit             -> standard quantity and cache mutation
+CanPack               -> one required full post-mutation refresh
+```
+
+If the caller and override analysis proves that a targeted query cannot reproduce the supplied view and active cache semantics, this candidate will be rejected rather than broadening it into an invasive replacement. No production change has yet been approved or implemented for `IsItemMissing()`.
+
 ## Deployed performance customization files
 
 - `PickPackShipTranQtyPerformanceExt.cs`
