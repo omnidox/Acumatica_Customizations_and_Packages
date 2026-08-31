@@ -16,14 +16,19 @@ The investigation will identify:
 - SQL execution time
 - Cached versus database-executed queries
 - Application methods responsible for each query
+- Indexes defined on each accessed table
+- Physical indexes and access operators actually selected by SQL Server
+- Database rows returned versus HTTP response data returned to the scanner/browser
 
 ## Required evidence sources
 
 | Source | Information provided |
 |---|---|
 | Acumatica Request Profiler | Scan boundary, SQL sequence, start times, tables, parameters, row counts, durations, cache status, and C# stack traces |
+| SQL Server index metadata | Index names, key columns, included columns, uniqueness, and clustered/nonclustered definitions |
 | SQL Server execution plans | Indexes used, seeks, scans, key lookups, joins, sorts, warnings, and actual row counts |
 | JetBrains dotTrace | Application processing between SQL queries and the complete method flow |
+| Browser developer tools | HTTP scan callback, response size, transferred bytes, and client-observed duration |
 
 ---
 
@@ -75,6 +80,24 @@ Each exported snapshot should contain one item scan only. Separate captures make
 
 Extract every SQL entry belonging to the scan request and place it in execution order.
 
+### Current completed baseline
+
+The Scan 12 baseline has been extracted to:
+
+`ProfilerLog_020\Scan_12_Chronological_SQL_Timeline.csv`
+
+Verified contents:
+
+- 182 SQL executions
+- 77 distinct query hashes
+- 5,774 total database rows returned
+- 280.9517 ms of summed logged SQL duration
+- Complete SQL text and C# stack traces for all 182 entries
+- No results served from Acumatica's query cache
+- Chronological coverage from 2.0846 ms through 1,360.8388 ms of the parent request
+
+This baseline is sufficient for the initial query-flow and table-access analysis. Additional captures remain useful for measuring repeatability and cache variation.
+
 | Sequence | Start time | Query hash | Tables | Operation | Parameters | Rows | SQL time | From cache | Calling method |
 |---:|---:|---|---|---|---|---:|---:|---|---|
 | 1 |  |  |  |  |  |  |  |  |  |
@@ -95,6 +118,10 @@ Extract every SQL entry belonging to the scan request and place it in execution 
 - Stack trace or calling method
 - Read, insert, update, or delete operation
 
+### Ordering rule
+
+Sort numerically by `RequestStartTime`, then assign a new unique sequence number beginning with 1. Do not use `QueryOrderId` as the timeline sequence because it can repeat for nested or related query activity.
+
 ### Important distinction
 
 The report must distinguish between:
@@ -104,6 +131,38 @@ The report must distinguish between:
 
 Cached queries may still require application processing even though SQL Server does not execute them again.
 
+### Database rows versus API response data
+
+`NRows` measures rows returned or affected by an individual SQL statement. It does not measure the size of the HTTP response returned to the scanner or browser.
+
+For Peiyu's request, report both measurements separately:
+
+1. **Database response:** SQL executions and `NRows` from Request Profiler.
+2. **Browser response:** transferred bytes, resource size, status, and duration of the `SO302020.aspx` scan `POST`, captured from the browser Network panel or an exported HAR file.
+
+The SO302020 item scan is normally one browser callback containing many internal database operations. The SQL entries must not be described as separate browser API calls.
+
+---
+
+## Phase 2A: Inventory index definitions
+
+For every table referenced by a material scan query, collect SQL Server index metadata:
+
+- Schema and table
+- Index name
+- Clustered or nonclustered type
+- Primary-key and uniqueness status
+- Key columns in ordinal order
+- Ascending or descending direction
+- Included columns
+- Filter definition, if present
+
+This inventory answers which columns are indexed. It does not prove that a scan query used a particular index; Phase 3 provides that evidence.
+
+| Table | Index | Type | Key columns | Included columns | Unique | Filter |
+|---|---|---|---|---|---|---|
+|  |  |  |  |  |  |  |
+
 ---
 
 ## Phase 3: Identify the indexes used
@@ -112,7 +171,7 @@ Acumatica Request Profiler identifies the tables accessed, but it does not ident
 
 ### Execution-plan procedure
 
-For each unique material SQL query:
+For each high-impact material `SELECT` query:
 
 1. Copy the SQL text from Request Profiler.
 2. Copy the captured parameter values.
@@ -121,13 +180,39 @@ For each unique material SQL query:
 5. Enable **Include Actual Execution Plan** by pressing `Ctrl+M`.
 6. Add:
 
+    ```sql
     SET STATISTICS IO ON;
     SET STATISTICS TIME ON;
+    ```
 
-7. Declare or substitute the captured parameter values.
+7. Declare the captured parameter values using SQL data types that match the referenced columns.
 8. Execute the query.
 9. Save the execution plan as a `.sqlplan` file.
-10. Record every relevant execution-plan operator.
+10. Save the Messages output containing `STATISTICS IO` and `STATISTICS TIME`.
+11. Record every relevant execution-plan operator.
+
+### Execution safety
+
+An actual execution plan executes the SQL statement. Do not replay captured `UPDATE`, `INSERT`, or `DELETE` statements merely to obtain an actual plan.
+
+- Use actual execution plans initially for `SELECT` statements only.
+- Use an estimated plan (`Ctrl+L`) first for write statements.
+- If an actual write plan is essential, use a disposable restored database and document the rollback and side-effect controls.
+- Never perform experimental plan capture against the SaaS production database without ASC's authorization and supervision.
+
+### Reproduction controls
+
+For each plan, record:
+
+- Database and Acumatica snapshot/version
+- Query hash and exact SQL text
+- Parameter values and SQL data types
+- Capture timestamp
+- Relevant customization version
+- Whether the database and application caches were warm or cold
+- Whether the query was replayed manually or captured during a live scan
+
+Different parameter types, statistics, indexes, data volumes, or database compatibility settings can produce a different plan from the original Acumatica execution.
 
 ### Operators to document
 
@@ -142,20 +227,28 @@ For each unique material SQL query:
 - Nested Loops
 - Merge Join
 - Spill or execution warning
+- Number of executions
+- Seek predicates
+- Residual predicates
+- Output columns
 
 ### Index-use worksheet
 
-| Query hash | Table | Index | Access type | Seek predicate | Actual rows | Estimated rows | Logical reads | Warning |
-|---|---|---|---|---|---:|---:|---:|---|
-|  |  |  |  |  |  |  |  |  |
+| Query hash | Table | Index used | Access type | Seek columns | Residual predicate | Executions | Actual rows | Estimated rows | Logical reads | Warning |
+|---|---|---|---|---|---|---:|---:|---:|---:|---|
+|  |  |  |  |  |  |  |  |  |  |  |
 
 ### Initial priority queries
 
-1. `FF246783`
-2. Current `INItemXRef` barcode query
-3. `E93AD83C`
-4. `11914AC2`
-5. Queries used by the proposed targeted `IsItemMissing()` implementation
+1. `FF246783` — two full 1,808-row `SOShipLineSplit`/`SOShipLine`/`INLocation` loads
+2. `8659BCA6` — full 1,808-row `SOShipLine` load
+3. `B730E2F8` — `SOLine`/`SOShipLine` lookup returning 66 rows
+4. `D4571A51` — current `INItemXRef`/`InventoryItem` barcode-resolution query
+5. `E93AD83C` — package-split lookup, if repetition remains material in the current capture
+6. Queries supporting the proposed targeted `IsItemMissing()` implementation
+7. `11914AC2`, if its current executions, rows, or SQL time justify plan analysis
+
+The priority list must be recalculated for later captures instead of assuming that an older high-cost query remains important.
 
 ---
 
@@ -204,6 +297,8 @@ Compare the captures to distinguish repeatable behavior from one-time initializa
 | SQL rows |  |  |  |  |
 | Cached query count |  |  |  |  |
 | Exceptions |  |  |  |  |
+| HTTP response bytes |  |  |  |  |
+| HTTP transferred bytes |  |  |  |  |
 
 Also compare:
 
@@ -261,21 +356,38 @@ List every SQL or cached query in the order it occurred.
 |---|---|---:|---:|---:|---:|
 |  |  |  |  |  |  |
 
-### 5. Query-to-index matrix
+### 5. Defined-index inventory
+
+List the indexes available on every material table, including ordered key columns and included columns. Keep this separate from the indexes actually selected by SQL Server.
+
+### 6. Query-to-index matrix
 
 | Query hash | Tables | Indexes used | Access operators | Rows | SQL time |
 |---|---|---|---|---:|---:|
 |  |  |  |  |  |  |
 
-### 6. Read-and-write flow
+### 7. API and database response measurements
+
+For every representative item scan, report:
+
+- One complete browser scan callback
+- HTTP status
+- HTTP response resource size and transferred bytes
+- Client-observed duration
+- SQL execution count
+- Database rows returned or affected
+
+Do not equate database row counts with HTTP payload size.
+
+### 8. Read-and-write flow
 
 Document which tables are read before packing, modified during `PackSplit`, and reread during post-pack validation.
 
-### 7. Three-scan comparison
+### 9. Three-scan comparison
 
 Document repeatable activity, initialization activity, caching differences, and measurement variation.
 
-### 8. Supporting artifacts
+### 10. Supporting artifacts
 
 Include:
 
@@ -286,6 +398,8 @@ Include:
 - `STATISTICS IO` output
 - `STATISTICS TIME` output
 - Relevant dotTrace screenshots or exports
+- Browser Network export or HAR file for each representative scan
+- SQL Server index-definition export
 - Test conditions and timestamps
 
 ---
@@ -304,3 +418,6 @@ The investigation is complete when the report can answer, for one item scan:
 8. Which results came from cache?
 9. Which tables were updated?
 10. What processing occurred before and after each database call?
+11. Which columns are defined as index keys or included columns on each material table?
+12. Which physical index did SQL Server actually select for each high-impact query?
+13. How many database rows were returned, and how large was the separate HTTP response?
