@@ -710,6 +710,51 @@ Before any diagnostic implementation, the following evidence is required:
 
 This rolling-cache concept is more coherent than preserving the first full `FF246783` solely for reuse, because the planned `IsItemMissing()` optimization is intended to eliminate that pre-pack full load. It nevertheless remains a higher-risk architectural candidate than the current request-scoped Version 1 optimization and will be rejected if Acumatica cache identity, mutation ordering, concurrency, or multi-node correctness cannot be proven.
 
+### Two independent remaining investigation paths
+
+**Execution plan analyzed and paths separated:** August 31, 2026 at 4:06 PM EDT
+
+The remaining pre-pack and parent-update loads originate from different Acumatica processes and must be investigated independently. Optimizing one will not automatically remove the other:
+
+| Investigation path | Query | Scan stage | Current behavior | Research objective |
+|---|---|---|---|---|
+| Item-presence validation | First `FF246783` | Before packing | `IsItemMissing()` materializes approximately 1,808 eligible joined split records to answer whether one scanned inventory item exists | Replace the full enumeration with a targeted, behaviorally equivalent existence query |
+| Parent shipment update | `8659BCA6` | During `PackSplit` | `UpdatePickPackInfoOf()` invokes `PXParentAttribute.SelectChildren()` and retrieves all 1,808 `SOShipLine` records while updating parent picked/packed information | Determine whether the calculation can safely use an incremental adjustment, narrower aggregate/projection, or validated rolling cache |
+
+The first path is evidenced by:
+
+```text
+ProcessSingleBarcode
+-> InjectItemPresenceValidation
+-> IsItemMissing
+-> pickedForPack
+-> GetSplits
+-> FF246783
+```
+
+The second path is evidenced by the independent stack:
+
+```text
+PackSplit
+-> insert SOShipLineSplitPackage
+-> RowInserted<SOShipLineSplitPackage>
+-> UpdateParentShipmentLine
+-> UpdateShipmentLine
+-> UpdatePickPackInfoOf
+-> PXParentAttribute.SelectChildren
+-> 8659BCA6
+```
+
+The actual `8659BCA6` execution plan used `SOShipLine_PK` through a Clustered Index Seek on `CompanyID` and `ShipmentNbr`, with `ShipmentType` and `DatabaseRecordStatus` applied as additional filters. It returned 1,808 rows, performed 186 logical reads, used 15 ms of SQL CPU in the SSMS replay, and showed no table scan, index scan, key lookup, missing-index recommendation, or execution warning. This indicates that SQL Server already locates the shipment lines efficiently; the remaining cost is retrieving a wide complete line collection and processing it in Acumatica. A new index alone is therefore unlikely to eliminate this load.
+
+The intended research sequence is:
+
+1. Complete caller, override, and rule analysis for `IsItemMissing()` and validate a comparison-only targeted existence query.
+2. Inspect the complete `UpdatePickPackInfoOf()` calculation to identify exactly why it requests every `SOShipLine` and which fields, cache events, and totals it consumes.
+3. Evaluate the parent-update alternatives in increasing order of risk: targeted incremental adjustment, database aggregate or narrower projection, then validated rolling cache.
+4. Preserve standard behavior as an immediate fallback whenever eligibility, cache identity, mutation state, or concurrency validation is uncertain.
+5. Measure each path independently and together. Only the combined result can determine whether the current sequence of three major 1,808-row executions can be reduced to the one required post-mutation `FF246783` refresh.
+
 ## Deployed performance customization files
 
 - `PickPackShipTranQtyPerformanceExt.cs`
