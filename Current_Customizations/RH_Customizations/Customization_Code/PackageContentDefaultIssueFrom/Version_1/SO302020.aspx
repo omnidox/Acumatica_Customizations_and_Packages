@@ -308,6 +308,7 @@
                                         <Columns>
                                             <px:PXGridColumn DataField="LineNbr" />
                                             <px:PXGridColumn DataField="InventoryID" />
+                                            <px:PXGridColumn DataField="UsrDefaultIssueFrom" Width="140" SortDirection="Ascending" />
                                             <px:PXGridColumn DataField="SOShipLine__TranDesc" />
                                             <px:PXGridColumn DataField="LotSerialNbr" />
                                             <px:PXGridColumn DataField="PackedQtyPerBox" />
