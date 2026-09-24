@@ -3,7 +3,11 @@
 ## Confirmed behavior
 
 - Target: `SOOrder.ShipVia`, which stores a configured `Carrier.CarrierID`.
-- Inputs: customer, optional customer location, TrueCommerce `TCSOOrderExt.UsrTCCustomField1` (shipping method), and `UsrTCCustomField2` (SCAC, possibly blank).
+- TrueCommerce's existing outbound mapping can derive routing and SCAC from
+  Ship Via even when the Acumatica UDFs are `N/A`; the resolver does not write
+  UDF1/UDF2 for the outbound ASN.
+- Inputs: Acumatica `Customer.AcctCD` and TrueCommerce `TCSOOrderExt.UsrTCCustomField1` (shipping method) and `UsrTCCustomField2` (SCAC, possibly blank). Version 1 uses a source-code dictionary keyed by customer ID; customer-location overrides are deferred.
+- Per the current business decision, the same customer rule applies to every corresponding Kohl's department-store, Sterling, and Nexcom customer ID listed in `Customers 20260923.xlsx`. Kohl's.com is a separate customer and is not included in the department-store rule.
 - Resolve a unique active mapping when an order is created and when either UDF is changed by a user. Re-resolve when customer or location changes, unless a manual override is active.
 - When a mapping resolves, apply the Ship Via through the Acumatica cache field update path so standard shipping, tax, freight, and package behavior runs.
 - When no unique mapping resolves, leave Acumatica's normal Ship Via default or existing value in place; do not guess, block saving, or place the order on hold. A nonblocking warning or status may identify the unresolved mapping.
@@ -29,7 +33,7 @@ For convenience, a direct user edit of Ship Via should enable the checkbox autom
 - Allow a blank UDF2 when the customer and UDF1 identify exactly one mapping.
 - Multiple candidates with different target Ship Via values are unresolved; do not choose by arbitrary ordering.
 - Validate that the target `Carrier` exists and is active.
-- Keep mapping records configurable so changes do not require code changes.
+- Version 1 keeps mappings in `ShipViaMappings.cs`; updating a route requires a code change and republish. A mapping table and maintenance screen are deferred.
 
 ## Implementation questions to resolve from an imported order
 

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <RootNamespace>IstarEDIShipViaResolver</RootNamespace>
+    <AssemblyName>IstarEDIShipViaResolver</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="PX.Data">
+      <HintPath>C:\Program Files\Acumatica ERP\AcumaticaERP\Bin\PX.Data.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PX.Objects">
+      <HintPath>C:\Program Files\Acumatica ERP\AcumaticaERP\Bin\PX.Objects.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PX.Common">
+      <HintPath>C:\Program Files\Acumatica ERP\AcumaticaERP\Bin\PX.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="TCAddon">
+      <HintPath>C:\Program Files\Acumatica ERP\AcumaticaERP\Bin\TCAddon.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+</Project>
