@@ -33,9 +33,9 @@ namespace CustomWMS2
         public static bool IsActive()
         {
             WmsDebugTrace.Info(
-                $"{TracePrefix} IsActive TRUE. Version={Version}");
+                $"{TracePrefix} IsActive False. Version={Version}");
 
-            return true;
+            return false;
         }
 
         public sealed class UnpackEntireShipmentCommand
