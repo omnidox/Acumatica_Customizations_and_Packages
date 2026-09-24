@@ -31,6 +31,11 @@ namespace iStarShippingRestrictionsCustomizations
             if (shipment == null)
                 return;
 
+            // Shipping restrictions apply only to outbound (Issue) shipments;
+            // Receipt-operation shipments (returns) are not validated.
+            if (shipment.Operation != SOOperation.Issue)
+                return;
+
             Customer customer = GetCustomer(shipment);
 
             if (ShouldBypassShippingValidation(customer))
