@@ -548,7 +548,8 @@ namespace AA.Objects.AL.Integration.PerPackage
                 cacheKey = ModelResolutionCache.BuildKey(
                     shipment.CustomerID,
                     _graph.Accessinfo.UserID,
-                    isParentBox);
+                    isParentBox,
+                    packageModels);
 
                 Guid cachedModelId;
 

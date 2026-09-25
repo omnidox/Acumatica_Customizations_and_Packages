@@ -2,6 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using AA.Objects.Labels;
 using PX.Data;
@@ -27,15 +29,19 @@ namespace AA.Objects.AL.Integration.PerPackage
     /// - The result is only remembered when EVERY candidate rule reads nothing
     ///   except those fields (IsCacheSafeRule). A new rule on any other field
     ///   automatically disables reuse until that rule is removed.
-    /// - The slot is a PXDatabase slot: Acumatica clears it whenever ALModel,
-    ///   ALRule, ALModelPrinter, or BAccount (customer names) change, and it is
-    ///   kept separately per tenant.
+    /// - The slot is a PXDatabase slot: Acumatica clears it whenever ALRule,
+    ///   ALModelPrinter, or BAccount (customer names) change, and it is kept
+    ///   separately per tenant.
+    /// - ALModel is deliberately NOT a dependent table: Asgard updates the printed
+    ///   model's ALModel row on every print (AcuLabelContext.RenderAsOutput), which
+    ///   would clear the slot after every label. Instead the key contains a
+    ///   fingerprint of the model fields that affect resolution (BuildModelFingerprint),
+    ///   so activating, deactivating, or re-ruling a model produces a new key.
     /// </summary>
     internal sealed class ModelResolutionCache
     {
         private static readonly Type[] DependentTables =
         {
-            typeof(ALModel),
             typeof(ALRule),
             typeof(ALModelPrinter),
             typeof(BAccount)
@@ -78,9 +84,41 @@ namespace AA.Objects.AL.Integration.PerPackage
                 typeof(ModelResolutionCache).FullName,
                 DependentTables);
 
-        public static string BuildKey(int? customerID, Guid userID, bool isParentBox)
+        public static string BuildKey(
+            int? customerID,
+            Guid userID,
+            bool isParentBox,
+            IEnumerable<ALModel> candidateModels)
         {
-            return $"{customerID}|{userID}|{isParentBox}";
+            return $"{customerID}|{userID}|{isParentBox}|{BuildModelFingerprint(candidateModels)}";
+        }
+
+        /// <summary>
+        /// Hash of the candidate model fields that decide which model is resolved:
+        /// the set of active package models, their rules, reverse flags, and the
+        /// Description used for the UCC tie-break.
+        /// </summary>
+        private static string BuildModelFingerprint(IEnumerable<ALModel> candidateModels)
+        {
+            string fields = string.Join(
+                "\n",
+                candidateModels
+                    .OrderBy(m => m.LabelID)
+                    .Select(m => string.Join(
+                        "|",
+                        m.LabelID,
+                        m.BasedOnView,
+                        m.FilterRuleID,
+                        m.ReverseFilter,
+                        m.PrintRuleID,
+                        m.ReversePrint,
+                        m.Description)));
+
+            using (SHA256 sha = SHA256.Create())
+            {
+                byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(fields));
+                return BitConverter.ToString(hash).Replace("-", string.Empty);
+            }
         }
 
         public static bool TryGet(string key, out Guid modelId)

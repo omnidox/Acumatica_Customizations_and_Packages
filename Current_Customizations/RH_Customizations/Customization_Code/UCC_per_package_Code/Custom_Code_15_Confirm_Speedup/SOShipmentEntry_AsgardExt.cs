@@ -297,7 +297,21 @@ namespace AA.Objects.AL.Integration.PerPackage
         /// </summary>
         public virtual void PrintForPackageCore(string shipmentNbr, int packageLineNbr)
         {
-            WriteDiagnostic("[ASGARD-PRINT] Core start: Creating fresh graph for shipment {0}", 
+            // Activate the package filter scope for the whole print, not only for
+            // model resolution and printing. Loading the shipment into the fresh
+            // graph below raises SOShipment_RowSelected, and
+            // SOShipmentEntry_PrintRowSelectedOptimization only replaces its full
+            // shipment-line load while this scope is active. The nested
+            // Activate calls in AsgardLabelService use the same shipment and package.
+            using (ALPackagesFilterScope.Activate(shipmentNbr, new int?[] { packageLineNbr }))
+            {
+                PrintForPackageCoreInScope(shipmentNbr, packageLineNbr);
+            }
+        }
+
+        private void PrintForPackageCoreInScope(string shipmentNbr, int packageLineNbr)
+        {
+            WriteDiagnostic("[ASGARD-PRINT] Core start: Creating fresh graph for shipment {0}",
                 shipmentNbr);
 
             SOShipmentEntry graph = PXGraph.CreateInstance<SOShipmentEntry>();
@@ -353,7 +367,7 @@ namespace AA.Objects.AL.Integration.PerPackage
             WriteDiagnostic("[ASGARD-PRINT] Model resolved: ModelID={0}", modelId);
 
             // ✅ Service owns filter scope + checkbox + context + print
-            // No outer wrapping needed here
+            // (PrintForPackageCore also holds an outer scope for the shipment load)
             PrintResults results = service.PrintSelectedPackageUsingNativeContext(
                 shipmentInLongOp,
                 modelId,
