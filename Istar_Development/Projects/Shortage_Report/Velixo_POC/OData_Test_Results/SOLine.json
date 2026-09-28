@@ -1,0 +1,35 @@
+﻿[
+    {
+        "OrderType":  "SZ",
+        "OrderNbr":  "SO00002786",
+        "LineNbr":  47,
+        "CustomerID":  7502,
+        "RequestDate":  "2026-09-04T00:00:00Z",
+        "InventoryID":  364331,
+        "OrderQty":  235.000000,
+        "ShippedQty":  0.000000,
+        "OpenQty":  235.000000
+    },
+    {
+        "OrderType":  "SZ",
+        "OrderNbr":  "SO00005723",
+        "LineNbr":  41,
+        "CustomerID":  7502,
+        "RequestDate":  "2026-08-03T00:00:00Z",
+        "InventoryID":  364331,
+        "OrderQty":  107.000000,
+        "ShippedQty":  0.000000,
+        "OpenQty":  107.000000
+    },
+    {
+        "OrderType":  "SZ",
+        "OrderNbr":  "SO00005728",
+        "LineNbr":  47,
+        "CustomerID":  7502,
+        "RequestDate":  "2026-09-04T00:00:00Z",
+        "InventoryID":  364331,
+        "OrderQty":  235.000000,
+        "ShippedQty":  0.000000,
+        "OpenQty":  235.000000
+    }
+]

@@ -1,0 +1,20 @@
+﻿[
+    {
+        "OrderType":  "SZ",
+        "OrderNbr":  "SO00002786",
+        "CustomerID":  7502,
+        "Status":  "N"
+    },
+    {
+        "OrderType":  "SZ",
+        "OrderNbr":  "SO00005723",
+        "CustomerID":  7502,
+        "Status":  "N"
+    },
+    {
+        "OrderType":  "SZ",
+        "OrderNbr":  "SO00005728",
+        "CustomerID":  7502,
+        "Status":  "N"
+    }
+]

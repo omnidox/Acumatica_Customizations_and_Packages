@@ -1,0 +1,52 @@
+﻿[
+    {
+        "InventoryID":  344709,
+        "SiteID":  277,
+        "CostCenterID":  0,
+        "QtyOnHand":  24.000000,
+        "QtyAvail":  24.000000,
+        "QtyPOPrepared":  920.000000,
+        "QtyPOOrders":  0.000000,
+        "QtySOBooked":  0.000000
+    },
+    {
+        "InventoryID":  363490,
+        "SiteID":  277,
+        "CostCenterID":  0,
+        "QtyOnHand":  5000.000000,
+        "QtyAvail":  5000.000000,
+        "QtyPOPrepared":  0.000000,
+        "QtyPOOrders":  1000.000000,
+        "QtySOBooked":  0.000000
+    },
+    {
+        "InventoryID":  363555,
+        "SiteID":  277,
+        "CostCenterID":  0,
+        "QtyOnHand":  0.000000,
+        "QtyAvail":  0.000000,
+        "QtyPOPrepared":  0.000000,
+        "QtyPOOrders":  0.000000,
+        "QtySOBooked":  0.000000
+    },
+    {
+        "InventoryID":  363567,
+        "SiteID":  277,
+        "CostCenterID":  0,
+        "QtyOnHand":  0.000000,
+        "QtyAvail":  0.000000,
+        "QtyPOPrepared":  0.000000,
+        "QtyPOOrders":  0.000000,
+        "QtySOBooked":  0.000000
+    },
+    {
+        "InventoryID":  364331,
+        "SiteID":  277,
+        "CostCenterID":  0,
+        "QtyOnHand":  0.000000,
+        "QtyAvail":  -577.000000,
+        "QtyPOPrepared":  0.000000,
+        "QtyPOOrders":  0.000000,
+        "QtySOBooked":  577.000000
+    }
+]

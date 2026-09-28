@@ -1,0 +1,22 @@
+﻿[
+    {
+        "OrderType":  "RO",
+        "OrderNbr":  "0000216",
+        "LineNbr":  1,
+        "InventoryID":  344709,
+        "VendorID":  8814,
+        "OrderQty":  920.000000,
+        "OpenQty":  920.000000,
+        "PromisedDate":  "2026-05-04T00:00:00Z"
+    },
+    {
+        "OrderType":  "RO",
+        "OrderNbr":  "0000315",
+        "LineNbr":  1,
+        "InventoryID":  363490,
+        "VendorID":  9175,
+        "OrderQty":  6000.000000,
+        "OpenQty":  1000.000000,
+        "PromisedDate":  "2026-05-28T00:00:00Z"
+    }
+]

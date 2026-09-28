@@ -1,0 +1,52 @@
+﻿[
+    {
+        "VendorID":  8814,
+        "VendorLocationID":  54215,
+        "InventoryID":  344709,
+        "PurchaseUnit":  "EA",
+        "AddLeadTimeDays":  0,
+        "Active":  true,
+        "MinOrdQty":  0.000000,
+        "LotSize":  0.000000
+    },
+    {
+        "VendorID":  8330,
+        "VendorLocationID":  9378,
+        "InventoryID":  363490,
+        "PurchaseUnit":  "EA",
+        "AddLeadTimeDays":  0,
+        "Active":  true,
+        "MinOrdQty":  0.000000,
+        "LotSize":  0.000000
+    },
+    {
+        "VendorID":  8330,
+        "VendorLocationID":  9378,
+        "InventoryID":  363555,
+        "PurchaseUnit":  "EA",
+        "AddLeadTimeDays":  0,
+        "Active":  true,
+        "MinOrdQty":  0.000000,
+        "LotSize":  0.000000
+    },
+    {
+        "VendorID":  8380,
+        "VendorLocationID":  9428,
+        "InventoryID":  363567,
+        "PurchaseUnit":  "EA",
+        "AddLeadTimeDays":  0,
+        "Active":  true,
+        "MinOrdQty":  0.000000,
+        "LotSize":  0.000000
+    },
+    {
+        "VendorID":  9175,
+        "VendorLocationID":  65673,
+        "InventoryID":  363490,
+        "PurchaseUnit":  "EA",
+        "AddLeadTimeDays":  0,
+        "Active":  true,
+        "MinOrdQty":  0.000000,
+        "LotSize":  0.000000
+    }
+]

@@ -1,0 +1,34 @@
+﻿[
+    {
+        "KitInventoryID":  364331,
+        "RevisionID":  "01",
+        "LineNbr":  1,
+        "CompInventoryID":  344709,
+        "DfltCompQty":  1.000000,
+        "UOM":  "EA"
+    },
+    {
+        "KitInventoryID":  364331,
+        "RevisionID":  "01",
+        "LineNbr":  2,
+        "CompInventoryID":  363555,
+        "DfltCompQty":  1.000000,
+        "UOM":  "EA"
+    },
+    {
+        "KitInventoryID":  364331,
+        "RevisionID":  "01",
+        "LineNbr":  3,
+        "CompInventoryID":  363490,
+        "DfltCompQty":  1.000000,
+        "UOM":  "EA"
+    },
+    {
+        "KitInventoryID":  364331,
+        "RevisionID":  "01",
+        "LineNbr":  4,
+        "CompInventoryID":  363567,
+        "DfltCompQty":  1.000000,
+        "UOM":  "EA"
+    }
+]
