@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALSubstitution" file-name="ALSubstitution-(Name)">
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALSubstitutionDetail (ChildSubstitutionID)" type="FromMaster" updateable="True" do-not-change="ALSubstitution" />
+    <link from="ALSubstitution (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALSubstitution">
+      <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALSubstitution>
+      <row SubstitutionID="d0a5cd00-db29-455f-b207-01fb3de93b3d" Name="Prepend-420-Readable" Description="Prepend (420)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'(420)'" NoteID="08c3bc8c-f6a1-ef11-82ba-00155d73340f" />
+      </row>
+      <row SubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Name="StringFunctions.Prepend" Description="StringFunctions - Prepend" Active="1" IsSystem="1" IsComposite="0" AllowExport="1" ReturnTypeName="System.String" TypeName="AA.Objects.AL.StringFunctions" FunctionName="Prepend" InternalName="string.Prepend" Signature="Prepend(string text, string by) -&gt; string" NbArgs="2" ArgNames="text,by" DefValues="null,null" />
+    </ALSubstitution>
+  </data>
+</data-set>
