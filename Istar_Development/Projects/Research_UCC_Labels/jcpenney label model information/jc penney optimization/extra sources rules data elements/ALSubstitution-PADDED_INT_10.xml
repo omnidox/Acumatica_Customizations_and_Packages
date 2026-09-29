@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALSubstitution" file-name="ALSubstitution-(Name)">
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALSubstitutionDetail (ChildSubstitutionID)" type="FromMaster" updateable="True" do-not-change="ALSubstitution" />
+    <link from="ALSubstitution (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALSubstitution">
+      <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALSubstitution>
+      <row SubstitutionID="17ffa460-b07b-40af-b194-657a395ece24" Name="PADDED_INT_10" Description="math.format 'D10'" Active="1" IsSystem="1" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1">
+        <ALSubstitutionDetail LineNbr="3" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="e6b0971e-f8a3-4667-a857-c0d26fd4a57a" Arg1="_this_" Arg2="000000" NoteID="369e8975-45bb-f111-91f5-00155d0a3e0f" />
+        <ALSubstitutionDetail LineNbr="2" SortOrder="2" Active="1" IsSystem="1" ChildSubstitutionID="e6b0971e-f8a3-4667-a857-c0d26fd4a57a" Arg1="_this_" Arg2="000000" NoteID="a25dd5d4-42bb-f111-91f5-00155d0a3e0f" />
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="5400a195-be39-42f2-a731-a71dc217f8c8" Arg1="_this_" Arg2="'D10'" NoteID="5bd28600-9190-ee11-a467-3c6aa7cb36ca" />
+      </row>
+      <row SubstitutionID="e6b0971e-f8a3-4667-a857-c0d26fd4a57a" Name="StringFunctions.PadLeft" Description="StringFunctions - Pad Left" Active="1" IsSystem="1" IsComposite="0" AllowExport="1" ReturnTypeName="System.String" TypeName="AA.Objects.AL.StringFunctions" FunctionName="PadLeft" InternalName="string.PadLeft" Signature="PadLeft(string text, int width) -&gt; string" NbArgs="2" ArgNames="text,width" DefValues="null,null" />
+      <row SubstitutionID="5400a195-be39-42f2-a731-a71dc217f8c8" Name="MathFunctions.Format" Description="MathFunctions - Format" Active="1" IsSystem="1" IsComposite="0" AllowExport="1" ReturnTypeName="System.String" TypeName="AA.Objects.AL.MathFunctions" FunctionName="Format" InternalName="math.Format" Signature="Format(object value, string format, string culture = NULL) -&gt; string" NbArgs="3" ArgNames="value,format,culture" DefValues="null,null,null" />
+    </ALSubstitution>
+  </data>
+</data-set>

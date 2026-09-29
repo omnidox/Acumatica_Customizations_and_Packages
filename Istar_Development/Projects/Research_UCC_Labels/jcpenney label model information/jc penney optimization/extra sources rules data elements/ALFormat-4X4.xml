@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALFormat" file-name="ALFormat-(Name)">
+    <link from="ALMargin (MarginID)" to="ALFormat (MarginID)" />
+    <link from="ALFormatRule (FormatID)" to="ALFormat (FormatID)" />
+    <link from="ALRule (RuleID)" to="ALFormatRule (RuleID)" />
+    <link from="ALFormat (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALFormat">
+      <table name="ALMargin" uplink="(MarginID) = (MarginID)" />
+      <table name="ALFormatRule" uplink="(FormatID) = (FormatID)">
+        <table name="ALRule" uplink="(RuleID) = (RuleID)" />
+      </table>
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALFormat>
+      <row FormatID="b3467fcf-3de5-48ea-937e-ce021ba1e0d6" Name="4X4" Active="1" IsSystem="1" IsComposite="0" AllowExport="1" Description="4 x 4, 203 dpi" Width="4.0000" Height="4.0000" PrintDensityType="M" PrintDensity="8" SizeUnit="IN" Rotation="000" UseWithPdf="0" PageSize="1" PageOrientation="0" PageHAlign="3" PageVAlign="3" />
+    </ALFormat>
+  </data>
+</data-set>

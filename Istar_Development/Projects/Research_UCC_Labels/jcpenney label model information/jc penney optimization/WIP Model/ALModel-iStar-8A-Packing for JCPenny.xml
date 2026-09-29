@@ -1,0 +1,309 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALModel" file-name="ALModel-(Name)">
+    <link from="ALCategory (CategoryID)" to="ALModel (CategoryID)" />
+    <link from="ALMargin (MarginID)" to="ALModel (MarginID)" />
+    <link from="ALFormat (FormatID)" to="ALModel (FormatID)" />
+    <link from="ALRule (RuleID)" to="ALModel (FilterRuleID)" />
+    <link from="ALRule (RuleID)" to="ALModel (PrintRuleID)" />
+    <link from="ALModelGraphic (ModelID)" to="ALModel (LabelID)" />
+    <link from="ALModelChild (LabelID)" to="ALModel (LabelID)" />
+    <link from="ALModelExpr (LabelID)" to="ALModel (LabelID)" />
+    <link from="ALModelPrinter (LabelID)" to="ALModel (LabelID)" />
+    <link from="ALRuleDetail (RuleID)" to="ALRule (RuleID)" />
+    <link from="ALFont (FontID)" to="ALModelExpr (FontID)" />
+    <link from="ALColor (ColorID)" to="ALModelExpr (ForeColorID)" />
+    <link from="ALColor (ColorID)" to="ALModelExpr (BackColorID)" />
+    <link from="ALDataElement (RecordID)" to="ALModelExpr (DataElementID)" />
+    <link from="ALJustification (JustificationID)" to="ALModelExpr (JustificationID)" />
+    <link from="ALDataSource (SourceID)" to="ALDataElement (SourceID)" />
+    <link from="ALBarcode (BarcodeID)" to="ALDataElement (BarcodeID)" />
+    <link from="ALBarcodeOption (BarcodeID)" to="ALBarcode (BarcodeID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALDataElement (SubstitutionID)" />
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALContent (ContentID)" to="ALDataElement (ContentID)" />
+    <link from="ALContentElement (ContentID)" to="ALContent (ContentID)" />
+  </relations>
+  <layout>
+    <table name="ALModel">
+      <table name="ALCategory" uplink="(CategoryID) = (CategoryID)" />
+      <table name="ALMargin" uplink="(MarginID) = (MarginID)" />
+      <table name="ALFormat" uplink="(FormatID) = (FormatID)" />
+      <table name="ALRule" uplink="(FilterRuleID) = (RuleID)">
+        <table name="ALRuleDetail" uplink="(RuleID) = (RuleID)" />
+      </table>
+      <table name="ALModelGraphic" uplink="(LabelID) = (ModelID)" />
+      <table name="ALModelChild" uplink="(LabelID) = (LabelID)" />
+      <table name="ALModelExpr" uplink="(LabelID) = (LabelID)">
+        <table name="ALFont" uplink="(FontID) = (FontID)" />
+        <table name="ALColor" uplink="(ForeColorID) = (ColorID)" />
+        <table name="ALDataElement" uplink="(DataElementID) = (RecordID)">
+          <table name="ALDataSource" uplink="(SourceID) = (SourceID)" />
+          <table name="ALBarcode" uplink="(BarcodeID) = (BarcodeID)">
+            <table name="ALBarcodeOption" uplink="(BarcodeID) = (BarcodeID)" />
+          </table>
+          <table name="ALSubstitution" uplink="(SubstitutionID) = (SubstitutionID)">
+            <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+          </table>
+          <table name="ALContent" uplink="(ContentID) = (ContentID)">
+            <table name="ALContentElement" uplink="(ContentID) = (ContentID)" />
+          </table>
+        </table>
+        <table name="ALJustification" uplink="(JustificationID) = (JustificationID)" />
+      </table>
+      <table name="ALModelPrinter" uplink="(LabelID) = (LabelID)" />
+    </table>
+  </layout>
+  <data>
+    <ALModel>
+      <row LabelID="e90eed66-d87c-47bc-81ff-c4603a7db790" Name="iStar-8A-Packing for JCPenny" Active="1" IsSystem="0" Description="Stanley UCC-128 - JCPenny" ModelType="S" CategoryID="0730f79f-f891-4b6b-89f1-b0a19374d13a" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" BasedOnView="Packages" HideWhenInGroup="0" AllowExport="1" FilterRuleID="e14bdeb8-b4db-4c99-b489-9000b1fd61e4" ReverseFilter="0" HideInstead="1" IgnoreRotationOnRender="0" PrintRuleID="793b17c9-985e-447f-be38-eccefd311d86" ReversePrint="1" Language="ZPL" FormatID="38e34de2-cadf-4f92-86e4-c26fa1521207" ImageUrl="https://istar.privatecloudcorp.com/AcumaticaERP/Frames/GetFile.ashx?fileID=b871f610-4084-4b00-88b3-60e5647a1ebf" SizeUnit="MM" DealingMode="0" SendPauseEvery="0" PrintOnOtherDensity="PA" NumberingID="" NoteID="7478f3fe-dd30-f011-82c6-00155d73340f">
+        <ALCategory Name="iStar" Description="iStar" Active="1" IsSystem="1" AllowExport="1" NoteID="27d0b349-6997-ef11-a97e-dc46288b05dc" />
+        <ALFormat Name="4X6" Active="1" IsSystem="1" AllowExport="1" Description="4 x 6, 203 dpi" Width="4.0000" Height="6.0000" PrintDensityType="M" PrintDensity="8" SizeUnit="IN" Rotation="000" UseWithPdf="0" PageSize="0" PageOrientation="0" PageHAlign="2" PageVAlign="2" NoteID="62bcde6b-eb55-f111-82ca-97bb00e902b8" />
+        <ALRule Name="CustomerIsJCP" Active="1" IsSystem="1" AllowExport="1" IsComposite="0" Description="Packing Label for JCP" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Expression="Document.CustomerID.AcctName | string.Contains 'PENNEY'" NoteID="38b80d73-4f4c-f011-82c7-00155d73340f" />
+        <ALModelGraphic LineNbr="8" SortOrder="8" Active="1" GraphicType="V" FromX="55.0000" FromY="51.0000" ToX="55.0000" ToY="72.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="a465f98c-48b8-f111-91f5-00155d0a3e0f" SizeUnit="DT" />
+        <ALModelGraphic LineNbr="7" SortOrder="7" Active="1" GraphicType="V" FromX="55.0000" FromY="16.0000" ToX="55.0000" ToY="36.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="a75e3222-48b8-f111-91f5-00155d0a3e0f" SizeUnit="DT" />
+        <ALModelGraphic LineNbr="6" SortOrder="6" Active="1" GraphicType="V" FromX="35.0000" FromY="0.0000" ToX="35.0000" ToY="16.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="bf57781b-48b8-f111-91f5-00155d0a3e0f" SizeUnit="DT" />
+        <ALModelGraphic LineNbr="5" SortOrder="5" Active="1" GraphicType="H" FromX="0.0000" FromY="72.0000" ToX="100.0000" ToY="100.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="b033d314-48b8-f111-91f5-00155d0a3e0f" SizeUnit="DT" />
+        <ALModelGraphic LineNbr="4" SortOrder="4" Active="1" GraphicType="H" FromX="0.0000" FromY="51.0000" ToX="100.0000" ToY="51.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="7450990c-48b8-f111-91f5-00155d0a3e0f" SizeUnit="DT" />
+        <ALModelGraphic LineNbr="3" SortOrder="3" Active="1" GraphicType="H" FromX="0.0000" FromY="36.0000" ToX="100.0000" ToY="36.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="7050990c-48b8-f111-91f5-00155d0a3e0f" SizeUnit="DT" />
+        <ALModelGraphic LineNbr="2" SortOrder="2" Active="1" GraphicType="H" FromX="0.0000" FromY="16.0000" ToX="100.0000" ToY="16.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="2d9d4906-48b8-f111-91f5-00155d0a3e0f" SizeUnit="DT" />
+        <ALModelGraphic LineNbr="1" SortOrder="1" Active="1" GraphicType="B" FromX="0.0000" FromY="0.0000" ToX="100.0000" ToY="100.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="c2fff0fe-47b8-f111-91f5-00155d0a3e0f" SizeUnit="DT" />
+        <ALModelExpr LineNbr="56" SortOrder="55" Active="1" ExprCode="iStar-8A-Packing for JCPenny-056" ExprType="H" DataElementID="6ba2564a-53bd-441e-8ec0-b6b91d5cc073" PosX="10.0000" PosY="80.0000" ReverseRule="0" LabelZoomType="0" NoteID="0d61a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="148" SortOrder="15" Name="SO302000-SO Package Detail (GS1-128) - (barcode-GS1-Code128-175-NoHRI)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Packages" ExprValue="UsrTCUCC128" SampleType="H" SampleValue="00000228920277475636" DoSubstitute="0" BarcodeID="467ee919-d56e-48a9-b695-e0a83da7a3fd" NoteID="a3501e45-cb64-f011-82c8-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+            <ALBarcode Name="Code128-100-noHRI" Description="Code 128 height 100 no HRI" SampleValue="0194901234567894310100035590" Active="1" IsSystem="0" AllowExport="1" Language="ZPL" BarcodeType="C" Dimension="1" FormatID="aae904b5-c69b-4a18-ae3e-776b8e3cedb3" NoteID="c112786c-8b6b-ef11-a975-dc46288b05dc">
+              <ALBarcodeOption LineNbr="6" SortOrder="6" Option="m" Value="N" NoteID="dba80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="5" SortOrder="5" Option="e" Value="N" NoteID="daa80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="4" SortOrder="4" Option="g" Value="N" NoteID="d9a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="3" SortOrder="3" Option="f" Value="N" NoteID="d8a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="2" SortOrder="2" Option="h" Value="100" NoteID="d7a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="1" SortOrder="1" Option="o" Value="N" NoteID="d6a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+            </ALBarcode>
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="55" SortOrder="54" Active="1" ExprCode="iStar-8A-Packing for JCPenny-055" ExprType="H" ExprValue="^BY4,3" ReverseRule="0" LabelZoomType="0" NoteID="0b61a447-31bc-f111-91f5-00155d0a3e0f" />
+        <ALModelExpr LineNbr="54" SortOrder="53" Active="1" ExprCode="iStar-8A-Packing for JCPenny-054" ExprType="H" DataElementID="f123bcda-b13f-4c62-b0d8-60865ef7e487" PosX="0.0000" PosY="77.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" JustificationID="ba3145a6-218e-423e-98a9-41fb3cc2dc0b" LabelZoomType="0" NoteID="0961a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="10" SortOrder="9" Name="SO302000-SO Package Detail (GS1-128)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Packages" ExprValue="UsrTCUCC128" SampleType="H" SampleValue="00000228920277475636" DoSubstitute="0" NoteID="a6501e45-cb64-f011-82c8-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" justBlockType="FB" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="53" SortOrder="52" Active="1" ExprCode="iStar-8A-Packing for JCPenny-053" ExprType="H" ExprValue="SERIAL SHIPPING CONTAINER CODE" PosX="2.0000" PosY="74.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="0761a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="52" SortOrder="51" Active="1" ExprCode="iStar-8A-Packing for JCPenny-052" ExprType="H" DataElementID="c970d88f-52c6-4ab0-a18d-1c87df1ac7cc" PosX="55.0000" PosY="67.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" JustificationID="cf2f6dee-5671-447d-bf8f-b389d25bbc95" LabelZoomType="0" NoteID="0561a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="146" SortOrder="13" Name="SO302000-Shipping Address (Postal Code)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="PostalCode" SampleType="H" SampleValue="19606" DoSubstitute="0" NoteID="412e2889-8097-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="51" SortOrder="50" Active="1" ExprCode="iStar-8A-Packing for JCPenny-051" ExprType="H" DataElementID="5b6805af-5d31-4fbd-86d8-8b8b85f4905c" PosX="60.0000" PosY="64.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="0361a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="145" SortOrder="19" Name="SO302000-Shipping Address ([City,StateID]) - (sub-JOIN_BY_SPACE)" Active="1" IsSystem="1" GenName="1" CategoryID="2301f03a-6e8f-4a01-bec0-a3e94e438b8e" Description="Shipping Address ([City,StateID,PostalCode]) -&gt; (sub:Join array by Space)" ExprType="F" BasedOn="array" ExprValue="ToArray" Arg1="Shipping_Address.City" Arg2="Shipping_Address.State?.StateID" DefaultValue="ToArray" SampleType="F" SampleValue="['NORTHVALE', 'NJ', '07647']" DoSubstitute="1" SubstitutionID="8e405ce2-fbad-40aa-8138-93424d88e73d" NoteID="afea485f-8097-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+            <ALSubstitution Name="JOIN_BY_SPACE" Description="Join array by Space" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="85a0050d-1064-ee11-b4fe-f0b61e7e1a57">
+              <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" ChildSubstitutionID="8349e9f0-17f0-4e2a-b5c3-ba8e27395b47" Arg1="_this_" Arg2="' '" NoteID="127c47f8-8c55-ed11-a409-0492266d8119" />
+            </ALSubstitution>
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="50" SortOrder="49" Active="1" ExprCode="iStar-8A-Packing for JCPenny-050" ExprType="H" DataElementID="8dfca252-920c-4d24-9426-54e39098355a" PosX="60.0000" PosY="61.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="0161a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="13" SortOrder="12" Name="SO302000-Shipping Address (Address Line 2)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="AddressLine2" SampleType="H" SampleValue="5 BIRCHMONT DRIVE" DoSubstitute="0" NoteID="e10f9e1a-7f97-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="49" SortOrder="48" Active="1" ExprCode="iStar-8A-Packing for JCPenny-049" ExprType="H" DataElementID="0fe0073e-b3e7-4379-a616-d3a787c44f1a" PosX="60.0000" PosY="58.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="ff60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="12" SortOrder="11" Name="SO302000-Shipping Address (Address Line 1)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="AddressLine1" SampleType="H" SampleValue="BOSCOV'S DIST CTR #15" DoSubstitute="0" NoteID="535807f2-7e97-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="48" SortOrder="47" Active="1" ExprCode="iStar-8A-Packing for JCPenny-048" ExprType="H" ExprValue="J. C. PENNEY'S" PosX="60.0000" PosY="55.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="fd60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="47" SortOrder="46" Active="1" ExprCode="iStar-8A-Packing for JCPenny-047" ExprType="H" DataElementID="e065118a-0a6d-4525-8c78-fc50fb87f973" PosX="68.0000" PosY="52.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="fb60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="185" SortOrder="52" Name="SO302000-CurrentDocument (EDI Distribution Center)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="000044" DoSubstitute="0" SubstitutionID="17ffa460-b07b-40af-b194-657a395ece24" NoteID="2270a33e-4bbb-f111-91f5-00155d0a3e0f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+            <ALSubstitution Name="PADDED_INT_10" Description="math.format 'D10'" Active="1" IsSystem="1" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="96a56a9c-3f55-f111-82ca-97bb00e902b8">
+              <ALSubstitutionDetail LineNbr="3" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="e6b0971e-f8a3-4667-a857-c0d26fd4a57a" Arg1="_this_" Arg2="000000" NoteID="369e8975-45bb-f111-91f5-00155d0a3e0f" />
+              <ALSubstitutionDetail LineNbr="2" SortOrder="2" Active="1" IsSystem="1" ChildSubstitutionID="e6b0971e-f8a3-4667-a857-c0d26fd4a57a" Arg1="_this_" Arg2="000000" NoteID="a25dd5d4-42bb-f111-91f5-00155d0a3e0f" />
+              <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="5400a195-be39-42f2-a731-a71dc217f8c8" Arg1="_this_" Arg2="'D10'" NoteID="5bd28600-9190-ee11-a467-3c6aa7cb36ca" />
+            </ALSubstitution>
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="46" SortOrder="45" Active="1" ExprCode="iStar-8A-Packing for JCPenny-046" ExprType="H" ExprValue="FOR:" PosX="58.0000" PosY="52.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="f960a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="45" SortOrder="44" Active="1" ExprCode="iStar-8A-Packing for JCPenny-045" ExprType="H" DataElementID="5d3f2d20-c618-4ec0-a0fc-91ba436b019a" PosX="10.0000" PosY="58.0000" ReverseRule="0" LabelZoomType="0" NoteID="f760a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="157" SortOrder="24" Name="SO302000-CurrentDocument (EDI Distribution Center) - (sub-Prepend-91-Barcode) - (barcode-GS1-Code128" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="00044" DoSubstitute="1" SubstitutionID="c6c5222e-1878-411c-957d-961382d3352c" BarcodeID="467ee919-d56e-48a9-b695-e0a83da7a3fd" NoteID="4a3b1e37-7424-f011-82c5-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+            <ALBarcode Name="Code128-100-noHRI" Description="Code 128 height 100 no HRI" SampleValue="0194901234567894310100035590" Active="1" IsSystem="0" AllowExport="1" Language="ZPL" BarcodeType="C" Dimension="1" FormatID="aae904b5-c69b-4a18-ae3e-776b8e3cedb3" NoteID="c112786c-8b6b-ef11-a975-dc46288b05dc">
+              <ALBarcodeOption LineNbr="6" SortOrder="6" Option="m" Value="N" NoteID="dba80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="5" SortOrder="5" Option="e" Value="N" NoteID="daa80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="4" SortOrder="4" Option="g" Value="N" NoteID="d9a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="3" SortOrder="3" Option="f" Value="N" NoteID="d8a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="2" SortOrder="2" Option="h" Value="100" NoteID="d7a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="1" SortOrder="1" Option="o" Value="N" NoteID="d6a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+            </ALBarcode>
+            <ALSubstitution Name="Prepend-91-Barcode" Description="Prepend 91" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="5881097b-7424-f011-82c5-00155d73340f">
+              <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'91'" NoteID="017e50d6-7424-f011-82c5-00155d73340f" />
+            </ALSubstitution>
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="44" SortOrder="43" Active="1" ExprCode="iStar-8A-Packing for JCPenny-044" ExprType="H" DataElementID="2e9cb615-7ddb-4475-98b7-530c3e413f21" PosX="0.0000" PosY="55.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" JustificationID="ec8b3346-d5d9-4505-9fe9-88926135f610" LabelZoomType="0" NoteID="f560a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="156" SortOrder="23" Name="SO302000-CurrentDocument (EDI Distribution Center) - (sub-Prepend-91-Readable)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="0044" DoSubstitute="1" SubstitutionID="f3730d35-f1b8-4e23-a0e5-c77346b73b1a" NoteID="7b133447-7124-f011-82c5-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+            <ALSubstitution Name="Prepend-91-Readable" Description="Prepend (91)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="fd648513-7224-f011-82c5-00155d73340f">
+              <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'(91)'" NoteID="b0360e84-46bb-f111-91f5-00155d0a3e0f" />
+            </ALSubstitution>
+          </ALDataElement>
+          <ALJustification Name="C-000-055" Description="C-000-055" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="55.0000" MaxLines="1" SizeUnit="MM" NoteID="4a5f9834-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="43" SortOrder="42" Active="1" ExprCode="iStar-8A-Packing for JCPenny-043" ExprType="H" ExprValue="FOR:" PosX="2.0000" PosY="52.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="f360a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="42" SortOrder="41" Active="1" ExprCode="iStar-8A-Packing for JCPenny-042" ExprType="H" ExprValue="- PACKING LIST INSIDE -" DataElementID="3de5faaf-1182-45ca-a51d-1411fa99083f" PosX="0.0000" PosY="42.0000" ReverseRule="0" FontID="c6c78c88-2129-4dd1-b883-d3cc390756d4" JustificationID="ba3145a6-218e-423e-98a9-41fb3cc2dc0b" LabelZoomType="0" NoteID="f160a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-40" Description="0 (40, 40)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="hello" SizeUnit="DT" Height="40.0000" Width="40.0000" NoteID="a1b7a332-eb21-f011-82c5-00155d73340f" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="4" SortOrder="3" Name="SO302000-Shipment (CustomerID.AcctName)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="Document" ExprValue="CustomerID.AcctName" SampleType="H" SampleValue="Boscov's Dept Store Inc." DoSubstitute="0" NoteID="ab09cf38-6b97-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" justBlockType="FB" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="41" SortOrder="40" Active="1" ExprCode="iStar-8A-Packing for JCPenny-041" ExprType="H" DataElementID="fdd11e2b-b486-4e22-bbc0-0111c4596ef5" PosX="55.0000" PosY="30.0000" ReverseRule="0" FontID="76f66a27-168f-4e0d-9f9a-38dccdddc34a" JustificationID="cf2f6dee-5671-447d-bf8f-b389d25bbc95" LabelZoomType="0" NoteID="ef60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-030" Description="0 (30, 30)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" Height="30.0000" Width="30.0000" NoteID="e22fb238-5bf0-ee11-a960-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="161" SortOrder="28" Name="SO302000-CurrentDocument (User Defined Field 5)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCCustomField5" SampleType="H" SampleValue="300115755209" DoSubstitute="0" NoteID="af4cb008-fa30-f011-82c6-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="40" SortOrder="39" Active="1" ExprCode="iStar-8A-Packing for JCPenny-040" ExprType="H" DataElementID="fe974e52-8c3c-4a7b-8783-c2587ff7b9df" PosX="65.0000" PosY="24.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="ed60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="147" SortOrder="14" Name="SO302000-CurrentDocument (EDI Department Number)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDepartmentNumber" SampleType="H" SampleValue="00153" DoSubstitute="0" NoteID="c7b0e3cb-8197-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="39" SortOrder="38" Active="1" ExprCode="iStar-8A-Packing for JCPenny-039" ExprType="H" ExprValue="SUB" PosX="58.0000" PosY="24.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="eb60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="37" SortOrder="37" Active="1" ExprCode="iStar-8A-Packing for JCPenny-037" ExprType="H" DataElementID="f826f159-92f5-4b4d-9564-bec53c52229e" PosX="65.0000" PosY="21.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="e960a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="6" SortOrder="5" Name="SO302000-CurrentDocument (Purchase Order Number)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCPONumber" SampleType="H" SampleValue="0215-6524823-0554" DoSubstitute="0" NoteID="be3b94fe-6b97-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="35" SortOrder="35" Active="1" ExprCode="iStar-8A-Packing for JCPenny-035" ExprType="H" ExprValue="PO" PosX="58.0000" PosY="21.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="e760a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="33" SortOrder="33" Active="1" ExprCode="iStar-8A-Packing for JCPenny-033" ExprType="H" DataElementID="7ee2dc31-ab43-473d-a692-b92d2d84a0a0" PosX="75.0000" PosY="18.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="e560a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="160" SortOrder="27" Name="SO302000-Shipment (CustomerID.AcctCD)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Document" ExprValue="CustomerID.AcctCD" SampleType="H" SampleValue="001234" DoSubstitute="0" NoteID="4d2a571c-f330-f011-82c6-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="31" SortOrder="31" Active="1" ExprCode="iStar-8A-Packing for JCPenny-031" ExprType="H" ExprValue="SUPP #" PosX="58.0000" PosY="18.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="e360a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="29" SortOrder="29" Active="1" ExprCode="iStar-8A-Packing for JCPenny-029" ExprType="H" DataElementID="9d599adc-b0d9-4ba9-a11d-ad9dff06a4b1" PosX="10.0000" PosY="23.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="e160a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="154" SortOrder="21" Name="SO302000-Shipping Address (Postal Code) - (sub-Prepend-420-Barcode) - (barcode-GS1-Code128-150-NoHRI" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="PostalCode" SampleType="H" SampleValue="19606" DoSubstitute="1" SubstitutionID="c8c3b34f-eff7-4f7b-964c-7175b5d2029c" BarcodeID="467ee919-d56e-48a9-b695-e0a83da7a3fd" NoteID="5fa1f5fe-f4a1-ef11-82ba-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+            <ALBarcode Name="Code128-100-noHRI" Description="Code 128 height 100 no HRI" SampleValue="0194901234567894310100035590" Active="1" IsSystem="0" AllowExport="1" Language="ZPL" BarcodeType="C" Dimension="1" FormatID="aae904b5-c69b-4a18-ae3e-776b8e3cedb3" NoteID="c112786c-8b6b-ef11-a975-dc46288b05dc">
+              <ALBarcodeOption LineNbr="6" SortOrder="6" Option="m" Value="N" NoteID="dba80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="5" SortOrder="5" Option="e" Value="N" NoteID="daa80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="4" SortOrder="4" Option="g" Value="N" NoteID="d9a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="3" SortOrder="3" Option="f" Value="N" NoteID="d8a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="2" SortOrder="2" Option="h" Value="100" NoteID="d7a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+              <ALBarcodeOption LineNbr="1" SortOrder="1" Option="o" Value="N" NoteID="d6a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+            </ALBarcode>
+            <ALSubstitution Name="Prepend-420-Barcode" Description="Prepend 420" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="93f36e9a-f6a1-ef11-82ba-00155d73340f">
+              <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'420'" NoteID="96f36e9a-f6a1-ef11-82ba-00155d73340f" />
+            </ALSubstitution>
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="27" SortOrder="27" Active="1" ExprCode="iStar-8A-Packing for JCPenny-027" ExprType="H" DataElementID="977277e4-c8f0-4d83-a924-1da5ba449ded" PosX="0.0000" PosY="21.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" JustificationID="ec8b3346-d5d9-4505-9fe9-88926135f610" LabelZoomType="0" NoteID="df60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="155" SortOrder="22" Name="SO302000-Shipping Address (Postal Code) - (sub-Prepend-420-Readable)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="PostalCode" SampleType="H" SampleValue="19606" DoSubstitute="1" SubstitutionID="d0a5cd00-db29-455f-b207-01fb3de93b3d" NoteID="3f44f4ad-f6a1-ef11-82ba-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+            <ALSubstitution Name="Prepend-420-Readable" Description="Prepend (420)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="2f029c85-f6a1-ef11-82ba-00155d73340f">
+              <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'(420)'" NoteID="08c3bc8c-f6a1-ef11-82ba-00155d73340f" />
+            </ALSubstitution>
+          </ALDataElement>
+          <ALJustification Name="C-000-055" Description="C-000-055" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="55.0000" MaxLines="1" SizeUnit="MM" NoteID="4a5f9834-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="25" SortOrder="25" Active="1" ExprCode="iStar-8A-Packing for JCPenny-025" ExprType="H" ExprValue="^BY3,3" ReverseRule="0" LabelZoomType="0" NoteID="dd60a447-31bc-f111-91f5-00155d0a3e0f" />
+        <ALModelExpr LineNbr="23" SortOrder="23" Active="1" ExprCode="iStar-8A-Packing for JCPenny-023" ExprType="H" ExprValue="Ship to Post:" PosX="2.0000" PosY="18.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="db60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="21" SortOrder="21" Active="1" ExprCode="iStar-8A-Packing for JCPenny-021" ExprType="H" DataElementID="c970d88f-52c6-4ab0-a18d-1c87df1ac7cc" PosX="40.0000" PosY="14.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" JustificationID="cf2f6dee-5671-447d-bf8f-b389d25bbc95" LabelZoomType="0" NoteID="d960a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="146" SortOrder="13" Name="SO302000-Shipping Address (Postal Code)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="PostalCode" SampleType="H" SampleValue="19606" DoSubstitute="0" NoteID="412e2889-8097-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="19" SortOrder="19" Active="1" ExprCode="iStar-8A-Packing for JCPenny-019" ExprType="H" DataElementID="5b6805af-5d31-4fbd-86d8-8b8b85f4905c" PosX="40.0000" PosY="11.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="d760a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="145" SortOrder="19" Name="SO302000-Shipping Address ([City,StateID]) - (sub-JOIN_BY_SPACE)" Active="1" IsSystem="1" GenName="1" CategoryID="2301f03a-6e8f-4a01-bec0-a3e94e438b8e" Description="Shipping Address ([City,StateID,PostalCode]) -&gt; (sub:Join array by Space)" ExprType="F" BasedOn="array" ExprValue="ToArray" Arg1="Shipping_Address.City" Arg2="Shipping_Address.State?.StateID" DefaultValue="ToArray" SampleType="F" SampleValue="['NORTHVALE', 'NJ', '07647']" DoSubstitute="1" SubstitutionID="8e405ce2-fbad-40aa-8138-93424d88e73d" NoteID="afea485f-8097-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+            <ALSubstitution Name="JOIN_BY_SPACE" Description="Join array by Space" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="85a0050d-1064-ee11-b4fe-f0b61e7e1a57">
+              <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" ChildSubstitutionID="8349e9f0-17f0-4e2a-b5c3-ba8e27395b47" Arg1="_this_" Arg2="' '" NoteID="127c47f8-8c55-ed11-a409-0492266d8119" />
+            </ALSubstitution>
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="17" SortOrder="17" Active="1" ExprCode="iStar-8A-Packing for JCPenny-017" ExprType="H" DataElementID="8dfca252-920c-4d24-9426-54e39098355a" PosX="40.0000" PosY="8.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="d560a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="13" SortOrder="12" Name="SO302000-Shipping Address (Address Line 2)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="AddressLine2" SampleType="H" SampleValue="5 BIRCHMONT DRIVE" DoSubstitute="0" NoteID="e10f9e1a-7f97-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="15" SortOrder="15" Active="1" ExprCode="iStar-8A-Packing for JCPenny-015" ExprType="H" DataElementID="0fe0073e-b3e7-4379-a616-d3a787c44f1a" PosX="40.0000" PosY="5.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="d360a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="12" SortOrder="11" Name="SO302000-Shipping Address (Address Line 1)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="AddressLine1" SampleType="H" SampleValue="BOSCOV'S DIST CTR #15" DoSubstitute="0" NoteID="535807f2-7e97-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="13" SortOrder="13" Active="1" ExprCode="iStar-8A-Packing for JCPenny-013" ExprType="H" DataElementID="e065118a-0a6d-4525-8c78-fc50fb87f973" PosX="75.0000" PosY="2.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="d160a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="185" SortOrder="52" Name="SO302000-CurrentDocument (EDI Distribution Center)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="000044" DoSubstitute="0" SubstitutionID="17ffa460-b07b-40af-b194-657a395ece24" NoteID="2270a33e-4bbb-f111-91f5-00155d0a3e0f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+            <ALSubstitution Name="PADDED_INT_10" Description="math.format 'D10'" Active="1" IsSystem="1" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="96a56a9c-3f55-f111-82ca-97bb00e902b8">
+              <ALSubstitutionDetail LineNbr="3" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="e6b0971e-f8a3-4667-a857-c0d26fd4a57a" Arg1="_this_" Arg2="000000" NoteID="369e8975-45bb-f111-91f5-00155d0a3e0f" />
+              <ALSubstitutionDetail LineNbr="2" SortOrder="2" Active="1" IsSystem="1" ChildSubstitutionID="e6b0971e-f8a3-4667-a857-c0d26fd4a57a" Arg1="_this_" Arg2="000000" NoteID="a25dd5d4-42bb-f111-91f5-00155d0a3e0f" />
+              <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="5400a195-be39-42f2-a731-a71dc217f8c8" Arg1="_this_" Arg2="'D10'" NoteID="5bd28600-9190-ee11-a467-3c6aa7cb36ca" />
+            </ALSubstitution>
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="11" SortOrder="11" Active="1" ExprCode="iStar-8A-Packing for JCPenny-011" ExprType="H" ExprValue="J. C. Penney's" PosX="45.0000" PosY="2.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="cf60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="9" SortOrder="9" Active="1" ExprCode="iStar-8A-Packing for JCPenny-009" ExprType="H" ExprValue="TO:" PosX="38.0000" PosY="2.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="cd60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="7" SortOrder="7" Active="1" ExprCode="iStar-8A-Packing for JCPenny-007" ExprType="H" ExprValue="Pine Brook, NJ 07058" PosX="4.0000" PosY="11.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="cb60a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="5" SortOrder="5" Active="1" ExprCode="iStar-8A-Packing for JCPenny-005" ExprType="H" ExprValue="34 Maple Avenue" PosX="4.0000" PosY="8.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="c960a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="3" SortOrder="3" Active="1" ExprCode="iStar-8A-Packing for JCPenny-003" ExprType="H" ExprValue="Stanley Creations, Inc." PosX="4.0000" PosY="5.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="c760a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="1" SortOrder="1" Active="1" ExprCode="iStar-8A-Packing for JCPenny-001" ExprType="H" ExprValue="FROM:" PosX="2.0000" PosY="2.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="c560a447-31bc-f111-91f5-00155d0a3e0f">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelPrinter LineNbr="8" SortOrder="8" Active="1" UserID="f8772e4f-af56-4c9c-b974-1f18783036b1" PrinterID="bc023aa5-df65-48e0-9cf9-5df43c75a898" NoteID="a60cef53-3bb8-f111-91f5-00155d0a3e0f" />
+        <ALModelPrinter LineNbr="7" SortOrder="7" Active="1" UserID="8df1d26f-fb9c-42ca-bd09-bfd10948c45b" PrinterID="033590df-0f13-4df6-8866-60b356f654d6" NoteID="626b5a45-32b8-f111-91f5-00155d0a3e0f" />
+        <ALModelPrinter LineNbr="6" SortOrder="6" Active="1" UserID="8d76c07b-a302-4aa9-a73c-d0023bf8f16e" PrinterID="02678747-9ee2-4012-ab3a-47840c1ae6c9" NoteID="20bdc81d-8ba0-f111-91f2-00155d0a3e0f" />
+        <ALModelPrinter LineNbr="5" SortOrder="5" Active="1" UserID="ff63201c-6b1f-4e65-b6ca-af4e3fca516e" PrinterID="02678747-9ee2-4012-ab3a-47840c1ae6c9" NoteID="e85f12a5-119c-f111-91ef-00155d0a3e0f" />
+        <ALModelPrinter LineNbr="4" SortOrder="4" Active="1" UserID="6b518798-390b-4e72-ac8c-eb607098224d" PrinterID="02678747-9ee2-4012-ab3a-47840c1ae6c9" NoteID="e65f12a5-119c-f111-91ef-00155d0a3e0f" />
+        <ALModelPrinter LineNbr="3" SortOrder="3" Active="1" UserID="9d1f61ce-3c00-4dc4-8041-5c5e5a348fb5" PrinterID="02678747-9ee2-4012-ab3a-47840c1ae6c9" NoteID="e45f12a5-119c-f111-91ef-00155d0a3e0f" />
+        <ALModelPrinter LineNbr="2" SortOrder="2" Active="1" UserID="dd3d0d1f-8adc-40fe-ae96-f606aa1e59cc" PrinterID="bc023aa5-df65-48e0-9cf9-5df43c75a898" NoteID="fd881ba2-e955-f111-82ca-97bb00e902b8" />
+        <ALModelPrinter LineNbr="1" SortOrder="1" Active="1" UserID="60d92694-8f8b-4edc-af88-fb834627ea16" PrinterID="bc023aa5-df65-48e0-9cf9-5df43c75a898" NoteID="fb881ba2-e955-f111-82ca-97bb00e902b8" />
+      </row>
+    </ALModel>
+  </data>
+</data-set>
