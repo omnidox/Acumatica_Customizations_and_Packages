@@ -56,18 +56,53 @@
   </layout>
   <data>
     <ALModel>
-      <row LabelID="7aabc0c2-7b3c-4ceb-b463-741314bc8eb3" Name="masterpack JCPENNEY U.C.C.-128 label" Active="1" IsSystem="0" Description="JCPenney master pack carton label (ship-to postal and FOR store GS1-128 barcodes), 4x6 ZPL" ModelType="S" CategoryID="0730f79f-f891-4b6b-89f1-b0a19374d13a" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" BasedOnView="Packages" HideWhenInGroup="0" AllowExport="1" FilterRuleID="e14bdeb8-b4db-4c99-b489-9000b1fd61e4" ReverseFilter="0" HideInstead="1" IgnoreRotationOnRender="0" PrintRuleID="50b4055d-e89d-4f87-9a11-6c775e02ce1e" ReversePrint="0" Language="ZPL" FormatID="38e34de2-cadf-4f92-86e4-c26fa1521207" ImageUrl="https://istar.privatecloudcorp.com/AcumaticaERP/Frames/GetFile.ashx?fileID=e30c2a2d-5d84-4533-ab09-0e546b87eb2c" SizeUnit="MM" DealingMode="0" SendPauseEvery="0" PrintOnOtherDensity="PA" NumberingID="" NoteID="369d721d-1445-4a44-8af7-75c1dc8c28d9">
+      <row LabelID="7aabc0c2-7b3c-4ceb-b463-741314bc8eb3" Name="masterpack JCPENNEY U.C.C.-128 label" Active="1" IsSystem="0" Description="JCPenney master pack carton label (ship-to postal and FOR store GS1-128 barcodes), 4x6 ZPL" ModelType="S" CategoryID="0730f79f-f891-4b6b-89f1-b0a19374d13a" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" BasedOnView="Packages" HideWhenInGroup="0" AllowExport="1" FilterRuleID="e14bdeb8-b4db-4c99-b489-9000b1fd61e4" ReverseFilter="0" HideInstead="1" IgnoreRotationOnRender="0" PrintRuleID="50b4055d-e89d-4f87-9a11-6c775e02ce1e" ReversePrint="0" Language="ZPL" FormatID="38e34de2-cadf-4f92-86e4-c26fa1521207" ImageUrl="http://localhost:8888/AcumaticaERP/Frames/GetFile.ashx?fileID=6a456453-f75d-4a3c-92a7-7bcd21a4527f" DealingMode="0" SendPauseEvery="0" PrintOnOtherDensity="PA" NumberingID="" SizeUnit="MM" NoteID="369d721d-1445-4a44-8af7-75c1dc8c28d9">
         <ALCategory Name="iStar" Description="iStar" Active="1" IsSystem="1" AllowExport="1" NoteID="27d0b349-6997-ef11-a97e-dc46288b05dc" />
         <ALFormat Name="4X6" Active="1" IsSystem="1" AllowExport="1" Description="4 x 6, 203 dpi" Width="4.0000" Height="6.0000" PrintDensityType="M" PrintDensity="8" SizeUnit="IN" Rotation="000" UseWithPdf="0" PageSize="0" PageOrientation="0" PageHAlign="2" PageVAlign="2" NoteID="62bcde6b-eb55-f111-82ca-97bb00e902b8" />
         <ALRule Name="CustomerIsJCP" Active="1" IsSystem="1" AllowExport="1" IsComposite="0" Description="Packing Label for JCP" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Expression="Document.CustomerID.AcctName | string.Contains 'PENNEY'" NoteID="38b80d73-4f4c-f011-82c7-00155d73340f" />
-        <ALModelGraphic LineNbr="8" SortOrder="8" Active="1" GraphicType="V" FromX="58.0000" FromY="58.0000" ToX="58.0000" ToY="79.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="acbe0ebb-12a0-487b-b11a-9cea4b351e32" SizeUnit="DT" />
-        <ALModelGraphic LineNbr="7" SortOrder="7" Active="1" GraphicType="V" FromX="58.0000" FromY="16.0000" ToX="58.0000" ToY="36.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="91eac103-c830-420e-af9b-012646ca0f13" SizeUnit="DT" />
-        <ALModelGraphic LineNbr="6" SortOrder="6" Active="1" GraphicType="V" FromX="38.0000" FromY="0.0000" ToX="38.0000" ToY="16.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="d05a208f-fecc-43c8-a0cb-77bd443b24eb" SizeUnit="DT" />
-        <ALModelGraphic LineNbr="5" SortOrder="5" Active="1" GraphicType="H" FromX="0.0000" FromY="79.0000" ToX="100.0000" ToY="79.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="f59d6693-113a-43b9-91d1-40df93d8a67f" SizeUnit="DT" />
-        <ALModelGraphic LineNbr="4" SortOrder="4" Active="1" GraphicType="H" FromX="0.0000" FromY="58.0000" ToX="100.0000" ToY="58.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="fd76c217-a345-4d03-b76c-b1b98caff950" SizeUnit="DT" />
-        <ALModelGraphic LineNbr="3" SortOrder="3" Active="1" GraphicType="H" FromX="0.0000" FromY="36.0000" ToX="100.0000" ToY="36.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="75ef15ad-171f-411f-9c29-9b2b4f1a0f90" SizeUnit="DT" />
-        <ALModelGraphic LineNbr="2" SortOrder="2" Active="1" GraphicType="H" FromX="0.0000" FromY="16.0000" ToX="100.0000" ToY="16.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="74e34db9-04db-45d5-9fb8-dfb867c81dfd" SizeUnit="DT" />
-        <ALModelGraphic LineNbr="1" SortOrder="1" Active="1" GraphicType="B" FromX="0.0000" FromY="0.0000" ToX="100.0000" ToY="100.0000" ReverseDots="0" Thickness="2" Rounding="0" NoteID="6dfa09cc-f79c-475a-8c5e-cc3d1bcf6c93" SizeUnit="DT" />
+        <ALModelGraphic LineNbr="8" SortOrder="8" Active="1" GraphicType="V" FromX="58.0000" FromY="58.0000" ToX="58.0000" ToY="79.0000" ReverseDots="0" Thickness="2" SizeUnit="DT" Rounding="0" NoteID="acbe0ebb-12a0-487b-b11a-9cea4b351e32" />
+        <ALModelGraphic LineNbr="7" SortOrder="7" Active="1" GraphicType="V" FromX="58.0000" FromY="16.0000" ToX="58.0000" ToY="36.0000" ReverseDots="0" Thickness="2" SizeUnit="DT" Rounding="0" NoteID="91eac103-c830-420e-af9b-012646ca0f13" />
+        <ALModelGraphic LineNbr="6" SortOrder="6" Active="1" GraphicType="V" FromX="38.0000" FromY="0.0000" ToX="38.0000" ToY="16.0000" ReverseDots="0" Thickness="2" SizeUnit="DT" Rounding="0" NoteID="d05a208f-fecc-43c8-a0cb-77bd443b24eb" />
+        <ALModelGraphic LineNbr="5" SortOrder="5" Active="1" GraphicType="H" FromX="0.0000" FromY="79.0000" ToX="100.0000" ToY="79.0000" ReverseDots="0" Thickness="2" SizeUnit="DT" Rounding="0" NoteID="f59d6693-113a-43b9-91d1-40df93d8a67f" />
+        <ALModelGraphic LineNbr="4" SortOrder="4" Active="1" GraphicType="H" FromX="0.0000" FromY="58.0000" ToX="100.0000" ToY="58.0000" ReverseDots="0" Thickness="2" SizeUnit="DT" Rounding="0" NoteID="fd76c217-a345-4d03-b76c-b1b98caff950" />
+        <ALModelGraphic LineNbr="3" SortOrder="3" Active="1" GraphicType="H" FromX="0.0000" FromY="36.0000" ToX="100.0000" ToY="36.0000" ReverseDots="0" Thickness="2" SizeUnit="DT" Rounding="0" NoteID="75ef15ad-171f-411f-9c29-9b2b4f1a0f90" />
+        <ALModelGraphic LineNbr="2" SortOrder="2" Active="1" GraphicType="H" FromX="0.0000" FromY="16.0000" ToX="100.0000" ToY="16.0000" ReverseDots="0" Thickness="2" SizeUnit="DT" Rounding="0" NoteID="74e34db9-04db-45d5-9fb8-dfb867c81dfd" />
+        <ALModelGraphic LineNbr="1" SortOrder="1" Active="1" GraphicType="B" FromX="0.0000" FromY="0.0000" ToX="100.0000" ToY="100.0000" ReverseDots="0" Thickness="2" SizeUnit="DT" Rounding="0" NoteID="6dfa09cc-f79c-475a-8c5e-cc3d1bcf6c93" />
+        <ALModelExpr LineNbr="50" SortOrder="50" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-050" ExprType="H" ExprValue="^FO430,524^BY3,3^BCN,110,N,N,N^FD00000000^FS" ReverseRule="0" LabelZoomType="0" NoteID="23ae5735-1ede-41d6-999f-17555cc3259d" />
+        <ALModelExpr LineNbr="49" SortOrder="49" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-049" ExprType="H" ExprValue="MASTER PACK" PosX="0.0000" PosY="84.0000" ReverseRule="0" FontID="b847d57e-aa38-419a-9941-a663c0e2c023" JustificationID="ba3145a6-218e-423e-98a9-41fb3cc2dc0b" LabelZoomType="0" NoteID="96a5f0ab-b312-42ba-b029-73c1eaaacf46">
+          <ALFont Name="0 (125, 125)" Description="0 (125, 125)" Active="1" IsSystem="0" AllowExport="1" FontType="0" Language="ZPL" SampleValue="123ABc" SizeUnit="DT" Height="125.0000" Width="125.0000" NoteID="9368b03e-0593-ef11-82b9-00155d73340f" />
+          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" JustBlockType="FB" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="48" SortOrder="48" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-048" ExprType="H" ExprValue="Invoice No. [INVOICE#]" PosX="57.5000" PosY="53.5000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="f80e1e17-c924-447f-97d1-1ee221d224e5">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="47" SortOrder="47" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-047" ExprType="H" ExprValue="[UNITS]" PosX="18.0000" PosY="51.5000" ReverseRule="0" FontID="76f66a27-168f-4e0d-9f9a-38dccdddc34a" LabelZoomType="0" NoteID="0a0c5440-fe0f-459a-843b-6715dc16db25">
+          <ALFont Name="0-030" Description="0 (30, 30)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" Height="30.0000" Width="30.0000" NoteID="e22fb238-5bf0-ee11-a960-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="46" SortOrder="46" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-046" ExprType="H" ExprValue="Units:" PosX="5.0000" PosY="51.5000" ReverseRule="0" FontID="76f66a27-168f-4e0d-9f9a-38dccdddc34a" LabelZoomType="0" NoteID="cb5d14b8-ecae-4ea8-8bc6-581bd9b5c43b">
+          <ALFont Name="0-030" Description="0 (30, 30)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" Height="30.0000" Width="30.0000" NoteID="e22fb238-5bf0-ee11-a960-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="45" SortOrder="45" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-045" ExprType="H" ExprValue="Dept:" PosX="5.0000" PosY="45.0000" ReverseRule="0" FontID="76f66a27-168f-4e0d-9f9a-38dccdddc34a" LabelZoomType="0" NoteID="6f67ead6-9cb7-4685-905b-22c110b78d44">
+          <ALFont Name="0-030" Description="0 (30, 30)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" Height="30.0000" Width="30.0000" NoteID="e22fb238-5bf0-ee11-a960-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="44" SortOrder="44" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-044" ExprType="H" ExprValue="PO #:" PosX="5.0000" PosY="38.5000" ReverseRule="0" FontID="76f66a27-168f-4e0d-9f9a-38dccdddc34a" LabelZoomType="0" NoteID="daad6ef3-3e3d-4cfd-acfe-0b052c9cfe81">
+          <ALFont Name="0-030" Description="0 (30, 30)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" Height="30.0000" Width="30.0000" NoteID="e22fb238-5bf0-ee11-a960-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="43" SortOrder="43" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-043" ExprType="H" ExprValue="Bill of Lading Number" PosX="61.0000" PosY="24.5000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="5290e48f-f404-4371-90f0-951c172112f2">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="42" SortOrder="42" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-042" ExprType="H" ExprValue="[PRO#]" PosX="69.0000" PosY="21.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="74f36983-49ec-487d-bd86-5b3bd5bef1e6">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="41" SortOrder="41" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-041" ExprType="H" ExprValue="Pro#:" PosX="61.0000" PosY="21.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="63f9ad5c-36ad-47dc-bd45-ed8b2e227aa7">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="40" SortOrder="40" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-040" ExprType="H" ExprValue="[CARRIER]" PosX="72.0000" PosY="18.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="ed720e88-798e-4ea3-a68a-1bc149584773">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="39" SortOrder="39" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-039" ExprType="H" ExprValue="Carrier:" PosX="61.0000" PosY="18.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="6a5a751d-8b35-4755-bc2d-93951cbc63bc">
+          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
         <ALModelExpr LineNbr="38" SortOrder="38" Active="0" ExprCode="masterpack JCPENNEY U.C.C.-128 label-038" ExprType="H" DataElementID="e065118a-0a6d-4525-8c78-fc50fb87f973" PosX="3.0000" PosY="46.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" JustificationID="ba3145a6-218e-423e-98a9-41fb3cc2dc0b" LabelZoomType="0" NoteID="5887054e-60fc-4c5d-a894-bfd0233f7b57">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
           <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="185" SortOrder="52" Name="SO302000-CurrentDocument (EDI Distribution Center)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="000044" DoSubstitute="0" SubstitutionID="17ffa460-b07b-40af-b194-657a395ece24" NoteID="2270a33e-4bbb-f111-91f5-00155d0a3e0f">
@@ -78,7 +113,7 @@
               <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="5400a195-be39-42f2-a731-a71dc217f8c8" Arg1="_this_" Arg2="'D10'" NoteID="5bd28600-9190-ee11-a467-3c6aa7cb36ca" />
             </ALSubstitution>
           </ALDataElement>
-          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" justBlockType="FB" />
+          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" JustBlockType="FB" />
         </ALModelExpr>
         <ALModelExpr LineNbr="37" SortOrder="37" Active="0" ExprCode="masterpack JCPENNEY U.C.C.-128 label-037" ExprType="H" DataElementID="6ba2564a-53bd-441e-8ec0-b6b91d5cc073" PosX="13.0000" PosY="80.0000" ReverseRule="0" LabelZoomType="0" NoteID="a48c4acc-d360-458d-881d-813b0c64423a">
           <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="148" SortOrder="15" Name="SO302000-SO Package Detail (GS1-128) - (barcode-GS1-Code128-175-NoHRI)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Packages" ExprValue="UsrTCUCC128" SampleType="H" SampleValue="00000228920277475636" DoSubstitute="0" BarcodeID="57480b2f-4d4d-49b9-8189-578f986aef6d" NoteID="a3501e45-cb64-f011-82c8-00155d73340f">
@@ -99,7 +134,7 @@
           <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="10" SortOrder="9" Name="SO302000-SO Package Detail (GS1-128)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Packages" ExprValue="UsrTCUCC128" SampleType="H" SampleValue="00000228920277475636" DoSubstitute="0" NoteID="a6501e45-cb64-f011-82c8-00155d73340f">
             <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
           </ALDataElement>
-          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" justBlockType="FB" />
+          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" JustBlockType="FB" />
         </ALModelExpr>
         <ALModelExpr LineNbr="34" SortOrder="34" Active="0" ExprCode="masterpack JCPENNEY U.C.C.-128 label-034" ExprType="H" ExprValue="SERIAL SHIPPING CONTAINER CODE" PosX="5.0000" PosY="74.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="ae45b5ec-9f4e-4661-a1b5-33025ee1dafc">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
@@ -109,7 +144,7 @@
           <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="146" SortOrder="13" Name="SO302000-Shipping Address (Postal Code)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="PostalCode" SampleType="H" SampleValue="19606" DoSubstitute="0" NoteID="412e2889-8097-ef11-82b9-00155d73340f">
             <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
           </ALDataElement>
-          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" JustBlockType="FB" />
         </ALModelExpr>
         <ALModelExpr LineNbr="32" SortOrder="32" Active="0" ExprCode="masterpack JCPENNEY U.C.C.-128 label-032" ExprType="H" DataElementID="5b6805af-5d31-4fbd-86d8-8b8b85f4905c" PosX="63.0000" PosY="64.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="23c9bf40-2262-497d-b428-68750e93b0c2">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
@@ -135,12 +170,12 @@
         <ALModelExpr LineNbr="29" SortOrder="29" Active="0" ExprCode="masterpack JCPENNEY U.C.C.-128 label-029" ExprType="H" ExprValue="J. C. PENNEY'S" PosX="63.0000" PosY="55.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="cea9d336-5428-4f6d-995a-39e72cbcded3">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
         </ALModelExpr>
-        <ALModelExpr LineNbr="28" SortOrder="28" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-028" ExprType="H" DataElementID="7253cf79-4551-4d49-8636-2c83c14605e0" PosX="58.0000" PosY="65.5000" ReverseRule="0" FontID="931d38c5-a66f-4dbb-b04f-24c503c27c60" LabelZoomType="0" NoteID="c1796555-6bde-4a33-825e-0789128f72c2" JustificationID="cf2f6dee-5671-447d-bf8f-b389d25bbc95">
+        <ALModelExpr LineNbr="28" SortOrder="28" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-028" ExprType="H" DataElementID="7253cf79-4551-4d49-8636-2c83c14605e0" PosX="58.0000" PosY="65.5000" ReverseRule="0" FontID="931d38c5-a66f-4dbb-b04f-24c503c27c60" JustificationID="cf2f6dee-5671-447d-bf8f-b389d25bbc95" LabelZoomType="0" NoteID="c1796555-6bde-4a33-825e-0789128f72c2">
           <ALFont Name="0-070" Description="0 (70, 60)" Active="1" IsSystem="0" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" SizeUnit="DT" Height="70.0000" Width="60.0000" NoteID="ab1c0245-f9eb-4f44-8e12-ef7615222b98" />
           <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="5" SortOrder="4" Name="SO302000-CurrentDocument (EDI Distribution Center)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="00044" DoSubstitute="0" NoteID="1642e8c1-6b97-ef11-82b9-00155d73340f">
             <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
           </ALDataElement>
-          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" JustBlockType="FB" />
         </ALModelExpr>
         <ALModelExpr LineNbr="27" SortOrder="27" Active="0" ExprCode="masterpack JCPENNEY U.C.C.-128 label-027" ExprType="H" ExprValue="FOR:" PosX="61.0000" PosY="52.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="d8159d46-22e5-4dcc-bd84-ca452bc8bde0">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
@@ -169,7 +204,7 @@
               <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'(91)'" NoteID="b0360e84-46bb-f111-91f5-00155d0a3e0f" />
             </ALSubstitution>
           </ALDataElement>
-          <ALJustification Name="C-000-055" Description="C-000-055" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="55.0000" MaxLines="1" SizeUnit="MM" NoteID="4a5f9834-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+          <ALJustification Name="C-000-055" Description="C-000-055" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="55.0000" MaxLines="1" SizeUnit="MM" NoteID="4a5f9834-df96-ef11-a97e-dc46288b05dc" JustBlockType="FB" />
         </ALModelExpr>
         <ALModelExpr LineNbr="24" SortOrder="24" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-024" ExprType="H" ExprValue="FOR:" PosX="5.0000" PosY="59.5000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="681d1cd0-2552-463f-908e-9839c0b65926">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
@@ -179,14 +214,14 @@
           <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="4" SortOrder="3" Name="SO302000-Shipment (CustomerID.AcctName)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="Document" ExprValue="CustomerID.AcctName" SampleType="H" SampleValue="Boscov's Dept Store Inc." DoSubstitute="0" NoteID="ab09cf38-6b97-ef11-82b9-00155d73340f">
             <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
           </ALDataElement>
-          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" justBlockType="FB" />
+          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" JustBlockType="FB" />
         </ALModelExpr>
         <ALModelExpr LineNbr="22" SortOrder="22" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-022" ExprType="H" DataElementID="fdd11e2b-b486-4e22-bbc0-0111c4596ef5" PosX="58.0000" PosY="29.0000" ReverseRule="0" FontID="c6c78c88-2129-4dd1-b883-d3cc390756d4" JustificationID="cf2f6dee-5671-447d-bf8f-b389d25bbc95" LabelZoomType="0" NoteID="33787244-eee7-4c26-9591-b0e624c70726">
           <ALFont Name="0-40" Description="0 (40, 40)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="hello" SizeUnit="DT" Height="40.0000" Width="40.0000" NoteID="a1b7a332-eb21-f011-82c5-00155d73340f" />
           <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="161" SortOrder="28" Name="SO302000-CurrentDocument (User Defined Field 5)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCCustomField5" SampleType="H" SampleValue="300115755209" DoSubstitute="0" NoteID="af4cb008-fa30-f011-82c6-00155d73340f">
             <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
           </ALDataElement>
-          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" JustBlockType="FB" />
         </ALModelExpr>
         <ALModelExpr LineNbr="21" SortOrder="21" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-021" ExprType="H" DataElementID="fe974e52-8c3c-4a7b-8783-c2587ff7b9df" PosX="18.0000" PosY="45.0000" ReverseRule="0" FontID="76f66a27-168f-4e0d-9f9a-38dccdddc34a" LabelZoomType="0" NoteID="fdb9d224-64d3-469e-831f-7fd922e3da08">
           <ALFont Name="0-030" Description="0 (30, 30)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" Height="30.0000" Width="30.0000" NoteID="e22fb238-5bf0-ee11-a960-dc46288b05dc" />
@@ -240,7 +275,7 @@
               <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'(420)'" NoteID="08c3bc8c-f6a1-ef11-82ba-00155d73340f" />
             </ALSubstitution>
           </ALDataElement>
-          <ALJustification Name="C-000-055" Description="C-000-055" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="55.0000" MaxLines="1" SizeUnit="MM" NoteID="4a5f9834-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+          <ALJustification Name="C-000-055" Description="C-000-055" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="55.0000" MaxLines="1" SizeUnit="MM" NoteID="4a5f9834-df96-ef11-a97e-dc46288b05dc" JustBlockType="FB" />
         </ALModelExpr>
         <ALModelExpr LineNbr="13" SortOrder="13" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-013" ExprType="H" ExprValue="^BY3,3" ReverseRule="0" LabelZoomType="0" NoteID="45f2a909-6274-4331-828d-91db2a93c3b3" />
         <ALModelExpr LineNbr="12" SortOrder="12" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-012" ExprType="H" ExprValue="Ship to Postal Code:" PosX="5.0000" PosY="18.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="97017929-bd93-4af4-8cba-b9461a14a895">
@@ -251,7 +286,7 @@
           <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="146" SortOrder="13" Name="SO302000-Shipping Address (Postal Code)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="PostalCode" SampleType="H" SampleValue="19606" DoSubstitute="0" NoteID="412e2889-8097-ef11-82b9-00155d73340f">
             <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
           </ALDataElement>
-          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
+          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" JustBlockType="FB" />
         </ALModelExpr>
         <ALModelExpr LineNbr="10" SortOrder="10" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-010" ExprType="H" DataElementID="5b6805af-5d31-4fbd-86d8-8b8b85f4905c" PosX="43.0000" PosY="11.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="1c95e529-70a5-4fb4-ae31-98a7db920e86">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
@@ -306,42 +341,6 @@
         <ALModelPrinter LineNbr="3" SortOrder="3" Active="1" UserID="9d1f61ce-3c00-4dc4-8041-5c5e5a348fb5" PrinterID="02678747-9ee2-4012-ab3a-47840c1ae6c9" NoteID="6c527b61-a80e-4ddd-8e6e-305ebf967c37" />
         <ALModelPrinter LineNbr="2" SortOrder="2" Active="1" UserID="dd3d0d1f-8adc-40fe-ae96-f606aa1e59cc" PrinterID="bc023aa5-df65-48e0-9cf9-5df43c75a898" NoteID="f4a39119-8221-4833-9276-52d9f6654fb0" />
         <ALModelPrinter LineNbr="1" SortOrder="1" Active="1" UserID="60d92694-8f8b-4edc-af88-fb834627ea16" PrinterID="bc023aa5-df65-48e0-9cf9-5df43c75a898" NoteID="e8bf4640-0c1f-4043-aac4-938fd36dd3e8" />
-        <ALModelExpr LineNbr="39" SortOrder="39" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-039" ExprType="H" ExprValue="Carrier:" PosX="61.0000" PosY="18.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="6a5a751d-8b35-4755-bc2d-93951cbc63bc">
-          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="40" SortOrder="40" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-040" ExprType="H" ExprValue="[CARRIER]" PosX="72.0000" PosY="18.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="ed720e88-798e-4ea3-a68a-1bc149584773">
-          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="41" SortOrder="41" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-041" ExprType="H" ExprValue="Pro#:" PosX="61.0000" PosY="21.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="63f9ad5c-36ad-47dc-bd45-ed8b2e227aa7">
-          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="42" SortOrder="42" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-042" ExprType="H" ExprValue="[PRO#]" PosX="69.0000" PosY="21.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="74f36983-49ec-487d-bd86-5b3bd5bef1e6">
-          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="43" SortOrder="43" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-043" ExprType="H" ExprValue="Bill of Lading Number" PosX="61.0000" PosY="24.5000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="5290e48f-f404-4371-90f0-951c172112f2">
-          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="44" SortOrder="44" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-044" ExprType="H" ExprValue="PO #:" PosX="5.0000" PosY="38.5000" ReverseRule="0" FontID="76f66a27-168f-4e0d-9f9a-38dccdddc34a" LabelZoomType="0" NoteID="daad6ef3-3e3d-4cfd-acfe-0b052c9cfe81">
-          <ALFont Name="0-030" Description="0 (30, 30)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" Height="30.0000" Width="30.0000" NoteID="e22fb238-5bf0-ee11-a960-dc46288b05dc" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="45" SortOrder="45" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-045" ExprType="H" ExprValue="Dept:" PosX="5.0000" PosY="45.0000" ReverseRule="0" FontID="76f66a27-168f-4e0d-9f9a-38dccdddc34a" LabelZoomType="0" NoteID="6f67ead6-9cb7-4685-905b-22c110b78d44">
-          <ALFont Name="0-030" Description="0 (30, 30)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" Height="30.0000" Width="30.0000" NoteID="e22fb238-5bf0-ee11-a960-dc46288b05dc" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="46" SortOrder="46" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-046" ExprType="H" ExprValue="Units:" PosX="5.0000" PosY="51.5000" ReverseRule="0" FontID="76f66a27-168f-4e0d-9f9a-38dccdddc34a" LabelZoomType="0" NoteID="cb5d14b8-ecae-4ea8-8bc6-581bd9b5c43b">
-          <ALFont Name="0-030" Description="0 (30, 30)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" Height="30.0000" Width="30.0000" NoteID="e22fb238-5bf0-ee11-a960-dc46288b05dc" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="47" SortOrder="47" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-047" ExprType="H" ExprValue="[UNITS]" PosX="18.0000" PosY="51.5000" ReverseRule="0" FontID="76f66a27-168f-4e0d-9f9a-38dccdddc34a" LabelZoomType="0" NoteID="0a0c5440-fe0f-459a-843b-6715dc16db25">
-          <ALFont Name="0-030" Description="0 (30, 30)" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" Height="30.0000" Width="30.0000" NoteID="e22fb238-5bf0-ee11-a960-dc46288b05dc" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="48" SortOrder="48" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-048" ExprType="H" ExprValue="Invoice No. [INVOICE#]" PosX="55.0000" PosY="53.5000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" JustificationID="cf2f6dee-5671-447d-bf8f-b389d25bbc95" LabelZoomType="0" NoteID="f80e1e17-c924-447f-97d1-1ee221d224e5">
-          <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
-          <ALJustification Name="C-055-100" Description="C-055-100" Active="1" IsSystem="1" AllowExport="1" Justification="C" FromX="55.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="d6c7d173-df96-ef11-a97e-dc46288b05dc" justBlockType="FB" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="49" SortOrder="49" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-049" ExprType="H" ExprValue="MASTER PACK" PosX="0.0000" PosY="84.0000" ReverseRule="0" FontID="b847d57e-aa38-419a-9941-a663c0e2c023" JustificationID="ba3145a6-218e-423e-98a9-41fb3cc2dc0b" LabelZoomType="0" NoteID="96a5f0ab-b312-42ba-b029-73c1eaaacf46">
-          <ALFont Name="0 (125, 125)" Description="0 (125, 125)" Active="1" IsSystem="0" AllowExport="1" FontType="0" Language="ZPL" SampleValue="123ABc" SizeUnit="DT" Height="125.0000" Width="125.0000" NoteID="9368b03e-0593-ef11-82b9-00155d73340f" />
-          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" justBlockType="FB" />
-        </ALModelExpr>
-        <ALModelExpr LineNbr="50" SortOrder="50" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-050" ExprType="H" ExprValue="^FO495,524^BY3,3^BCN,110,N,N,N^FD00000000^FS" ReverseRule="0" LabelZoomType="0" NoteID="23ae5735-1ede-41d6-999f-17555cc3259d" />
       </row>
     </ALModel>
   </data>
