@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALModel" file-name="ALModel-(Name)">
+    <link from="ALCategory (CategoryID)" to="ALModel (CategoryID)" />
+    <link from="ALMargin (MarginID)" to="ALModel (MarginID)" />
+    <link from="ALFormat (FormatID)" to="ALModel (FormatID)" />
+    <link from="ALRule (RuleID)" to="ALModel (FilterRuleID)" />
+    <link from="ALRule (RuleID)" to="ALModel (PrintRuleID)" />
+    <link from="ALModelGraphic (ModelID)" to="ALModel (LabelID)" />
+    <link from="ALModelChild (LabelID)" to="ALModel (LabelID)" />
+    <link from="ALModelExpr (LabelID)" to="ALModel (LabelID)" />
+    <link from="ALModelPrinter (LabelID)" to="ALModel (LabelID)" />
+    <link from="ALRuleDetail (RuleID)" to="ALRule (RuleID)" />
+    <link from="ALFont (FontID)" to="ALModelExpr (FontID)" />
+    <link from="ALColor (ColorID)" to="ALModelExpr (ForeColorID)" />
+    <link from="ALColor (ColorID)" to="ALModelExpr (BackColorID)" />
+    <link from="ALDataElement (RecordID)" to="ALModelExpr (DataElementID)" />
+    <link from="ALJustification (JustificationID)" to="ALModelExpr (JustificationID)" />
+    <link from="ALDataSource (SourceID)" to="ALDataElement (SourceID)" />
+    <link from="ALBarcode (BarcodeID)" to="ALDataElement (BarcodeID)" />
+    <link from="ALBarcodeOption (BarcodeID)" to="ALBarcode (BarcodeID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALDataElement (SubstitutionID)" />
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALContent (ContentID)" to="ALDataElement (ContentID)" />
+    <link from="ALContentElement (ContentID)" to="ALContent (ContentID)" />
+  </relations>
+  <layout>
+    <table name="ALModel">
+      <table name="ALCategory" uplink="(CategoryID) = (CategoryID)" />
+      <table name="ALMargin" uplink="(MarginID) = (MarginID)" />
+      <table name="ALFormat" uplink="(FormatID) = (FormatID)" />
+      <table name="ALRule" uplink="(FilterRuleID) = (RuleID)">
+        <table name="ALRuleDetail" uplink="(RuleID) = (RuleID)" />
+      </table>
+      <table name="ALModelGraphic" uplink="(LabelID) = (ModelID)" />
+      <table name="ALModelChild" uplink="(LabelID) = (LabelID)" />
+      <table name="ALModelExpr" uplink="(LabelID) = (LabelID)">
+        <table name="ALFont" uplink="(FontID) = (FontID)" />
+        <table name="ALColor" uplink="(ForeColorID) = (ColorID)" />
+        <table name="ALDataElement" uplink="(DataElementID) = (RecordID)">
+          <table name="ALDataSource" uplink="(SourceID) = (SourceID)" />
+          <table name="ALBarcode" uplink="(BarcodeID) = (BarcodeID)">
+            <table name="ALBarcodeOption" uplink="(BarcodeID) = (BarcodeID)" />
+          </table>
+          <table name="ALSubstitution" uplink="(SubstitutionID) = (SubstitutionID)">
+            <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+          </table>
+          <table name="ALContent" uplink="(ContentID) = (ContentID)">
+            <table name="ALContentElement" uplink="(ContentID) = (ContentID)" />
+          </table>
+        </table>
+        <table name="ALJustification" uplink="(JustificationID) = (JustificationID)" />
+      </table>
+      <table name="ALModelPrinter" uplink="(LabelID) = (LabelID)" />
+    </table>
+  </layout>
+  <data>
+    <ALModel>
+      <row LabelID="54c19ede-1645-4efa-8830-4d3d3bb929be" Name="iStar-5A-MasterPackingCartonLabel" Active="1" IsSystem="0" Description="Master Packing Carton Label" ModelType="S" CategoryID="0730f79f-f891-4b6b-89f1-b0a19374d13a" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" BasedOnView="Packages" HideWhenInGroup="0" AllowExport="1" ReverseFilter="0" HideInstead="0" IgnoreRotationOnRender="0" PrintRuleID="793b17c9-985e-447f-be38-eccefd311d86" ReversePrint="0" Language="ZPL" FormatID="16b16814-c2ed-49fe-a4bd-1c2f345a9f37" ImageUrl="http://localhost:8888/AcumaticaERP/Frames/GetFile.ashx?fileID=be879c57-4bfc-4ed5-926f-efa3ad66771f" DealingMode="0" SendPauseEvery="0" PrintOnOtherDensity="PA" NumberingID="" SizeUnit="MM" NoteID="86266dc6-f496-ef11-a97e-dc46288b05dc">
+        <ALCategory Name="iStar" Description="iStar" Active="1" IsSystem="1" AllowExport="1" NoteID="27d0b349-6997-ef11-a97e-dc46288b05dc" />
+        <ALFormat Name="4x3In-203DPI" Active="1" IsSystem="1" IsComposite="0" AllowExport="1" Description="4x3 Inches, 203 DPI" Width="4.0000" Height="3.0000" PrintDensityType="M" PrintDensity="8" SizeUnit="IN" Rotation="000" UseWithPdf="0" PageSize="1" PageOrientation="0" PageHAlign="3" PageVAlign="3" NoteID="5b6a6108-ef95-ef11-a97d-dc46288b05dc" />
+        <ALModelGraphic LineNbr="1" SortOrder="1" Active="0" GraphicType="B" FromX="0.0500" FromY="0.0500" ToX="99.9500" ToY="99.9500" ReverseDots="0" Thickness="1" SizeUnit="DT" Rounding="0" NoteID="91e218ef-f496-ef11-a97e-dc46288b05dc" />
+        <ALModelExpr LineNbr="14" SortOrder="6" Active="1" ExprCode="iStar-5A-MasterPackingCartonLabel-014" ExprType="H" DataElementID="fe974e52-8c3c-4a7b-8783-c2587ff7b9df" PosX="20.0000" PosY="21.0000" ReverseRule="0" NoteID="97a41e2f-8797-ef11-82b9-00155d73340f">
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="147" SortOrder="14" Name="SO302000-CurrentDocument (EDI Department Number)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDepartmentNumber" SampleType="H" SampleValue="00153" DoSubstitute="0" NoteID="c7b0e3cb-8197-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="13" SortOrder="4" Active="1" ExprCode="iStar-5A-MasterPackingCartonLabel-013" ExprType="H" DataElementID="9789b9ed-b7d9-4128-a029-d2f9cf0ae8f6" PosX="38.0000" PosY="13.0000" ReverseRule="0" NoteID="8f042403-8797-ef11-82b9-00155d73340f">
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="3" SortOrder="2" Name="SO302000-SO Package Detail (Carton #)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="Packages" ExprValue="UsrCartonNbr" SampleType="H" SampleValue="27747563" DoSubstitute="0" NoteID="6d0a658d-6a97-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="12" SortOrder="2" Active="1" ExprCode="iStar-5A-MasterPackingCartonLabel-012" ExprType="H" DataElementID="f826f159-92f5-4b4d-9564-bec53c52229e" PosX="17.0000" PosY="5.0000" ReverseRule="0" NoteID="3efba98f-8697-ef11-82b9-00155d73340f">
+          <ALDataElement SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="6" SortOrder="5" Name="SO302000-CurrentDocument (Purchase Order Number)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCPONumber" SampleType="H" SampleValue="0215-6524823-0554" DoSubstitute="0" NoteID="be3b94fe-6b97-ef11-82b9-00155d73340f">
+            <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+          </ALDataElement>
+        </ALModelExpr>
+        <ALModelExpr LineNbr="11" SortOrder="9" Active="0" ExprCode="iStar-5A-MasterPackingCartonLabel-011" ExprType="H" ExprValue="14 STORES" PosX="3.0000" PosY="88.0000" ReverseRule="0" JustificationID="ba3145a6-218e-423e-98a9-41fb3cc2dc0b" NoteID="136152bc-f596-ef11-a97e-dc46288b05dc">
+          <ALJustification Name="FULL-CENTER" Description="Default (centered, 0 to 100)" Active="1" AllowExport="1" Justification="C" FromX="0.0000" ToX="100.0000" MaxLines="1" SizeUnit="MM" NoteID="568e24dc-906b-ef11-a975-dc46288b05dc" JustBlockType="FB" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="5" SortOrder="8" Active="1" ExprCode="iStar-5A-MasterPackingCartonLabel-005" ExprType="H" ExprValue="NEX0010" DataElementID="b9176372-5b4f-4b95-996e-2bc72181e23f" PosX="1.0000" PosY="37.0000" ReverseRule="0" NoteID="b1efae6d-f596-ef11-a97e-dc46288b05dc">
+          <ALDataElement SourceID="8ee32c6c-d73a-46f1-b33e-d9f6a01b2eeb" LineNbr="292" SortOrder="46" Name="SO302000-Iterator on iStar-5A-MasterPackingCartonLabel-Iterator:OrderList" Active="1" IsSystem="0" GenName="1" ExprType="E" Arg1="24" Arg2="8" Arg3="4" Arg4="24.5" Arg5="False" SampleType="M" SnippetID="7be53301-762e-4767-8f20-48ee91d6ab55" DoSubstitute="0" NoteID="d0177730-f796-ef11-a97e-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelExpr LineNbr="4" SortOrder="7" Active="1" ExprCode="iStar-5A-MasterPackingCartonLabel-004" ExprType="H" ExprValue="Store #:" PosX="3.0000" PosY="29.0000" ReverseRule="0" NoteID="46267961-f596-ef11-a97e-dc46288b05dc" />
+        <ALModelExpr LineNbr="3" SortOrder="5" Active="1" ExprCode="iStar-5A-MasterPackingCartonLabel-003" ExprType="H" ExprValue="Dept #:" PosX="3.0000" PosY="21.0000" ReverseRule="0" NoteID="eb0d165b-f596-ef11-a97e-dc46288b05dc" />
+        <ALModelExpr LineNbr="2" SortOrder="3" Active="1" ExprCode="iStar-5A-MasterPackingCartonLabel-002" ExprType="H" ExprValue="Master Pack #:" PosX="3.0000" PosY="13.0000" ReverseRule="0" NoteID="14f3e030-f596-ef11-a97e-dc46288b05dc" />
+        <ALModelExpr LineNbr="1" SortOrder="1" Active="1" ExprCode="iStar-5A-MasterPackingCartonLabel-001" ExprType="H" ExprValue="PO #:" PosX="3.0000" PosY="5.0000" ReverseRule="0" FontID="71cfd283-aa59-4c15-8130-a68168e48e99" NoteID="7fe5b225-f596-ef11-a97e-dc46288b05dc">
+          <ALFont Name="0-045" Description="0-045-045" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" SampleValue="Hello" SizeUnit="DT" Height="45.0000" Width="45.0000" NoteID="c78749dc-4cfd-ee11-a962-dc46288b05dc" />
+        </ALModelExpr>
+        <ALModelPrinter LineNbr="4" SortOrder="3" Active="1" UserID="39fe6683-122e-41ee-9afb-efd0f8549491" PrinterID="09c9d9d7-9420-4886-9d5a-dfcccbc0ad74" NoteID="6771abe9-0265-f111-91e7-00155d00a3c4" />
+        <ALModelPrinter LineNbr="3" SortOrder="2" Active="1" UserID="60d92694-8f8b-4edc-af88-fb834627ea16" PrinterID="09c9d9d7-9420-4886-9d5a-dfcccbc0ad74" NoteID="1a4933f9-ff64-f111-91e7-00155d00a3c4" />
+        <ALModelPrinter LineNbr="2" SortOrder="1" Active="1" UserID="dd3d0d1f-8adc-40fe-ae96-f606aa1e59cc" PrinterID="09c9d9d7-9420-4886-9d5a-dfcccbc0ad74" NoteID="a130617f-0b35-f111-aad9-00155da3db1d" />
+      </row>
+    </ALModel>
+  </data>
+</data-set>
