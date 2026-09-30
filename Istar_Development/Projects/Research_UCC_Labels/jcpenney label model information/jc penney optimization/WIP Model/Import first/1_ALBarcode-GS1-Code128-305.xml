@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALBarcode" file-name="ALBarcode-(Name)">
+    <link from="ALBarcodeOption (BarcodeID)" to="ALBarcode (BarcodeID)" />
+    <link from="ALFormat (FormatID)" to="ALBarcode (FormatID)" />
+    <link from="ALBarcode (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALBarcode">
+      <table name="ALBarcodeOption" uplink="(BarcodeID) = (BarcodeID)" />
+      <table name="ALFormat" uplink="(FormatID) = (FormatID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALBarcode>
+      <row BarcodeID="a335f3f0-8115-4bc0-9d46-53b232e55684" Name="GS1-Code128-305-NoHRI" Description="GS1-Code128, 305 dots (1.5 in at 203 dpi), No Human Readable - JCPenney" Active="1" IsSystem="0" AllowExport="1" Language="ZPL" BarcodeType="C" Dimension="1" NoteID="c691680b-1223-4d49-821f-fe4263845b71">
+        <ALBarcodeOption LineNbr="6" SortOrder="6" Option="m" Value="D" NoteID="c23a4c03-b340-49d5-bf8a-04680ee8861a" />
+        <ALBarcodeOption LineNbr="5" SortOrder="5" Option="e" Value="N" NoteID="061f2c36-c94e-439f-8f94-1951ad3c015a" />
+        <ALBarcodeOption LineNbr="4" SortOrder="4" Option="g" Value="N" NoteID="4af85a3c-0edd-4ddb-869b-1e1b9f2aa277" />
+        <ALBarcodeOption LineNbr="3" SortOrder="3" Option="f" Value="N" NoteID="a31b81b7-6669-4ca4-aeb9-70a7509c2716" />
+        <ALBarcodeOption LineNbr="2" SortOrder="2" Option="h" Value="305" NoteID="131bb0a8-67dd-42ee-bb7a-f7189ffb12b1" />
+        <ALBarcodeOption LineNbr="1" SortOrder="1" Option="o" Value="N" NoteID="19a42d69-cd81-4c66-9a11-c885ffff5352" />
+      </row>
+    </ALBarcode>
+  </data>
+</data-set>

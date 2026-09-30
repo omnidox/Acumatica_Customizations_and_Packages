@@ -289,7 +289,7 @@
         <ALModelExpr LineNbr="5" SortOrder="5" Active="1" ExprCode="iStar-8A-Packing for JCPenny-005" ExprType="H" ExprValue="34 Maple Avenue" PosX="4.0000" PosY="8.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="c960a447-31bc-f111-91f5-00155d0a3e0f">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
         </ALModelExpr>
-        <ALModelExpr LineNbr="3" SortOrder="3" Active="1" ExprCode="iStar-8A-Packing for JCPenny-003" ExprType="H" ExprValue="Stanley Creations, Inc." PosX="4.0000" PosY="5.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="c760a447-31bc-f111-91f5-00155d0a3e0f">
+        <ALModelExpr LineNbr="3" SortOrder="3" Active="1" ExprCode="iStar-8A-Packing for JCPenny-003" ExprType="H" ExprValue="SGG INC" PosX="4.0000" PosY="5.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="c760a447-31bc-f111-91f5-00155d0a3e0f">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
         </ALModelExpr>
         <ALModelExpr LineNbr="1" SortOrder="1" Active="1" ExprCode="iStar-8A-Packing for JCPenny-001" ExprType="H" ExprValue="FROM:" PosX="2.0000" PosY="2.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="c560a447-31bc-f111-91f5-00155d0a3e0f">

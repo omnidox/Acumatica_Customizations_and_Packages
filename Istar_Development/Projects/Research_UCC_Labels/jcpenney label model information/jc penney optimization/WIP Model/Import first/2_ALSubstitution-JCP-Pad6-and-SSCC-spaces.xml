@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALSubstitution" file-name="ALSubstitution-(Name)">
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALSubstitutionDetail (ChildSubstitutionID)" type="FromMaster" updateable="True" do-not-change="ALSubstitution" />
+    <link from="ALSubstitution (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALSubstitution">
+      <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALSubstitution>
+      <row SubstitutionID="8c650a18-99ee-4a21-b1d3-f2c3342fdd9b" Name="JCP-SSCC-00-Paren-Readable" Description="(00) 0 0614611 000000004 7 - AI, extension digit, 7-digit prefix, 9-digit serial, check digit" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="13b02a2b-c091-4092-b694-3332a1c28003">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="7f0fa74f-430a-4c2b-8a56-8c7dcf09e164" Arg1="_this_" Arg2="'^00([0-9])([0-9][0-9][0-9][0-9][0-9][0-9][0-9])([0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9])([0-9])$'" Arg3="'(00) $1 $2 $3 $4'" NoteID="c3ba7d56-a44d-4c99-b8d8-df3d3e223fc5" />
+      </row>
+      <row SubstitutionID="2707c9df-49f8-4aba-a0df-10995ae55265" Name="JCP-MarkFor-Pad6-91-Barcode-1step" Description="Pad 5-digit value to 6 with a leading zero, then prepend 91 - one step (Asgard pipes multi-step chains incorrectly)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="bd9a72e9-e7b2-4afe-bc17-f6d9aba04f82">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="7f0fa74f-430a-4c2b-8a56-8c7dcf09e164" Arg1="_this_" Arg2="'^([0-9][0-9][0-9][0-9][0-9])$'" Arg3="'0$1' | string.Prepend '91'" NoteID="22aca3c1-7c92-4be0-9baa-555e88077ec8" />
+      </row>
+      <row SubstitutionID="318fab64-194c-4642-8246-1b590e664410" Name="JCP-MarkFor-Pad6-91-Readable-1step" Description="Pad 5-digit value to 6 with a leading zero, then prepend (91) - one step (Asgard pipes multi-step chains incorrectly)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="6f52b1b4-9bca-4e25-975f-77926171e99d">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="7f0fa74f-430a-4c2b-8a56-8c7dcf09e164" Arg1="_this_" Arg2="'^([0-9][0-9][0-9][0-9][0-9])$'" Arg3="'0$1' | string.Prepend '(91)'" NoteID="d8c03789-a6aa-4424-aefb-b9a3e87df485" />
+      </row>
+    </ALSubstitution>
+  </data>
+</data-set>

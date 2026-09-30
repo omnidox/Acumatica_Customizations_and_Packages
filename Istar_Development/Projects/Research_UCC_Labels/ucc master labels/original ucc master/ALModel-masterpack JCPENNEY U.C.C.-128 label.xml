@@ -291,7 +291,7 @@
         <ALModelExpr LineNbr="3" SortOrder="3" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-003" ExprType="H" ExprValue="34 Maple Avenue" PosX="7.0000" PosY="8.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="c8c27195-4e0d-4e5e-a88c-7846f1aaf938">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
         </ALModelExpr>
-        <ALModelExpr LineNbr="2" SortOrder="2" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-002" ExprType="H" ExprValue="S G G Inc." PosX="7.0000" PosY="5.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="81502f93-ae7f-4866-a39c-f08effde79ea">
+        <ALModelExpr LineNbr="2" SortOrder="2" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-002" ExprType="H" ExprValue="SGG INC" PosX="7.0000" PosY="5.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="81502f93-ae7f-4866-a39c-f08effde79ea">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
         </ALModelExpr>
         <ALModelExpr LineNbr="1" SortOrder="1" Active="1" ExprCode="masterpack JCPENNEY U.C.C.-128 label-001" ExprType="H" ExprValue="FROM:" PosX="5.0000" PosY="2.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="7ca86ba7-40ff-4156-aae7-5a20ce29570e">

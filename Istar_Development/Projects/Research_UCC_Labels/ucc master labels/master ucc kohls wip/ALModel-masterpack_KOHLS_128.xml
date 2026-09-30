@@ -259,7 +259,7 @@
         <ALModelExpr LineNbr="3" SortOrder="3" Active="1" ExprCode="masterpack KOHLS U.C.C.-128 label-003" ExprType="H" ExprValue="34 Maple Avenue" PosX="7.0000" PosY="8.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="2e94920d-2e5f-411f-a093-2d134a2baa0b">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
         </ALModelExpr>
-        <ALModelExpr LineNbr="2" SortOrder="2" Active="1" ExprCode="masterpack KOHLS U.C.C.-128 label-002" ExprType="H" ExprValue="S G G Inc." PosX="7.0000" PosY="5.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="dbeef703-f236-405b-8dbd-459a67c77561">
+        <ALModelExpr LineNbr="2" SortOrder="2" Active="1" ExprCode="masterpack KOHLS U.C.C.-128 label-002" ExprType="H" ExprValue="SGG INC" PosX="7.0000" PosY="5.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="dbeef703-f236-405b-8dbd-459a67c77561">
           <ALFont Name="0-25" Description="0-25" Active="1" IsSystem="1" AllowExport="1" FontType="0" Language="ZPL" Height="25.0000" NoteID="70953cd3-d296-ef11-a97e-dc46288b05dc" />
         </ALModelExpr>
         <ALModelExpr LineNbr="1" SortOrder="1" Active="1" ExprCode="masterpack KOHLS U.C.C.-128 label-001" ExprType="H" ExprValue="FROM:" PosX="5.0000" PosY="2.0000" ReverseRule="0" FontID="b2b53bfc-7963-48d7-b493-af01d985c11e" LabelZoomType="0" NoteID="b093e35a-3071-44b3-84e0-ba089c898b4d">
