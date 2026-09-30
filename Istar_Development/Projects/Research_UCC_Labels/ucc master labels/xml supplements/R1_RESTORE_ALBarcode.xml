@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALBarcode" file-name="ALBarcode-(Name)">
+    <link from="ALBarcodeOption (BarcodeID)" to="ALBarcode (BarcodeID)" />
+    <link from="ALFormat (FormatID)" to="ALBarcode (FormatID)" />
+    <link from="ALBarcode (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALBarcode">
+      <table name="ALBarcodeOption" uplink="(BarcodeID) = (BarcodeID)" />
+      <table name="ALFormat" uplink="(FormatID) = (FormatID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALBarcode>
+      <row BarcodeID="3cdb3754-9001-4ae8-b858-16dd09990d03" Name="GS1-Code128-100-NoHRI" Description="GS1-Code128, 100 Height, No Human Readable" SampleValue="00000228920277475636" Active="1" IsSystem="0" AllowExport="1" Language="ZPL" BarcodeType="C" Dimension="1" NoteID="32e694f2-fe95-ef11-a97d-dc46288b05dc">
+        <ALBarcodeOption LineNbr="6" SortOrder="6" Option="m" Value="D" NoteID="35e84014-ff95-ef11-a97d-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="5" SortOrder="5" Option="e" Value="N" NoteID="34e84014-ff95-ef11-a97d-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="4" SortOrder="4" Option="g" Value="N" NoteID="33e84014-ff95-ef11-a97d-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="3" SortOrder="3" Option="f" Value="N" NoteID="32e84014-ff95-ef11-a97d-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="2" SortOrder="2" Option="h" Value="100" NoteID="31e84014-ff95-ef11-a97d-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="1" SortOrder="1" Option="o" Value="N" NoteID="30e84014-ff95-ef11-a97d-dc46288b05dc" />
+      </row>
+      <row BarcodeID="57480b2f-4d4d-49b9-8189-578f986aef6d" Name="GS1-Code128-175-NoHRI" Description="GS1-Code128, 175 Height, No Human Readable" Active="1" IsSystem="0" AllowExport="1" Language="ZPL" BarcodeType="C" Dimension="1" NoteID="df1eb4e0-de96-ef11-a97e-dc46288b05dc">
+        <ALBarcodeOption LineNbr="6" SortOrder="6" Option="m" Value="D" NoteID="4dbe34e8-de96-ef11-a97e-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="5" SortOrder="5" Option="e" Value="N" NoteID="4cbe34e8-de96-ef11-a97e-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="4" SortOrder="4" Option="g" Value="N" NoteID="4bbe34e8-de96-ef11-a97e-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="3" SortOrder="3" Option="f" Value="N" NoteID="4abe34e8-de96-ef11-a97e-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="2" SortOrder="2" Option="h" Value="200" NoteID="49be34e8-de96-ef11-a97e-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="1" SortOrder="1" Option="o" Value="N" NoteID="48be34e8-de96-ef11-a97e-dc46288b05dc" />
+      </row>
+      <row BarcodeID="a39d4c04-9e8b-4d47-b20b-59e9d8702dcf" Name="GS1-Code128-150-NoHRI" Description="GS1-Code128, 150 Height, No Human Readable" Active="1" IsSystem="0" AllowExport="1" Language="ZPL" BarcodeType="C" Dimension="1" NoteID="d5552ffe-dd96-ef11-a97e-dc46288b05dc">
+        <ALBarcodeOption LineNbr="6" SortOrder="6" Option="m" Value="D" NoteID="6368d708-de96-ef11-a97e-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="5" SortOrder="5" Option="e" Value="N" NoteID="6268d708-de96-ef11-a97e-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="4" SortOrder="4" Option="g" Value="N" NoteID="6168d708-de96-ef11-a97e-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="3" SortOrder="3" Option="f" Value="N" NoteID="6068d708-de96-ef11-a97e-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="2" SortOrder="2" Option="h" Value="150" NoteID="5f68d708-de96-ef11-a97e-dc46288b05dc" />
+        <ALBarcodeOption LineNbr="1" SortOrder="1" Option="o" Value="N" NoteID="5e68d708-de96-ef11-a97e-dc46288b05dc" />
+      </row>
+      <row BarcodeID="467ee919-d56e-48a9-b695-e0a83da7a3fd" Name="Code128-100-noHRI" Description="Code 128 height 100 no HRI" SampleValue="0194901234567894310100035590" Active="1" IsSystem="0" AllowExport="1" Language="ZPL" BarcodeType="C" Dimension="1" NoteID="c112786c-8b6b-ef11-a975-dc46288b05dc">
+        <ALBarcodeOption LineNbr="6" SortOrder="6" Option="m" Value="N" NoteID="dba80d25-be46-ed11-ba15-e0d4e894ad3f" />
+        <ALBarcodeOption LineNbr="5" SortOrder="5" Option="e" Value="N" NoteID="daa80d25-be46-ed11-ba15-e0d4e894ad3f" />
+        <ALBarcodeOption LineNbr="4" SortOrder="4" Option="g" Value="N" NoteID="d9a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+        <ALBarcodeOption LineNbr="3" SortOrder="3" Option="f" Value="N" NoteID="d8a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+        <ALBarcodeOption LineNbr="2" SortOrder="2" Option="h" Value="100" NoteID="d7a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+        <ALBarcodeOption LineNbr="1" SortOrder="1" Option="o" Value="N" NoteID="d6a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+      </row>
+    </ALBarcode>
+  </data>
+</data-set>

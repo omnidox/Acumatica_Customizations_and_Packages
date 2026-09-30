@@ -10,6 +10,7 @@
   </layout>
   <data>
     <ALRule>
+      <row RuleID="50b4055d-e89d-4f87-9a11-6c775e02ce1e" Name="SO302000-ALiStarPackages-is-Master" Description="SO302000 Packages is Master Carton Pack" Active="1" IsSystem="1" AllowExport="1" IsComposite="0" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Expression="ALiStarPackages.UsrIsParentBox == 'true'" NoteID="f7745564-fea9-f011-aac3-00155da3db1d" />
       <row RuleID="793b17c9-985e-447f-be38-eccefd311d86" Name="SO302000-Packages-is-Master" Description="SO302000 Packages is Master Carton Pack" Active="1" IsSystem="0" AllowExport="1" IsComposite="0" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Expression="Packages.UsrIsParentBox == 'true'" NoteID="f9745564-fea9-f011-aac3-00155da3db1d" />
     </ALRule>
   </data>

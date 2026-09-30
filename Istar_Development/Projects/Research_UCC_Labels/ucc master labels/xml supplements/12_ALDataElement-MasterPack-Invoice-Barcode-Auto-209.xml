@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALDataElement" file-name="ALDataElement-(SourceIDName)-(ScreenID)-(ExprType)-(CategoryIDName)-(Name)">
+    <link from="ALCategory (CategoryID)" to="ALDataElement (CategoryID)" />
+    <link from="ALBarcode (BarcodeID)" to="ALDataElement (BarcodeID)" />
+    <link from="ALBarcodeOption (BarcodeID)" to="ALBarcode (BarcodeID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALDataElement (SubstitutionID)" />
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALContent (ContentID)" to="ALDataElement (ContentID)" />
+    <link from="ALContentElement (ContentID)" to="ALContent (ContentID)" />
+    <link from="ALDataSource (SourceID)" to="ALDataElement (SourceID)" />
+    <link from="ALPrinterFile (PrinterFileID)" to="ALDataElement (PrinterFileID)" />
+    <link from="ALDataElement (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALDataElement">
+      <table name="ALCategory" uplink="(CategoryID) = (CategoryID)" />
+      <table name="ALBarcode" uplink="(BarcodeID) = (BarcodeID)">
+        <table name="ALBarcodeOption" uplink="(BarcodeID) = (BarcodeID)" />
+      </table>
+      <table name="ALSubstitution" uplink="(SubstitutionID) = (SubstitutionID)">
+        <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+      </table>
+      <table name="ALContent" uplink="(ContentID) = (ContentID)">
+        <table name="ALContentElement" uplink="(ContentID) = (ContentID)" />
+      </table>
+      <table name="ALDataSource" uplink="(SourceID) = (SourceID)" />
+      <table name="ALPrinterFile" uplink="(PrinterFileID) = (PrinterFileID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALDataElement>
+      <row RecordID="3e4c7d75-838a-4224-83db-584985a2aea8" SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="209" SortOrder="390" Name="SO302000-CurrentDocument (User Defined Field 3) - (barcode-Code128-100-noHRI-Auto)" Active="1" IsSystem="0" GenName="0" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCCustomField3" SampleType="H" SampleValue="25528477" DoSubstitute="0" BarcodeID="47614e54-030f-493e-b09f-ce1cb0069ab7" NoteID="485fe33d-034a-4f45-835e-ef6e61f9b946">
+        <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+      </row>
+    </ALDataElement>
+  </data>
+</data-set>

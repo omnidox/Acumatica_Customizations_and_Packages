@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALSubstitution" file-name="ALSubstitution-(Name)">
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALSubstitutionDetail (ChildSubstitutionID)" type="FromMaster" updateable="True" do-not-change="ALSubstitution" />
+    <link from="ALSubstitution (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALSubstitution">
+      <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALSubstitution>
+      <row SubstitutionID="d0a5cd00-db29-455f-b207-01fb3de93b3d" Name="Prepend-420-Readable" Description="Prepend (420)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="2f029c85-f6a1-ef11-82ba-00155d73340f">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'(420)'" NoteID="08c3bc8c-f6a1-ef11-82ba-00155d73340f" />
+      </row>
+      <row SubstitutionID="17ffa460-b07b-40af-b194-657a395ece24" Name="PADDED_INT_10" Description="math.format 'D10'" Active="1" IsSystem="1" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="dd8ab25d-ffa9-f011-aac3-00155da3db1d">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="5400a195-be39-42f2-a731-a71dc217f8c8" Arg1="_this_" Arg2="'D10'" NoteID="5bd28600-9190-ee11-a467-3c6aa7cb36ca" />
+      </row>
+      <row SubstitutionID="c8c3b34f-eff7-4f7b-964c-7175b5d2029c" Name="Prepend-420-Barcode" Description="Prepend 420" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="93f36e9a-f6a1-ef11-82ba-00155d73340f">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'420'" NoteID="96f36e9a-f6a1-ef11-82ba-00155d73340f" />
+      </row>
+      <row SubstitutionID="8e405ce2-fbad-40aa-8138-93424d88e73d" Name="JOIN_BY_SPACE" Description="Join array by Space" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="85a0050d-1064-ee11-b4fe-f0b61e7e1a57">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" ChildSubstitutionID="8349e9f0-17f0-4e2a-b5c3-ba8e27395b47" Arg1="_this_" Arg2="' '" NoteID="127c47f8-8c55-ed11-a409-0492266d8119" />
+      </row>
+      <row SubstitutionID="c6c5222e-1878-411c-957d-961382d3352c" Name="Prepend-91-Barcode" Description="Prepend 91" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="5881097b-7424-f011-82c5-00155d73340f">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'91'" NoteID="017e50d6-7424-f011-82c5-00155d73340f" />
+      </row>
+      <row SubstitutionID="f3730d35-f1b8-4e23-a0e5-c77346b73b1a" Name="Prepend-91-Readable" Description="Prepend (91)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="fd648513-7224-f011-82c5-00155d73340f">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="1" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'(91)'" NoteID="c9c85d23-7224-f011-82c5-00155d73340f" />
+      </row>
+    </ALSubstitution>
+  </data>
+</data-set>

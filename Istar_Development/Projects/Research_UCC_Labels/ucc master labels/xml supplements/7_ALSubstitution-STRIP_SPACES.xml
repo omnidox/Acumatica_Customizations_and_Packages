@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALSubstitution" file-name="ALSubstitution-(Name)">
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALSubstitutionDetail (ChildSubstitutionID)" type="FromMaster" updateable="True" do-not-change="ALSubstitution" />
+    <link from="ALSubstitution (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALSubstitution">
+      <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALSubstitution>
+      <row SubstitutionID="cd84237d-c00f-43b2-a694-5a30f0e17cbc" Name="STRIP_SPACES" Description="string.strip (remove leading/trailing spaces)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="0965183f-2b02-4c0a-bf00-662f73da4c27">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="fc35eb97-995d-4c01-88be-74db9b975295" Arg1="_this_" NoteID="73906e56-4f23-4005-81ee-ae4ecdf973ee" />
+      </row>
+    </ALSubstitution>
+  </data>
+</data-set>

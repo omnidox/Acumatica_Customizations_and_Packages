@@ -73,13 +73,13 @@
           <ALBarcodeOption LineNbr="1" SortOrder="1" Option="o" Value="N" NoteID="19a42d69-cd81-4c66-9a11-c885ffff5352" />
         </ALBarcode>
         <ALSubstitution Name="JCP-MarkFor-Pad6-91-Barcode-1step" Description="Pad 5-digit value to 6 with a leading zero, then prepend 91 - one step (Asgard pipes multi-step chains incorrectly)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="6c3c540c-0f91-4c7d-9204-9a281fdcace1">
-          <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="7f0fa74f-430a-4c2b-8a56-8c7dcf09e164" Arg1="_this_" Arg2="'^([0-9][0-9][0-9][0-9][0-9])$'" Arg3="'0$1' | string.Prepend '91'" NoteID="e1b4c9d1-46d8-4109-ac52-add5151bc7af" />
+          <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="7f0fa74f-430a-4c2b-8a56-8c7dcf09e164" Arg1="_this_" Arg2="'^([0-9][0-9][0-9][0-9][0-9]) *$'" Arg3="'0$1' | string.Strip | string.Prepend '91'" NoteID="e1b4c9d1-46d8-4109-ac52-add5151bc7af" />
         </ALSubstitution>
       </row>
       <row RecordID="81783daa-4e23-4c09-b0a2-4d1815136e67" SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="198" SortOrder="331" Name="SO302000-JCP Mark For (91)+pad6 DC - Readable" Active="1" IsSystem="0" GenName="0" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="00875" DoSubstitute="1" SubstitutionID="318fab64-194c-4642-8246-1b590e664410" NoteID="2ae65be6-8e46-4f70-b582-51e4ef5419fd">
         <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
         <ALSubstitution Name="JCP-MarkFor-Pad6-91-Readable-1step" Description="Pad 5-digit value to 6 with a leading zero, then prepend (91) - one step (Asgard pipes multi-step chains incorrectly)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="1fcbcab4-5e0f-44bd-b929-7faed4df7aa6">
-          <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="7f0fa74f-430a-4c2b-8a56-8c7dcf09e164" Arg1="_this_" Arg2="'^([0-9][0-9][0-9][0-9][0-9])$'" Arg3="'0$1' | string.Prepend '(91)'" NoteID="ec709481-003b-4efe-8e20-7ee875a35586" />
+          <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="7f0fa74f-430a-4c2b-8a56-8c7dcf09e164" Arg1="_this_" Arg2="'^([0-9][0-9][0-9][0-9][0-9]) *$'" Arg3="'0$1' | string.Strip | string.Prepend '(91)'" NoteID="ec709481-003b-4efe-8e20-7ee875a35586" />
         </ALSubstitution>
       </row>
     </ALDataElement>

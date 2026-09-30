@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALDataElement" file-name="ALDataElement-(SourceIDName)-(ScreenID)-(ExprType)-(CategoryIDName)-(Name)">
+    <link from="ALCategory (CategoryID)" to="ALDataElement (CategoryID)" />
+    <link from="ALBarcode (BarcodeID)" to="ALDataElement (BarcodeID)" />
+    <link from="ALBarcodeOption (BarcodeID)" to="ALBarcode (BarcodeID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALDataElement (SubstitutionID)" />
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALContent (ContentID)" to="ALDataElement (ContentID)" />
+    <link from="ALContentElement (ContentID)" to="ALContent (ContentID)" />
+    <link from="ALDataSource (SourceID)" to="ALDataElement (SourceID)" />
+    <link from="ALPrinterFile (PrinterFileID)" to="ALDataElement (PrinterFileID)" />
+    <link from="ALDataElement (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALDataElement">
+      <table name="ALCategory" uplink="(CategoryID) = (CategoryID)" />
+      <table name="ALBarcode" uplink="(BarcodeID) = (BarcodeID)">
+        <table name="ALBarcodeOption" uplink="(BarcodeID) = (BarcodeID)" />
+      </table>
+      <table name="ALSubstitution" uplink="(SubstitutionID) = (SubstitutionID)">
+        <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+      </table>
+      <table name="ALContent" uplink="(ContentID) = (ContentID)">
+        <table name="ALContentElement" uplink="(ContentID) = (ContentID)" />
+      </table>
+      <table name="ALDataSource" uplink="(SourceID) = (SourceID)" />
+      <table name="ALPrinterFile" uplink="(PrinterFileID) = (PrinterFileID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALDataElement>
+      <row RecordID="4c79a7db-9054-4d3d-ad3a-e34e70b454bd" SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="186" SortOrder="53" Name="SO302000-CurrentDocument (User Defined Field 3) - (barcode-Code128-100-noHRI)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCCustomField3" SampleType="H" SampleValue="300115755209" DoSubstitute="0" BarcodeID="467ee919-d56e-48a9-b695-e0a83da7a3fd" NoteID="f844e73b-8073-45ef-9e6d-72479c6f0b4c">
+        <ALBarcode Name="Code128-100-noHRI" Description="Code 128 height 100 no HRI" SampleValue="0194901234567894310100035590" Active="1" IsSystem="0" AllowExport="1" Language="ZPL" BarcodeType="C" Dimension="1" FormatID="aae904b5-c69b-4a18-ae3e-776b8e3cedb3" NoteID="c112786c-8b6b-ef11-a975-dc46288b05dc">
+          <ALBarcodeOption LineNbr="6" SortOrder="6" Option="m" Value="N" NoteID="dba80d25-be46-ed11-ba15-e0d4e894ad3f" />
+          <ALBarcodeOption LineNbr="5" SortOrder="5" Option="e" Value="N" NoteID="daa80d25-be46-ed11-ba15-e0d4e894ad3f" />
+          <ALBarcodeOption LineNbr="4" SortOrder="4" Option="g" Value="N" NoteID="d9a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+          <ALBarcodeOption LineNbr="3" SortOrder="3" Option="f" Value="N" NoteID="d8a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+          <ALBarcodeOption LineNbr="2" SortOrder="2" Option="h" Value="100" NoteID="d7a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+          <ALBarcodeOption LineNbr="1" SortOrder="1" Option="o" Value="N" NoteID="d6a80d25-be46-ed11-ba15-e0d4e894ad3f" />
+        </ALBarcode>
+        <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+      </row>
+      <row RecordID="81783daa-4e23-4c09-b0a2-4d1815136e67" SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="198" SortOrder="331" Name="SO302000-JCP Mark For (91)+pad6 DC - Readable" Active="1" IsSystem="0" GenName="0" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="00875" DoSubstitute="1" SubstitutionID="318fab64-194c-4642-8246-1b590e664410" NoteID="2ae65be6-8e46-4f70-b582-51e4ef5419fd">
+        <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+        <ALSubstitution Name="JCP-MarkFor-Pad6-91-Readable-1step" Description="Pad 5-digit value to 6 with a leading zero, then prepend (91) - one step (Asgard pipes multi-step chains incorrectly)" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="1fcbcab4-5e0f-44bd-b929-7faed4df7aa6">
+          <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="7f0fa74f-430a-4c2b-8a56-8c7dcf09e164" Arg1="_this_" Arg2="'^([0-9][0-9][0-9][0-9][0-9]) *$'" Arg3="'0$1' | string.Strip | string.Prepend '(91)'" NoteID="ec709481-003b-4efe-8e20-7ee875a35586" />
+        </ALSubstitution>
+      </row>
+      <row RecordID="d2924926-a680-4449-b444-69d89fede537" SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="199" SortOrder="340" Name="SO302000-MasterPack Mark For (91)+pad6 DC - GS1-Code128-150-NoHRI" Active="1" IsSystem="0" GenName="0" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="00875" DoSubstitute="1" SubstitutionID="2707c9df-49f8-4aba-a0df-10995ae55265" BarcodeID="a39d4c04-9e8b-4d47-b20b-59e9d8702dcf" NoteID="4b53b7a6-c797-400d-9c9a-5249c8afdd09">
+        <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+      </row>
+    </ALDataElement>
+  </data>
+</data-set>

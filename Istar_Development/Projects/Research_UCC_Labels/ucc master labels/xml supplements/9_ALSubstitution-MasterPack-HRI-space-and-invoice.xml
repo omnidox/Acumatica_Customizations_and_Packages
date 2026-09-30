@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALSubstitution" file-name="ALSubstitution-(Name)">
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALSubstitutionDetail (ChildSubstitutionID)" type="FromMaster" updateable="True" do-not-change="ALSubstitution" />
+    <link from="ALSubstitution (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALSubstitution">
+      <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALSubstitution>
+      <row SubstitutionID="eb74cbae-2703-4ac4-9507-2ea364a97e9c" Name="MP-Prepend-420-Readable-Space" Description="Prepend (420) with a space" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="e41b0130-b09a-42c8-a049-40ea6edb1c3e">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'(420) '" NoteID="97eca5ef-de81-4ff2-82d7-08a854259666" />
+      </row>
+      <row SubstitutionID="123edaac-05cf-4e47-a515-5ed49b77666c" Name="MP-MarkFor-Pad6-91-Readable-Space" Description="Pad 5-digit value to 6, strip, prepend (91) with a space" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="3dc23e46-72ec-4df3-b774-d848bd4e233a">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="7f0fa74f-430a-4c2b-8a56-8c7dcf09e164" Arg1="_this_" Arg2="'^([0-9][0-9][0-9][0-9][0-9]) *$'" Arg3="'0$1' | string.Strip | string.Prepend '(91) '" NoteID="c2e8f87f-c4da-4ca0-aaad-5f00c19a22b1" />
+      </row>
+      <row SubstitutionID="efd48380-fe8d-4ab3-9c2a-1d8fa9825f4d" Name="MP-Prepend-Invoice-No" Description="Prepend 'Invoice No. '" Active="1" IsSystem="0" IsComposite="1" AllowExport="1" ReturnTypeName="System.String" NbArgs="-1" NoteID="c24c048c-70a7-4b28-80d7-538a9e053695">
+        <ALSubstitutionDetail LineNbr="1" SortOrder="1" Active="1" IsSystem="0" ChildSubstitutionID="dc1d6796-d875-48da-9d36-72423d929d6e" Arg1="_this_" Arg2="'Invoice No. '" NoteID="4ac2ccdd-a7e8-4bce-96d9-f74b60c646a0" />
+      </row>
+    </ALSubstitution>
+  </data>
+</data-set>
