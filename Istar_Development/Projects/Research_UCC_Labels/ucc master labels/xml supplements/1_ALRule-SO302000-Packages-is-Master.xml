@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALRule" file-name="ALRule-(Name)">
+    <link from="ALRuleDetail (RuleID)" to="ALRule (RuleID)" />
+  </relations>
+  <layout>
+    <table name="ALRule">
+      <table name="ALRuleDetail" uplink="(RuleID) = (RuleID)" />
+    </table>
+  </layout>
+  <data>
+    <ALRule>
+      <row RuleID="793b17c9-985e-447f-be38-eccefd311d86" Name="SO302000-Packages-is-Master" Description="SO302000 Packages is Master Carton Pack" Active="1" IsSystem="0" AllowExport="1" IsComposite="0" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Expression="Packages.UsrIsParentBox == 'true'" NoteID="f9745564-fea9-f011-aac3-00155da3db1d" />
+    </ALRule>
+  </data>
+</data-set>

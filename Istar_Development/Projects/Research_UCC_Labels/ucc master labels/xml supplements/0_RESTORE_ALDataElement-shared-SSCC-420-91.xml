@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<data-set>
+  <relations format-version="4" relations-version="20160101" main-table="ALDataElement" file-name="ALDataElement-(SourceIDName)-(ScreenID)-(ExprType)-(CategoryIDName)-(Name)">
+    <link from="ALCategory (CategoryID)" to="ALDataElement (CategoryID)" />
+    <link from="ALBarcode (BarcodeID)" to="ALDataElement (BarcodeID)" />
+    <link from="ALBarcodeOption (BarcodeID)" to="ALBarcode (BarcodeID)" />
+    <link from="ALSubstitution (SubstitutionID)" to="ALDataElement (SubstitutionID)" />
+    <link from="ALSubstitutionDetail (SubstitutionID)" to="ALSubstitution (SubstitutionID)" />
+    <link from="ALContent (ContentID)" to="ALDataElement (ContentID)" />
+    <link from="ALContentElement (ContentID)" to="ALContent (ContentID)" />
+    <link from="ALDataSource (SourceID)" to="ALDataElement (SourceID)" />
+    <link from="ALPrinterFile (PrinterFileID)" to="ALDataElement (PrinterFileID)" />
+    <link from="ALDataElement (NoteID)" to="Note (NoteID)" type="Note" />
+  </relations>
+  <layout>
+    <table name="ALDataElement">
+      <table name="ALCategory" uplink="(CategoryID) = (CategoryID)" />
+      <table name="ALBarcode" uplink="(BarcodeID) = (BarcodeID)">
+        <table name="ALBarcodeOption" uplink="(BarcodeID) = (BarcodeID)" />
+      </table>
+      <table name="ALSubstitution" uplink="(SubstitutionID) = (SubstitutionID)">
+        <table name="ALSubstitutionDetail" uplink="(SubstitutionID) = (SubstitutionID)" />
+      </table>
+      <table name="ALContent" uplink="(ContentID) = (ContentID)">
+        <table name="ALContentElement" uplink="(ContentID) = (ContentID)" />
+      </table>
+      <table name="ALDataSource" uplink="(SourceID) = (SourceID)" />
+      <table name="ALPrinterFile" uplink="(PrinterFileID) = (PrinterFileID)" />
+      <table name="Note" uplink="(NoteID) = (NoteID)" />
+    </table>
+  </layout>
+  <data>
+    <ALDataElement>
+      <row RecordID="f123bcda-b13f-4c62-b0d8-60865ef7e487" SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="10" SortOrder="9" Name="SO302000-SO Package Detail (GS1-128)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Packages" ExprValue="UsrTCUCC128" SampleType="H" SampleValue="00000228920277475636" DoSubstitute="0" NoteID="a6501e45-cb64-f011-82c8-00155d73340f">
+        <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+      </row>
+      <row RecordID="6ba2564a-53bd-441e-8ec0-b6b91d5cc073" SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="148" SortOrder="15" Name="SO302000-SO Package Detail (GS1-128) - (barcode-GS1-Code128-175-NoHRI)" Active="1" IsSystem="1" GenName="1" ExprType="S" BasedOn="Packages" ExprValue="UsrTCUCC128" SampleType="H" SampleValue="00000228920277475636" DoSubstitute="0" BarcodeID="57480b2f-4d4d-49b9-8189-578f986aef6d" NoteID="a3501e45-cb64-f011-82c8-00155d73340f">
+        <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+      </row>
+      <row RecordID="9d599adc-b0d9-4ba9-a11d-ad9dff06a4b1" SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="154" SortOrder="21" Name="SO302000-Shipping Address (Postal Code) - (sub-Prepend-420-Barcode) - (barcode-GS1-Code128-150-NoHRI" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="Shipping_Address" ExprValue="PostalCode" SampleType="H" SampleValue="19606" DoSubstitute="1" SubstitutionID="c8c3b34f-eff7-4f7b-964c-7175b5d2029c" BarcodeID="a39d4c04-9e8b-4d47-b20b-59e9d8702dcf" NoteID="5fa1f5fe-f4a1-ef11-82ba-00155d73340f">
+        <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+      </row>
+      <row RecordID="2e9cb615-7ddb-4475-98b7-530c3e413f21" SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="156" SortOrder="23" Name="SO302000-CurrentDocument (EDI Distribution Center) - (sub-Prepend-91-Readable)" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="00044" DoSubstitute="1" SubstitutionID="f3730d35-f1b8-4e23-a0e5-c77346b73b1a" NoteID="7b133447-7124-f011-82c5-00155d73340f">
+        <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+      </row>
+      <row RecordID="5d3f2d20-c618-4ec0-a0fc-91ba436b019a" SourceID="7a1d6a24-21d1-45c3-8596-25df64e07b5b" LineNbr="157" SortOrder="24" Name="SO302000-CurrentDocument (EDI Distribution Center) - (sub-Prepend-91-Barcode) - (barcode-GS1-Code128" Active="1" IsSystem="0" GenName="1" ExprType="S" BasedOn="CurrentDocument" ExprValue="UsrTCDCCode" SampleType="H" SampleValue="00044" DoSubstitute="1" SubstitutionID="c6c5222e-1878-411c-957d-961382d3352c" BarcodeID="a39d4c04-9e8b-4d47-b20b-59e9d8702dcf" NoteID="4a3b1e37-7424-f011-82c5-00155d73340f">
+        <ALDataSource Name="SO-Shipments" Description="Shipments (SO302000)" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Active="1" IsSystem="0" AllowExport="1" NoteID="5a98c70b-6a97-ef11-82b9-00155d73340f" />
+      </row>
+    </ALDataElement>
+  </data>
+</data-set>
