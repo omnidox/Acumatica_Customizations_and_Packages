@@ -11,7 +11,8 @@ exactly as it works in the local SnapshotTest instance.
 | 2 | `2_ALBarcode-MasterPack.zip` | **Barcodes** (AL204000) | `GS1-Code128-150-NoHRI`, `Code128-100-noHRI-Auto` |
 | 3 | `3_ALSubstitution-MasterPack.zip` | **Substitutions** (AL206500) | 8 substitutions (pad-to-6 Mark For, `(420) `/`(91) ` with a space, "Invoice No. ", `STRIP_SPACES`, `NO_DECIMAL`, `JOIN_BY_SPACE`, `Prepend-420-Barcode`) |
 | 4 | `4_ALDataElement-MasterPack-201-211.zip` | **Data Elements** | 9 data elements (lines 201, 203, 205-211) |
-| 5 | `5_ALModel-masterpack_KOHLS_128.zip` | **Label Models** (AL201000) | The label itself |
+| 5 | `5_ALRule-SO302000-Packages-is-Master.zip` | **Rules** (AL203500) | The print rule `SO302000-Packages-is-Master` (`Packages.UsrIsParentBox == 'true'`): print only for master cartons. Production most likely has it already (the regular JCPenney label uses it); importing it again is harmless. |
+| 6 | `6_ALModel-masterpack_KOHLS_128.zip` | **Label Models** (AL201000) | The label itself |
 
 Do the steps **in order**: each file uses records created by the one before it.
 
@@ -37,7 +38,7 @@ Do the steps **in order**: each file uses records created by the one before it.
 The file adds a read-only, calculated field (no database column). It needs the Master Pack package (`WMS`)
 to be installed, which it already is.
 
-### 2-5. Label records
+### 2-6. Label records
 For each ZIP, open the screen, open the clipboard menu, choose **Import ALL as ZIP**, and pick the file.
 The result message should say "1 file has been imported".
 
@@ -46,15 +47,16 @@ The result message should say "1 file has been imported".
 | 2 | Barcodes (AL204000) | `2_ALBarcode-MasterPack.zip` |
 | 3 | Substitutions (AL206500) | `3_ALSubstitution-MasterPack.zip` |
 | 4 | Data Elements | `4_ALDataElement-MasterPack-201-211.zip` |
-| 5 | Label Models (AL201000) | `5_ALModel-masterpack_KOHLS_128.zip` |
+| 5 | Rules (AL203500) | `5_ALRule-SO302000-Packages-is-Master.zip` |
+| 6 | Label Models (AL201000) | `6_ALModel-masterpack_KOHLS_128.zip` |
 
 ## Check after the import
 
 Open the label on **Label Models (AL201000)**:
 - **Enabled when** (filter rule) shows **CustomerIsKohls**. If it is blank, select `CustomerIsKohls`.
-- **Prints when** (print rule) shows **SO302000-Packages-is-Master**, with **Not** unchecked. If it is blank, the
-  rule is missing: create it on **Rules (AL203500)** with the expression `Packages.UsrIsParentBox == 'true'`
-  (screen SO302000), then select it.
+- **Prints when** (print rule) shows **SO302000-Packages-is-Master**, with **Not** unchecked. If it is blank, open
+  **Rules (AL203500)**, find `SO302000-Packages-is-Master` (expression `Packages.UsrIsParentBox == 'true'`,
+  screen SO302000; step 5 creates it if it was missing), and select it on the label.
 
 Render or print a Kohl's master carton and check:
 - FOR block: `(91) 000875`-style readable (6 digits), the barcode, and the location number centered on the right.
