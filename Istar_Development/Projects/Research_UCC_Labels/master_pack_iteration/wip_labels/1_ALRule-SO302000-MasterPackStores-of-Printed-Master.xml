@@ -10,7 +10,7 @@
   </layout>
   <data>
     <ALRule>
-      <row RuleID="17b9743e-4f2f-4b0a-90ad-afe1e4651a8e" Name="SO302000-MasterPackStores-of-Printed-Master" Description="SO302000 master pack store belongs to the master carton being printed" Active="1" IsSystem="0" AllowExport="1" IsComposite="0" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Expression="MasterPackStores.MasterCartonNbr == Packages.UsrCartonNbr" NoteID="36c18609-adb8-40fd-96f0-6778d1f153a7" />
+      <row RuleID="17b9743e-4f2f-4b0a-90ad-afe1e4651a8e" Name="SO302000-MasterPackStores-of-Printed-Master" Description="SO302000 master pack store of the printed master carton" Active="1" IsSystem="0" AllowExport="1" IsComposite="0" ScreenID="SO302000" GraphType="PX.Objects.SO.SOShipmentEntry" Expression="MasterPackStores.MasterCartonNbr == Packages.UsrCartonNbr" NoteID="36c18609-adb8-40fd-96f0-6778d1f153a7" />
     </ALRule>
   </data>
 </data-set>
