@@ -271,3 +271,138 @@ Real customization overhead identified (run 1):
 - [Open] **Measure growth inside a single run.** Restore the 12:17 backup, then process all **172 orders for DC 00840 / 4/27/2026 in one run**, with the profiler recording. That is about 803 lines, under the 2,000-line limit. The run should show how per-order time grows as the shipment grows, which the 20-order runs were too small to show.
 - [Open] Production-scale comparison: `db_checks.sql` against production (read-only).
 - [Open] Confirm authorship of `WMS` and `ASC*` with Jim and Vadym.
+
+---
+
+## 2026-10-02 12:41 EDT: Restored the local DB to the 12:17 backup
+
+- Restored `AcumaticaDB_pre_ProcessOrders_20261002.bak` from SQL, because this session doesn't have admin rights, so IIS was not stopped first. `SET SINGLE_USER WITH ROLLBACK IMMEDIATE` disconnected the app pool's sessions, and the restore ran in the same batch. Database verified ONLINE and MULTI_USER afterwards.
+- Verified: test shipments 0000792 and 0000793 are gone (0 shipments created today), and all **172 orders for DC 00840 / 4/27/2026** are open again.
+- **IIS must be restarted** (`iisreset /stop`, then `iisreset /start`, from an Administrator prompt) before the next test, so Acumatica's in-memory caches don't serve data from before the restore.
+- IIS restarted at 12:43 EDT (`iisreset /stop` then `/start`, run elevated). The app pool reconnected to the DB, and the event log shows no errors. The local site is at `http://localhost:8888/AcumaticaERP/`; the login page returned HTTP 200. The DB is ready for the single 172-order run.
+
+---
+
+## 2026-10-02 13:08 EDT: Single 172-order run, measured growth with shipment size
+
+**Source:** `profiler results/ProfilerLog_third_172.zip`. The SQL log is 1.6 GB and 145,448 statements, so it was analyzed with `profiler results/analyze_profiler_stream.py`, which reads it line by line. To reproduce, unzip into `third/` and run `python analyze_profiler_stream.py third 253 10 21,50,143,172`.
+
+### Run checks [Verified-DB]
+- **Run:** started 12:52:20 with **Process All**, using the same filters as before (DKOHLS, ISTAR, 4/27/2026, Location 00840).
+- **Scope:** 172 of 172 orders processed. **No orders from other DCs were touched**, so Process All respected the Location column filter.
+- **Result:** all 172 orders went into **one shipment, 0000792**: 803 lines, 257 packages. All 172 orders are now in Shipping status.
+- **Exceptions:** one, caught. It was a file-lock `IOException` on `C:\AcumaticaLogs\PickedForPackDiagnostics_20260828.txt` (see "Local diagnostic trace file" below). It did not affect processing.
+
+### Totals [Verified-Profiler]
+- **Elapsed:** 470.4 s (7 min 50 s), about **2.7 s per order**, against 0.7–0.9 s per order in the warm 20-order runs.
+- **Breakdown:** 324.7 s of CPU and 154.6 s of SQL across 145,448 statements.
+- **Shipment saves:** 343 `UPDATE SOShipment` statements, which is 2 per order (F2 confirmed again).
+
+### The growth curve [Verified-Profiler]
+
+Each order's boundary is the single `UPDATE SOOrder` it issues.
+
+| Orders | Wall ms per order | Queries per order | SQL ms per order | Package UPDATEs per order |
+|---|---|---|---|---|
+| 1–10 | 2,633 (includes start-up) | 299 | 301 | 4.7 |
+| 21–30 | 1,014 | 322 | 226 | 29.1 |
+| 41–50 | 1,339 | 445 | 281 | 49.5 |
+| 61–70 | 2,246 | 633 | 735 | 72.3 |
+| 91–100 | 3,140 | 958 | 943 | 138.2 |
+| 121–130 | 3,356 | 1,134 | 803 | 182.4 |
+| 141–150 | 4,115 | 1,326 | 1,193 | 217.4 |
+| 161–170 | 4,470 | 1,457 | 1,242 | 246.8 |
+
+- **Per-order time roughly quadruples across the run.** It is about 1.0 s plus about 0.019 s for each order already in the shipment.
+- **Total time therefore grows with the square of the shipment size.** For *N* orders in one shipment, the total is about *N* × 1.0 s + 0.0095 × *N*² s. For 172 orders that predicts about 453 s; the measured order phase was about 458 s.
+- **F1 confirmed at scale:** package UPDATEs per order track the number of packages already in the shipment (about 1.5 packages per order), reaching 254 for the last order.
+
+### What grows: orders 21–50 compared with 143–172 [Verified-Profiler]
+
+| Call site | Early: queries / SQL ms per order | Late: queries / SQL ms per order | Finding |
+|---|---|---|---|
+| WMS `HasSelectedPackageContents` | 40 / 74 | **236 / 457** | F1 + F6: one query per package, no index |
+| FlexMFG `AssignSerialNumbersFromWOKitAssembly` | 160 / 61 | **739 / 320** | F3: loops over every shipment line |
+| Save SQL (shown under TrueCommerce `Persist`, which wraps all saves) | 103 / 34 | 310 / 144 | F1: every package re-saved |
+| TrueCommerce `CreateShipmentFromSchedules` | 28 / 22 | 34 / 62 | F7: `SOLine` lookup without `OrderType` |
+| Asgard `SOShipment_RowSelected` | 2 / 6 | 2 / 29 | Runs during processing |
+
+- **SQL grows by about 0.8 s per order from early to late, while wall time grows by about 3 s per order.** About a quarter of the growth is SQL; the rest is application CPU.
+- The CPU growth is consistent with the WMS package loops and handlers (re-updating and re-scanning every package, running handlers on each update) and the FlexMFG line loop [Inferred: the profiler does not attribute CPU to methods].
+- **Whole-run SQL by owner:**
+
+  | Owner | Queries | SQL s |
+  |---|---|---|
+  | WMS | 27,623 | 49.7 |
+  | TrueCommerce (mostly save pass-through) | 41,410 | 30.7 |
+  | FlexMFG | 69,994 | 30.1 |
+  | ASCiStarKohls (mostly base pass-through) | 3,331 | 6.6 |
+
+  Per call site: WMS `HasSelectedPackageContents` was 21,206 queries and 40.5 s, and FlexMFG `AssignSerialNumbers...` was 69,096 queries and 29.2 s.
+
+### F8 is conditional [Verified-Profiler]
+- The post-run Customer Order Nbr loop **did not save anything in this run**: there were 343 shipment updates, against 343 + 172 if F8 had fired.
+- `ASCiStarWMSSOOrderEntryExt.CreateShipment` only loops over orders with `Selected == true`. It fired in the earlier **Process** runs (20 saves each) but not with **Process All** [Inferred from the code plus this result].
+- [Open] Find out which button production uses. Peiyu's screenshot shows the rows ticked, so possibly Process with every row selected, in which case F8 applies to all 1,131 orders.
+
+### What capping shipment size would do (R1) [Inferred from the measured model]
+- Using the model above:
+  - **One shipment of 172 orders:** about 453 s.
+  - **Shipments capped at about 40 orders:** about 4.3 × (40 + 15) ≈ 237 s, about **48% less**.
+  - **Shipments capped at about 20 orders:** about 205 s, about **55% less**.
+- Capping stops the license errors and roughly halves processing time even before any code is fixed. Fixing F1 (rebuild only the new order's packages, no re-save of every package) and adding the `SelectedPackageContents` index (R2) would flatten most of the remaining slope.
+
+### Local diagnostic trace file [Verified-Config] (local environment issue)
+- The local `Web.config` has a `PXFileTraceProvider` writing **all PXTrace output** (including verbose telemetry every 10 s) to `C:\AcumaticaLogs\PickedForPackDiagnostics_20260828.txt`.
+- That file is now **2.58 GB** and still growing. It looks like a diagnostic setting from 2026-08-28 that was left on. It caused the caught file-lock exception and adds disk writes to every traced event, so it slightly inflates local timings.
+- [Open] Check that production's `Web.config` does not have this setting. Decide whether to remove it locally and archive or delete the file. It is not changed here; that is the user's decision.
+
+### Next steps
+- Share these numbers with Peiyu and Vadym. The case for R1 (cap shipment size) and R2 (index) is now measured. F1, F3 and F8 are confirmed as the main logic costs for Acupower/ASC to fix.
+- [Open] Production comparison: run `db_checks.sql` against production (read-only).
+- **Restore point:** the 12:17 backup still resets the local DB for further tests (for example, re-running with the R2 index added to measure its effect).
+
+---
+
+## 2026-10-02 13:22 EDT: Correction to F8 (what makes it save)
+
+The 13:08 entry said F8 did not fire because the run used **Process All**. **That was wrong.** [Verified-Profiler], [Verified-DB]
+
+- **The loop did run with Process All.** It issued 172 `SOOrderShipment` lookups (one per order) at 462.8–463.0 s, right after the last order (459.2 s).
+- **It skipped the saves because of the data.** The 172 orders for DC 00840 carry **two different Customer Order Nbrs** (16182751 and 16360484). F8 only sets the shipment's `CustomerOrderNbr` when **every selected order for that customer location has the same PO**. Otherwise the value is null and `UpdateShipmentCustomerOrderNbr` is never called. Shipment 0000792's `CustomerOrderNbr` is still null, which confirms it.
+- In the earlier 20-order runs, every order had the same PO (16182751), so it saved the shipment 20 times.
+
+**Corrected rule:** F8 loads and saves the shipment **once per selected order** whenever all of a DC's orders in the run share one PO. Process and Process All behave the same way.
+
+**Production:** Peiyu's screenshots show Customer Order 16654778 on every visible DC #840 row. That suggests the PO is the same per DC, so **F8 likely applies to most of the 1,131 orders** [Inferred]. R7 stays a high-priority, small fix. The open question is no longer "which button" but "do a DC's orders in one run share a PO", which can be checked from the order data.
+
+---
+
+## 2026-10-02 13:28 EDT: Do a DC's orders share one PO? (decides whether F8 saves) [Verified-DB, local data]
+
+Kohl's `SZ` orders grouped by DC (customer location) and ship date, counting distinct `CustomerOrderNbr`:
+
+| Orders | DC/date groups with 1 PO | Groups with 2 POs |
+|---|---|---|
+| All Kohl's orders | 42 groups, 7,576 orders (**82%**) | 9 groups, 1,618 orders |
+| Open orders (what Process Orders picks up) | 39 groups, 3,855 orders (**73%**) | 8 groups, 1,446 orders |
+
+- Historical Kohl's shipments: **5 of 6 have `CustomerOrderNbr` filled** (about 60 orders each), so F8 saved on those. The one empty shipment is test shipment 0000792 (2 POs).
+- **Conclusion:** most DC/date groups have a single PO, so **F8 usually fires and re-saves the shipment once per order** [Inferred for production; local data is older but follows the same pattern].
+- **Caveat:** F8 groups by customer location across **all orders in the run**, not per ship date. A run covering a date range (production used 9/30–10/31) can mix POs for the same DC, and then F8 would skip. Whether the production run hit that depends on its data. A read-only check against production would settle it.
+
+---
+
+## 2026-10-02 13:30 EDT: How Process and Process All select records [Verified-Code]
+
+Source: decompiled `PX.Data.PXProcessing<Table>` (`Process`, `ProcessAll`, `RunProcessAll`) and `PX.Data.PXProcessingBase<Table>` (`_PendingList`, `GetSelectedItems`, `_AlterFilters`) from `PX.Data.dll`.
+
+- **Process:** takes the rows already in the grid's cache whose `Selected` checkbox is ticked (`GetSelectedItems(cache, cache.Cached)`) and passes that list to the processing delegate.
+- **Process All:** calls `_PendingList(adapter.Parameters, adapter.SortColumns, adapter.Descendings, adapter.Filters)`. That method:
+  - re-queries every row matching the form filters **and the grid's column filters and sort**. `_AlterFilters` only drops a filter on the processing-status column.
+  - **sets `Selected = true`** on each row, except rows whose checkbox is disabled.
+  - then uses the same `GetSelectedItems` step and the same processing delegate as Process.
+- **Result:** both buttons hand the same kind of list, rows with `Selected = true`, to the same code. Process All is equivalent to ticking every row in the filtered grid and clicking Process.
+  - This explains why F8's `Selected == true` check passed with Process All (see the F8 correction above).
+  - It confirms from the code that **Process All respects the Location column filter**, which the 172-order run had already shown in the data.
+- **Downstream:** all orders in one click reach `SOOrderEntry.CreateShipment` together, so they share one `DocumentList<SOShipment>` and merge into the same shipments (one shipment, 0000792, for 172 orders). Separate clicks never merge with each other.
